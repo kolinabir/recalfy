@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 
 import { UserId } from '../mongo/collections';
 import { MongoService } from '../mongo/mongo.service';
+import { generatePairingCode } from './pairing-code';
 
 export type RedeemResult =
   | { status: 'linked'; email: string }
@@ -77,6 +78,40 @@ export class LinkStore {
 
     this.logger.log(`Linked Telegram ${telegramUserId} to ${linked.email}`);
     return { status: 'linked', email: linked.email };
+  }
+
+  /**
+   * Mints the manual fallback code. Any outstanding code for this Telegram
+   * account is dropped first, so a code read out earlier can't still be live
+   * once someone asks for a new one.
+   */
+  async issuePairingCode(telegramUserId: UserId, ttlMs: number): Promise<string> {
+    await this.mongo.pairingCodes.deleteMany({ telegramUserId });
+
+    const code = generatePairingCode();
+    const now = new Date();
+
+    await this.mongo.pairingCodes.insertOne({
+      _id: code,
+      telegramUserId,
+      createdAt: now,
+      expiresAt: new Date(now.getTime() + ttlMs),
+      attempts: 0,
+    });
+
+    return code;
+  }
+
+  /** Seconds until this account may ask for another code, or 0 if it may now. */
+  async pairingCooldown(telegramUserId: UserId, minIntervalMs: number): Promise<number> {
+    const recent = await this.mongo.pairingCodes.findOne(
+      { telegramUserId },
+      { sort: { createdAt: -1 } },
+    );
+    if (!recent) return 0;
+
+    const elapsed = Date.now() - recent.createdAt.getTime();
+    return elapsed >= minIntervalMs ? 0 : Math.ceil((minIntervalMs - elapsed) / 1000);
   }
 
   /** Returns the email it was detached from, or null if it wasn't linked. */

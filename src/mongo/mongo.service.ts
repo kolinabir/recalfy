@@ -7,6 +7,7 @@ import {
   LinkTokenDoc,
   MemoryDoc,
   MessageDoc,
+  PairingCodeDoc,
   ReminderDoc,
   UserDoc,
   WebUserDoc,
@@ -56,6 +57,10 @@ export class MongoService implements OnModuleInit, OnApplicationShutdown {
 
   get linkTokens(): Collection<LinkTokenDoc> {
     return this.db.collection<LinkTokenDoc>(COLLECTIONS.linkTokens);
+  }
+
+  get pairingCodes(): Collection<PairingCodeDoc> {
+    return this.db.collection<PairingCodeDoc>(COLLECTIONS.pairingCodes);
   }
 
   /** Written by Better Auth in the web app; read here, and linked here. */

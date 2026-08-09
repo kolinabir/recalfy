@@ -221,6 +221,110 @@ export function HandshakePanel({
           ) : null}
         </div>
       </div>
+
+      <ManualPairing />
     </div>
+  );
+}
+
+/**
+ * The third route, for when neither the link nor the QR is usable — a locked
+ * down machine, no Telegram Desktop, nothing to scan with.
+ *
+ * The code runs bot → person → this form, never the other way. A code heading
+ * towards an authenticated form is one an attacker must persuade someone to
+ * reveal; a code heading towards the bot is one they can persuade someone to
+ * paste, which is the shape every malicious-link scam already uses.
+ */
+function ManualPairing() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [code, setCode] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setPending(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/telegram/link/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const body = await res.json();
+
+      if (res.ok) {
+        router.refresh();
+        return;
+      }
+
+      setError(
+        body.error === "already-linked"
+          ? "This account is already connected."
+          : body.error === "telegram-taken"
+            ? "That Telegram account is connected to a different account."
+            : "That code isn't valid. Send /code to the bot for a fresh one.",
+      );
+    } catch {
+      setError("Network error. Try again.");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-6 font-mono text-[0.6875rem] text-fg-faint underline-offset-4 transition-colors hover:text-fg-subtle hover:underline"
+      >
+        Neither works? Connect manually
+      </button>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="mt-6 border-t border-line pt-6">
+      <p className="text-[0.875rem] leading-relaxed text-fg-subtle">
+        Send{" "}
+        <code className="font-mono text-[0.8125rem] text-fg-muted">/code</code>{" "}
+        to the bot in Telegram, then type what it replies with here.
+      </p>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2.5">
+        <input
+          autoFocus
+          value={code}
+          onChange={(event) => setCode(event.target.value)}
+          placeholder="K7M2-QX9F"
+          // Codes are Crockford base32; nothing here should be autocorrected
+          // or capitalised by the browser on the way in.
+          autoCapitalize="characters"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
+          maxLength={12}
+          aria-label="Pairing code"
+          className="w-[10rem] rounded-xl border border-line bg-s1 px-4 py-2.5 font-mono text-[0.9375rem] tracking-[0.08em] uppercase outline-none placeholder:text-fg-faint focus:border-fg-faint"
+        />
+        <button
+          type="submit"
+          disabled={pending || code.trim().length === 0}
+          className="rounded-xl border border-line px-4 py-2.5 text-[0.875rem] text-fg-muted transition-colors hover:border-fg-faint hover:text-fg disabled:opacity-50"
+        >
+          {pending ? "Checking…" : "Connect"}
+        </button>
+      </div>
+
+      {error ? (
+        <p role="alert" className="mt-3 text-[0.8125rem] text-fg-subtle">
+          {error}
+        </p>
+      ) : null}
+    </form>
   );
 }

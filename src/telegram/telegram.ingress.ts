@@ -6,6 +6,11 @@ import { ENV, Env } from '../config/env';
 import { InboundHandler, Ingress } from './ingress';
 import { LinkStore } from './link.store';
 import { linkedOnly, parseStartToken } from './linked-only.middleware';
+import { formatPairingCode } from './pairing-code';
+
+/** Short: there is no walk-to-another-device delay in the manual flow. */
+const PAIRING_TTL_MS = 5 * 60 * 1000;
+const PAIRING_COOLDOWN_MS = 30 * 1000;
 
 /**
  * grammY, wrapped. Used raw rather than through a decorator module: those add
@@ -34,6 +39,28 @@ export class TelegramIngress extends Ingress implements OnModuleInit {
       const token = parseStartToken(ctx.message.text);
       if (!token) return next();
       await this.completeLink(ctx, token);
+    });
+
+    this.bot.command('code', async (ctx) => {
+      const senderId = ctx.from!.id;
+
+      if (await this.links.isLinked(senderId)) {
+        await ctx.reply('This chat is already connected. Send /unlink first if you want to move it.');
+        return;
+      }
+
+      const wait = await this.links.pairingCooldown(senderId, PAIRING_COOLDOWN_MS);
+      if (wait > 0) {
+        await ctx.reply(`Hold on ${wait}s before asking for another code.`);
+        return;
+      }
+
+      const code = await this.links.issuePairingCode(senderId, PAIRING_TTL_MS);
+      await ctx.reply(
+        `Your pairing code is\n\n${formatPairingCode(code)}\n\n` +
+          `Type it into the "Connect manually" box on recalfy.com. It lasts ${PAIRING_TTL_MS / 60_000} minutes.\n\n` +
+          'Nobody legitimate will ever ask you for this code — if someone did, ignore them.',
+      );
     });
 
     this.bot.command('unlink', async (ctx) => {

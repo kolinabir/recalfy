@@ -128,6 +128,33 @@ export interface LinkTokenDoc {
 }
 
 /**
+ * The manual fallback, for when neither the deep link nor the QR is usable.
+ *
+ * It runs the opposite way to a LinkTokenDoc: the bot mints this one, bound to
+ * the Telegram account that asked, and it is redeemed in the signed-in web
+ * app. That direction is deliberate — a code travelling towards an
+ * authenticated form is one the holder must be persuaded to *reveal*, whereas
+ * a code travelling towards the bot is one they can be persuaded to *paste*,
+ * which is the shape every malicious-link scam already uses.
+ */
+export interface PairingCodeDoc {
+  /** 8 Crockford base32 symbols, normalised — see telegram/pairing-code.ts. */
+  _id: string;
+  telegramUserId: UserId;
+  createdAt: Date;
+  expiresAt: Date;
+  /**
+   * Wrong guesses against this code from anyone. The code dies at the cap
+   * rather than the guesser being throttled: an attacker can rotate accounts,
+   * but cannot rotate the code they are trying to hit.
+   */
+  attempts: number;
+  consumedAt?: Date;
+  /** `_id` of the Better Auth user that redeemed it, as a string. */
+  consumedBy?: string;
+}
+
+/**
  * The Better Auth user record, as far as the bot is concerned. Better Auth
  * owns this collection and the rest of its shape; `telegramUserId` is the one
  * field we add, and the only one read here.
@@ -147,6 +174,7 @@ export const COLLECTIONS = {
   memories: 'memories',
   reminders: 'reminders',
   linkTokens: 'linkTokens',
+  pairingCodes: 'pairingCodes',
   /** Better Auth's collection. Singular — that is its default, not a typo. */
   webUsers: 'user',
 } as const;

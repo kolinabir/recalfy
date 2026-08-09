@@ -29,6 +29,10 @@ export const INDEXES: Record<string, IndexDescription[]> = {
     { key: { expiresAt: 1 }, name: 'ttl', expireAfterSeconds: 0 },
     { key: { webUserId: 1 }, name: 'by_web_user' },
   ],
+  [COLLECTIONS.pairingCodes]: [
+    { key: { expiresAt: 1 }, name: 'ttl', expireAfterSeconds: 0 },
+    { key: { telegramUserId: 1 }, name: 'by_telegram_user' },
+  ],
   [COLLECTIONS.webUsers]: [
     // One Telegram account maps to at most one web account. Partial rather
     // than sparse so the constraint ignores the unlinked majority.
