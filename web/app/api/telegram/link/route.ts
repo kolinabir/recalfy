@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { ObjectId } from "mongodb";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import QRCode from "qrcode";
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/mongo";
@@ -59,7 +60,7 @@ export async function POST() {
     { sort: { createdAt: -1 } },
   );
   if (recent) {
-    return NextResponse.json({ url: linkFor(String(recent._id)) });
+    return NextResponse.json(await handshake(String(recent._id), recent.expiresAt as Date));
   }
 
   // Any outstanding token becomes dead the moment a new one is asked for, so
@@ -69,16 +70,36 @@ export async function POST() {
   // 32 bytes → 43 base64url chars, inside Telegram's 64-char start payload cap.
   const token = randomBytes(32).toString("base64url");
   const now = new Date();
+  const expiresAt = new Date(now.getTime() + TTL_MS);
 
   await tokens.insertOne({
     _id: token,
     webUserId: user.id,
     webUserEmail: user.email,
     createdAt: now,
-    expiresAt: new Date(now.getTime() + TTL_MS),
+    expiresAt,
   } as never);
 
-  return NextResponse.json({ url: linkFor(token) });
+  return NextResponse.json(await handshake(token, expiresAt));
+}
+
+/**
+ * The QR is rendered here rather than in the browser so the encoder stays out
+ * of the client bundle — the page only ever receives finished markup.
+ */
+async function handshake(token: string, expiresAt: Date) {
+  const url = linkFor(token);
+
+  const qr = await QRCode.toString(url, {
+    type: "svg",
+    errorCorrectionLevel: "M",
+    margin: 0,
+    // Rendered onto a light plate: Telegram's scanner wants real contrast, and
+    // inheriting a dark surface would break it.
+    color: { dark: "#000000", light: "#ffffff" },
+  });
+
+  return { url, qr, expiresAt: expiresAt.toISOString() };
 }
 
 function linkFor(token: string): string {
