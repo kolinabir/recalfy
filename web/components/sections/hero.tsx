@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { ProductFrame } from "@/components/product-frame";
-import { RotatingWord } from "@/components/rotating-word";
 
 /**
  * Centred statement, then the product at full width beneath it. The product
@@ -18,25 +17,24 @@ export function Hero() {
             <span className="rounded-full bg-s2 px-2 py-0.5 font-mono text-[0.625rem] tracking-wide text-accent">
               SOON
             </span>
-            launching on Telegram · five more chat apps queued
+            launching first on Telegram
           </p>
 
           <h1
-            className="resolve display mt-7 text-[clamp(2.75rem,7vw,5rem)]"
+            className="resolve display mt-8 text-[clamp(3rem,7.5vw,5.5rem)] text-balance"
             style={{ animationDelay: "80ms" }}
           >
-            <span className="block text-fg-muted">You&apos;ll forget</span>
-            <RotatingWord />
-            <span className="display-fill block">Recalfy won&apos;t.</span>
+            <span className="block text-fg-subtle">The memory</span>
+            <span className="display-fill block">that texts back.</span>
           </h1>
 
           <p
             className="resolve mx-auto mt-7 max-w-xl text-[1.0625rem] leading-relaxed text-fg-muted"
             style={{ animationDelay: "170ms" }}
           >
-            Text it the way you&apos;d text a friend — dates, names, quotes,
-            where you left things. Recalfy keeps every fact, answers from
-            memory, and messages you first when the moment comes.
+            Text Recalfy the way you&apos;d text a friend — dates, names,
+            quotes, where you left things. It keeps every fact, answers when
+            you ask, and messages you first when the moment comes.
           </p>
 
           <div
