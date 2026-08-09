@@ -9,6 +9,14 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
   trustedOrigins: ["https://recalfy.com", "http://localhost:3000"],
+  user: {
+    additionalFields: {
+      // Written only by the bot, once it has seen a valid token in a /start.
+      // input:false keeps it out of client-supplied update payloads, so nobody
+      // can claim a Telegram id by POSTing it at the account endpoint.
+      telegramUserId: { type: "number", required: false, input: false },
+    },
+  },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,

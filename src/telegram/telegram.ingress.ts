@@ -1,11 +1,11 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { Bot } from 'grammy';
+import { Bot, type Context } from 'grammy';
 import type { Update } from 'grammy/types';
 
 import { ENV, Env } from '../config/env';
-import { Allowlist } from './allowlist';
-import { allowlistOnly } from './allowlist.middleware';
 import { InboundHandler, Ingress } from './ingress';
+import { LinkStore } from './link.store';
+import { linkedOnly, parseStartToken } from './linked-only.middleware';
 
 /**
  * grammY, wrapped. Used raw rather than through a decorator module: those add
@@ -15,17 +15,36 @@ import { InboundHandler, Ingress } from './ingress';
 export class TelegramIngress extends Ingress implements OnModuleInit {
   private readonly logger = new Logger(TelegramIngress.name);
   private readonly bot: Bot;
-  private readonly allowlist: Allowlist;
   private readonly handlers: InboundHandler[] = [];
 
-  constructor(@Inject(ENV) env: Env) {
+  constructor(
+    @Inject(ENV) env: Env,
+    private readonly links: LinkStore,
+  ) {
     super();
     this.bot = new Bot(env.botToken);
-    this.allowlist = env.allowlist;
   }
 
   async onModuleInit(): Promise<void> {
-    this.bot.use(allowlistOnly(this.allowlist, this.logger));
+    this.bot.use(linkedOnly(this.links, this.logger));
+
+    // Registered before the generic text handler so a handshake never reaches
+    // the assistant as an ordinary message.
+    this.bot.on('message:text', async (ctx, next) => {
+      const token = parseStartToken(ctx.message.text);
+      if (!token) return next();
+      await this.completeLink(ctx, token);
+    });
+
+    this.bot.command('unlink', async (ctx) => {
+      const email = await this.links.unlink(ctx.from!.id);
+      await ctx.reply(
+        email
+          ? `Disconnected from ${email}. I won't reply here until it's connected again.`
+          : "This chat isn't connected to an account.",
+      );
+    });
+
     this.bot.on('message:text', (ctx) =>
       this.fanOut({
         userId: ctx.from.id,
@@ -38,12 +57,33 @@ export class TelegramIngress extends Ingress implements OnModuleInit {
 
     // Populates bot.botInfo; required before handleUpdate in webhook mode.
     await this.bot.init();
-    this.logger.log(`@${this.bot.botInfo.username} ready — ${this.allowlist.size} allowed sender(s)`);
-    if (this.allowlist.hasUnresolvedUsernames) {
-      this.logger.warn(
-        'Allowlist contains usernames. Usernames can be released and re-registered by someone ' +
-          'else — run `npm run whoami` and replace them with numeric ids.',
-      );
+    this.logger.log(`@${this.bot.botInfo.username} ready — access is by linked account`);
+  }
+
+  private async completeLink(ctx: Context, token: string): Promise<void> {
+    const result = await this.links.redeem(token, ctx.from!.id);
+
+    switch (result.status) {
+      case 'linked':
+        await ctx.reply(
+          `Connected to ${result.email}.\n\n` +
+            "Tell me anything you'd rather not hold in your head. If this wasn't you, send /unlink.",
+        );
+        return;
+      case 'taken':
+        await ctx.reply(
+          `This Telegram account is already connected to ${result.email}. Send /unlink here first if you want to move it.`,
+        );
+        return;
+      case 'account-linked':
+        await ctx.reply(
+          'That account is already connected to a different Telegram account. Disconnect it there first.',
+        );
+        return;
+      case 'invalid':
+        await ctx.reply(
+          'That link has expired or was already used. Open recalfy.com and press "Connect Telegram" for a fresh one.',
+        );
     }
   }
 

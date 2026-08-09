@@ -95,22 +95,22 @@ silently swallows every Telegram update — the app looks healthy on
 `127.0.0.1` while Telegram gets 404s. Check the tunnel end to end with
 `curl "$PUBLIC_URL/health"`; it must return this app's JSON.
 
-### 4. Set the allowlist
+### 4. Connect your Telegram account
 
-`TELEGRAM_ALLOWED_USERS` takes numeric ids and/or `@usernames`, and the app
-refuses to start if it's empty. Start with your `@handle` if that's all you
-have — the Bot API can't resolve a username to an id until its owner has
-messaged the bot.
+There is no allowlist to fill in. Access is granted by linking: sign in at
+recalfy.com, press **Connect Telegram**, and the site sends you to the bot
+carrying a one-time token. Pressing **Start** completes the handshake and
+attaches your Telegram id to the web account.
 
-Once you've sent the bot a message, swap in the permanent id:
+Until then the bot ignores you, which is the point — the webhook URL is public
+and the bot username is discoverable. A bare `/start` from an unlinked sender
+gets one pointer back to the site and nothing else.
 
-```bash
-npm run whoami
-```
+`/unlink` in the chat detaches it again.
 
-Prefer ids. A username can be released and claimed by someone else, who would
-then inherit access; a numeric id never changes hands. The app logs a warning
-at boot while any username is still in the list.
+Linking never asks for a `@username`. Usernames can be released and claimed by
+someone else, who would inherit the connection; the numeric id never changes
+hands, and pressing Start is what proves the account is yours.
 
 ### 5. Run
 

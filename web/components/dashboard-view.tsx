@@ -1,3 +1,4 @@
+import { ConnectTelegram } from "@/components/connect-telegram";
 import { Reveal } from "@/components/motion/reveal";
 import { SignOutButton } from "@/components/sign-out-button";
 
@@ -50,24 +51,33 @@ export function DashboardView({
             </div>
 
             <div className="mt-10 border-t border-line pt-8">
-              <h2 className="display-sm text-[1.25rem]">Connect Telegram</h2>
+              <h2 className="display-sm text-[1.25rem]">
+                {linked ? "Connected" : "Connect Telegram"}
+              </h2>
               <p className="mt-2.5 max-w-prose leading-relaxed text-fg-subtle">
-                You&apos;ll open a chat with the bot and press Start. That
-                proves the account is yours — which is why we don&apos;t just
-                ask you to type a username, and why nobody else can claim your
-                memory by taking one.
+                {linked ? (
+                  <>
+                    Your Telegram account is attached to this one. Send{" "}
+                    <code className="font-mono text-[0.8125rem] text-fg-muted">
+                      /unlink
+                    </code>{" "}
+                    in the chat to detach it.
+                  </>
+                ) : (
+                  <>
+                    You&apos;ll open a chat with the bot and press Start. That
+                    proves the account is yours — which is why we don&apos;t
+                    just ask you to type a username, and why nobody else can
+                    claim your memory by taking one.
+                  </>
+                )}
               </p>
 
-              <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
-                <button
-                  type="button"
-                  disabled
-                  className="rounded-xl bg-fg px-5 py-3 text-[0.9375rem] font-medium text-[var(--primary-foreground)] opacity-40"
-                >
-                  Connect Telegram
-                </button>
-                <span className="eyebrow">Shipping next</span>
-              </div>
+              {linked ? null : (
+                <div className="mt-7">
+                  <ConnectTelegram />
+                </div>
+              )}
             </div>
           </div>
         </Reveal>

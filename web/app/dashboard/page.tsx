@@ -17,12 +17,16 @@ export default async function DashboardPage() {
   // that is present but no longer valid.
   if (!session) redirect("/login");
 
+  // Written by the bot when it redeems a link token, so it is authoritative
+  // here — the client never gets to assert it.
+  const telegramUserId = (session.user as { telegramUserId?: number })
+    .telegramUserId;
+
   return (
     <DashboardView
       email={session.user.email}
       name={session.user.name}
-      // Telegram linking lands next; every account is one step short until then.
-      linked={false}
+      linked={typeof telegramUserId === "number"}
     />
   );
 }

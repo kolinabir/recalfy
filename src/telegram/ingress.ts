@@ -1,4 +1,4 @@
-/** A message that made it past the secret-token check and the allowlist. */
+/** A message that made it past the secret-token check and the link gate. */
 export interface InboundMessage {
   userId: number;
   text: string;

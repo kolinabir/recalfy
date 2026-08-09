@@ -2,7 +2,15 @@ import { Inject, Injectable, Logger, OnApplicationShutdown, OnModuleInit } from 
 import { Collection, Db, MongoClient } from 'mongodb';
 
 import { ENV, Env } from '../config/env';
-import { COLLECTIONS, MemoryDoc, MessageDoc, ReminderDoc, UserDoc } from './collections';
+import {
+  COLLECTIONS,
+  LinkTokenDoc,
+  MemoryDoc,
+  MessageDoc,
+  ReminderDoc,
+  UserDoc,
+  WebUserDoc,
+} from './collections';
 import { INDEXES } from './indexes';
 
 /** M0 allows 500 connections but only 100 ops/sec — a small pool is plenty. */
@@ -44,6 +52,15 @@ export class MongoService implements OnModuleInit, OnApplicationShutdown {
 
   get reminders(): Collection<ReminderDoc> {
     return this.db.collection<ReminderDoc>(COLLECTIONS.reminders);
+  }
+
+  get linkTokens(): Collection<LinkTokenDoc> {
+    return this.db.collection<LinkTokenDoc>(COLLECTIONS.linkTokens);
+  }
+
+  /** Written by Better Auth in the web app; read here, and linked here. */
+  get webUsers(): Collection<WebUserDoc> {
+    return this.db.collection<WebUserDoc>(COLLECTIONS.webUsers);
   }
 
   private async connect(): Promise<void> {

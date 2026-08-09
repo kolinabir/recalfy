@@ -1,7 +1,5 @@
 import { ConfigService } from '@nestjs/config';
 
-import { Allowlist } from '../telegram/allowlist';
-
 /**
  * Typed view over the environment. Everything the app needs to boot is read
  * once, here, so a missing variable fails at startup rather than at 3am when
@@ -22,11 +20,6 @@ export class Env {
 
   get webhookSecret(): string {
     return this.required('TELEGRAM_WEBHOOK_SECRET');
-  }
-
-  /** Numeric ids and/or `@username`s permitted to talk to the bot. Never empty. */
-  get allowlist(): Allowlist {
-    return new Allowlist(this.required('TELEGRAM_ALLOWED_USERS').split(','));
   }
 
   get glmApiKey(): string {

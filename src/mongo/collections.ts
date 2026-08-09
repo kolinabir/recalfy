@@ -103,9 +103,50 @@ export interface ReminderDoc {
   createdAt: Date;
 }
 
+/**
+ * A pending "connect Telegram" handshake. The web app mints one of these and
+ * sends the person to `t.me/<bot>?start=<token>`; whoever presses Start proves
+ * they hold the Telegram account, which typing a username never could.
+ *
+ * The token is public by construction — it travels in a URL and lands in chat
+ * history — so it carries no identity of its own, only a pointer to the web
+ * account that asked for it.
+ */
+export interface LinkTokenDoc {
+  /** 32 random bytes, base64url. 43 chars, inside Telegram's 64-char cap. */
+  _id: string;
+  /** `_id` of the Better Auth user this will link to, as a string. */
+  webUserId: string;
+  /** Shown in the bot's confirmation so the person can spot a wrong account. */
+  webUserEmail: string;
+  createdAt: Date;
+  /** TTL index target. Also filtered on at redemption — see LinkStore. */
+  expiresAt: Date;
+  /** Set on redemption; the filter that makes a token single-use. */
+  consumedAt?: Date;
+  consumedBy?: UserId;
+}
+
+/**
+ * The Better Auth user record, as far as the bot is concerned. Better Auth
+ * owns this collection and the rest of its shape; `telegramUserId` is the one
+ * field we add, and the only one read here.
+ */
+export interface WebUserDoc {
+  /** Better Auth stores an ObjectId here and exposes it as a hex string. */
+  _id: ObjectId;
+  email: string;
+  name?: string;
+  telegramUserId?: UserId;
+  telegramLinkedAt?: Date;
+}
+
 export const COLLECTIONS = {
   users: 'users',
   messages: 'messages',
   memories: 'memories',
   reminders: 'reminders',
+  linkTokens: 'linkTokens',
+  /** Better Auth's collection. Singular — that is its default, not a typo. */
+  webUsers: 'user',
 } as const;
