@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default async function TelegramPage() {
   const viewer = await requireViewer();
   const linked = typeof viewer.telegramUserId === "number";
-  const botUsername = process.env.TELEGRAM_BOT_USERNAME ?? "tele_memorybot";
+  const botUsername = process.env.TELEGRAM_BOT_USERNAME ?? "recalfy_bot";
 
   const memories = linked ? await getMemories(viewer.telegramUserId!) : [];
 

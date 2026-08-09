@@ -35,6 +35,7 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Mark } from "@/components/wordmark";
 import { signOut } from "@/lib/auth-client";
 
 const LIBRARY = [
@@ -71,13 +72,12 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild tooltip="Recalfy — home">
-              <Link href="/" className="group/mark">
+              <Link href="/" className="group">
                 <span
                   aria-hidden
-                  className="relative grid size-8 shrink-0 place-items-center rounded-lg border border-line bg-s1"
+                  className="grid size-8 shrink-0 place-items-center rounded-lg border border-line bg-s1"
                 >
-                  <span className="absolute size-1 -translate-x-1 rounded-full bg-fg-faint/50 transition-transform duration-500 group-hover/mark:-translate-x-1.5" />
-                  <span className="absolute size-1.5 translate-x-0.5 rounded-full bg-accent transition-transform duration-500 group-hover/mark:translate-x-1" />
+                  <Mark className="size-4.5" />
                 </span>
                 <span className="display text-[0.9375rem] font-semibold tracking-[-0.02em] text-fg">
                   Recalfy

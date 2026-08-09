@@ -204,7 +204,7 @@ function FirstForward() {
 
 /** The pre-connection page: the empty dashboard is the onboarding. */
 function NotConnected({ firstName }: { firstName?: string }) {
-  const botUsername = process.env.TELEGRAM_BOT_USERNAME ?? "tele_memorybot";
+  const botUsername = process.env.TELEGRAM_BOT_USERNAME ?? "recalfy_bot";
 
   return (
     <div>
