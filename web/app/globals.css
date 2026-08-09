@@ -1,0 +1,327 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  Engram design system.
+
+  Depth rule (the important one): no drop shadows, no gradient fills, no glows.
+  Elevation is a four-step surface ladder plus 1px hairlines — the same discipline
+  Linear uses. A glow is what a design reaches for when its surface ladder is too
+  weak to carry hierarchy on its own.
+
+  Accent rule: amber appears on the brand mark, the primary CTA, focus rings, and
+  live status. Nowhere else. If everything is accented, nothing is.
+*/
+
+:root {
+  /* surface ladder — canvas is never pure black */
+  --bg: oklch(0.147 0.004 265);
+  --s1: oklch(0.176 0.005 265);
+  --s2: oklch(0.204 0.005 265);
+  --s3: oklch(0.234 0.006 265);
+
+  --line: oklch(0.268 0.006 265);
+  --line-strong: oklch(0.336 0.007 265);
+
+  --fg: oklch(0.972 0.002 265);
+  --fg-muted: oklch(0.784 0.006 265);
+  --fg-subtle: oklch(0.622 0.008 265);
+  --fg-faint: oklch(0.498 0.008 265);
+
+  --accent: oklch(0.806 0.148 74);
+  --accent-hover: oklch(0.862 0.132 80);
+  --accent-ink: oklch(0.196 0.044 62);
+
+  --grid: oklch(0.972 0.002 265 / 0.045);
+
+  --background: var(--bg);
+  --foreground: var(--fg);
+  --card: var(--s1);
+  --card-foreground: var(--fg);
+  --popover: var(--s1);
+  --popover-foreground: var(--fg);
+  --primary: var(--fg);
+  --primary-foreground: oklch(0.147 0.004 265);
+  --secondary: var(--s2);
+  --secondary-foreground: var(--fg);
+  --muted: var(--s2);
+  --muted-foreground: var(--fg-muted);
+  --accent-foreground: var(--accent-ink);
+  --destructive: oklch(0.628 0.196 25);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--accent);
+}
+
+.light {
+  --bg: oklch(0.992 0.001 265);
+  --s1: oklch(1 0 0);
+  --s2: oklch(0.972 0.002 265);
+  --s3: oklch(0.948 0.003 265);
+
+  --line: oklch(0.906 0.003 265);
+  --line-strong: oklch(0.848 0.004 265);
+
+  --fg: oklch(0.178 0.006 265);
+  --fg-muted: oklch(0.402 0.008 265);
+  --fg-subtle: oklch(0.552 0.008 265);
+  --fg-faint: oklch(0.652 0.008 265);
+
+  --accent: oklch(0.636 0.152 54);
+  --accent-hover: oklch(0.566 0.158 50);
+  --accent-ink: oklch(0.995 0.002 90);
+
+  --grid: oklch(0.178 0.006 265 / 0.05);
+
+  --primary: oklch(0.178 0.006 265);
+  --primary-foreground: oklch(0.995 0 0);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-bg: var(--bg);
+  --color-s1: var(--s1);
+  --color-s2: var(--s2);
+  --color-s3: var(--s3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-fg-faint: var(--fg-faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-archivo), var(--font-hanken), sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  /* buttons 8 · cards 12 · screenshots 16 — nothing rounder */
+  --radius: 0.5rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1rem;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    color-scheme: dark;
+  }
+
+  html.light {
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+    letter-spacing: -0.003em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--accent) 50%, transparent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .shell {
+    width: 100%;
+    max-width: 76rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  @media (min-width: 768px) {
+    .shell {
+      padding-inline: 2rem;
+    }
+  }
+
+  /*
+    Display type: 600 weight with aggressive negative tracking. The tracking is
+    what separates a display face from a big body face.
+  */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.037em;
+    line-height: 1.0;
+  }
+
+  /*
+    Vertical fade through the letterforms. At display sizes a flat fill reads
+    heavy; dropping the baseline to ~60% lightens the mass without lowering
+    contrast where the eye actually lands.
+  */
+  .display-fill {
+    background-image: linear-gradient(
+      180deg,
+      var(--fg) 32%,
+      color-mix(in oklab, var(--fg) 62%, transparent) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .display-sm {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.024em;
+    line-height: 1.15;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--fg-faint);
+  }
+
+  /*
+    Blueprint grid — barely visible on purpose. If you notice it first, it's wrong.
+    The fade lives on a dedicated layer: masking the section itself would mask
+    its content too, quietly erasing everything below the fold.
+  */
+  .blueprint::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 64px 64px;
+    background-position: center top;
+    -webkit-mask-image: radial-gradient(70% 60% at 50% 0%, #000, transparent 78%);
+    mask-image: radial-gradient(70% 60% at 50% 0%, #000, transparent 78%);
+  }
+
+  /* Container rails — the page's only frame. */
+  .rails::before,
+  .rails::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--line);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .rails::before {
+    left: max(1.25rem, calc(50% - 38rem + 2rem));
+  }
+
+  .rails::after {
+    right: max(1.25rem, calc(50% - 38rem + 2rem));
+  }
+
+  /* A surface at a given rung of the ladder, always with its hairline. */
+  .panel {
+    background-color: var(--s1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xl);
+  }
+
+  .btn-primary {
+    background-color: var(--accent);
+    color: var(--accent-ink);
+    border-radius: var(--radius-md);
+    transition:
+      background-color 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--accent-hover);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0.5px);
+  }
+
+  .btn-ghost {
+    border: 1px solid var(--line);
+    color: var(--fg-muted);
+    border-radius: var(--radius-md);
+    transition:
+      border-color 0.18s ease,
+      color 0.18s ease;
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--line-strong);
+    color: var(--fg);
+  }
+}
+
+@layer utilities {
+  .resolve {
+    animation: resolve 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  @keyframes resolve {
+    from {
+      opacity: 0;
+      filter: blur(8px);
+      transform: translateY(0.4rem);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0);
+      transform: none;
+    }
+  }
+}

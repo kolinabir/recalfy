@@ -9,4 +9,3 @@ dist/
 backups/
 *.log
 .DS_Store
-web/

@@ -1,0 +1,70 @@
+import Link from "next/link";
+
+import { Wordmark } from "@/components/wordmark";
+
+const COLUMNS = [
+  {
+    title: "Product",
+    links: [
+      { href: "/#how", label: "How it works" },
+      { href: "/#channels", label: "Channels" },
+      { href: "/pricing", label: "Pricing" },
+      { href: "/login", label: "Sign in" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { href: "/#faq", label: "FAQ" },
+      { href: "mailto:hello@recalfy.com", label: "hello@recalfy.com" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { href: "/privacy", label: "Privacy" },
+      { href: "/terms", label: "Terms" },
+    ],
+  },
+];
+
+export function SiteFooter() {
+  return (
+    <footer className="rails border-t border-line">
+      <div className="shell grid gap-12 py-16 md:grid-cols-[1.5fr_repeat(3,1fr)]">
+        <div className="max-w-xs">
+          <Wordmark />
+          <p className="mt-4 text-[0.875rem] leading-relaxed text-fg-muted">
+            A memory that lives where you already talk — for people who&apos;d
+            rather not hold it all in their head.
+          </p>
+        </div>
+
+        {COLUMNS.map((column) => (
+          <div key={column.title}>
+            <h3 className="font-mono text-[0.6875rem] tracking-[0.16em] text-fg-subtle uppercase">
+              {column.title}
+            </h3>
+            <ul className="mt-4 space-y-2.5">
+              {column.links.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    href={link.href}
+                    className="text-[0.875rem] text-fg-muted transition-colors hover:text-fg"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      <div className="shell flex flex-col gap-2 border-t border-line py-6 font-mono text-[0.6875rem] tracking-wide text-fg-subtle sm:flex-row sm:items-center sm:justify-between">
+        <p>© {new Date().getFullYear()} Recalfy</p>
+        <p>Your memories are yours. Export or delete them any day.</p>
+      </div>
+    </footer>
+  );
+}
