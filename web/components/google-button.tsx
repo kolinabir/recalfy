@@ -2,25 +2,48 @@
 
 import { useState } from "react";
 
+import { signIn } from "@/lib/auth-client";
+
 /**
  * Google's brand guidelines require the mark be shown unmodified, so the G keeps
  * its colours while the control follows this site's surface language.
- * Wiring lands with the auth work — this only records intent for now.
  */
 export function GoogleButton({ plan }: { plan?: string }) {
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   return (
-    <button
-      type="button"
-      disabled={pending}
-      onClick={() => setPending(true)}
-      data-plan={plan}
-      className="group flex w-full items-center justify-center gap-3 rounded-xl border border-line bg-s2 px-6 py-3.5 text-[0.9375rem] font-medium transition-all duration-300 hover:border-fg-faint hover:bg-s3 active:scale-[0.99] disabled:opacity-60"
-    >
-      <GoogleMark />
-      <span>{pending ? "Opening Google…" : "Continue with Google"}</span>
-    </button>
+    <>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={async () => {
+          setPending(true);
+          setError(null);
+          // Carrying the plan through means checkout can pick it up after the
+          // round trip to Google, which drops any client state we held here.
+          const { error } = await signIn.social({
+            provider: "google",
+            callbackURL: plan ? `/dashboard?plan=${plan}` : "/dashboard",
+          });
+          if (error) {
+            setError(error.message ?? "Could not reach Google. Try again.");
+            setPending(false);
+          }
+        }}
+        data-plan={plan}
+        className="group flex w-full items-center justify-center gap-3 rounded-xl border border-line bg-s2 px-6 py-3.5 text-[0.9375rem] font-medium transition-all duration-300 hover:border-fg-faint hover:bg-s3 active:scale-[0.99] disabled:opacity-60"
+      >
+        <GoogleMark />
+        <span>{pending ? "Opening Google…" : "Continue with Google"}</span>
+      </button>
+
+      {error ? (
+        <p role="alert" className="mt-3 text-[0.8125rem] text-fg-subtle">
+          {error}
+        </p>
+      ) : null}
+    </>
   );
 }
 
