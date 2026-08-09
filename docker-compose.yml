@@ -1,0 +1,24 @@
+# Local development database only. Production uses MongoDB Atlas — see DESIGN.md §7.
+#
+#   npm run db:up      start
+#   npm run db:shell   mongosh, without installing it
+#   npm run db:down    stop, keeping data
+
+services:
+  mongo:
+    image: mongo:8
+    container_name: tele-memory-mongo
+    restart: unless-stopped
+    ports:
+      # Bound to loopback: nothing outside this machine can reach it.
+      - '127.0.0.1:27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.adminCommand("ping")']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo-data:

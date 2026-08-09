@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import { claimsAction } from '../src/brain/claims-action';
+
+test('catches a claim that something was stored', () => {
+  assert.equal(claimsAction("Got it, I've noted that down."), true);
+  assert.equal(claimsAction('Saved!'), true);
+});
+
+test('catches a claim that something was changed', () => {
+  assert.equal(claimsAction('Got it, rent is now due on the 3rd.'), true);
+  assert.equal(claimsAction("I've updated it."), true);
+});
+
+test('catches a claim that something was deleted', () => {
+  assert.equal(claimsAction('Done, forgot the rent information.'), true);
+  assert.equal(claimsAction("I've removed those."), true);
+});
+
+test('catches a claim that a reminder exists', () => {
+  assert.equal(claimsAction("I'll remind you to call Rahim at 5pm."), true);
+  assert.equal(claimsAction('Reminder set for tomorrow.'), true);
+});
+
+test('leaves a plain answer alone', () => {
+  assert.equal(claimsAction('Your rent is due on the 3rd of each month.'), false);
+  assert.equal(claimsAction('Your landlord is Rahim.'), false);
+});
+
+test('leaves a question or a refusal alone', () => {
+  assert.equal(claimsAction("What's your name, and which city are you in?"), false);
+  assert.equal(claimsAction("I don't know that yet — tell me and I'll keep it."), false);
+});

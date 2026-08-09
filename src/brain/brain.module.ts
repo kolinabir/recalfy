@@ -1,0 +1,38 @@
+import { Module } from '@nestjs/common';
+
+import { LlmModule } from '../llm/llm.module';
+import { MemoryModule } from '../memory/memory.module';
+import { RemindersModule } from '../reminders/reminders.module';
+import { BrainService } from './brain.service';
+import { ConversationWindow } from './conversation-window';
+import { CancelReminderTool } from './tools/cancel-reminder.tool';
+import { ForgetTool } from './tools/forget.tool';
+import { ListRemindersTool } from './tools/list-reminders.tool';
+import { RememberTool } from './tools/remember.tool';
+import { RemindTool } from './tools/remind.tool';
+import { SetTimezoneTool } from './tools/set-timezone.tool';
+import { TOOLS, Tool } from './tools/tool';
+import { ToolExecutor } from './tools/tool-executor';
+
+/** Everything the model can do. A new capability is one class and one line. */
+const TOOL_CLASSES = [
+  RememberTool,
+  ForgetTool,
+  SetTimezoneTool,
+  RemindTool,
+  ListRemindersTool,
+  CancelReminderTool,
+];
+
+@Module({
+  imports: [LlmModule, MemoryModule, RemindersModule],
+  providers: [
+    ...TOOL_CLASSES,
+    { provide: TOOLS, useFactory: (...tools: Tool[]) => tools, inject: TOOL_CLASSES },
+    ToolExecutor,
+    ConversationWindow,
+    BrainService,
+  ],
+  exports: [BrainService],
+})
+export class BrainModule {}
