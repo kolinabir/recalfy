@@ -3,13 +3,21 @@
 import { AnimatePresence, motion } from "motion/react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+
+/**
+ * `resolvedTheme` is only known on the client, so the first paint has to match
+ * the server's guess or React reports a hydration mismatch. useSyncExternalStore
+ * gives us that "are we past hydration yet" signal without setState in an
+ * effect: it serves the server snapshot through hydration, then the client one.
+ */
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const dark = !mounted || resolvedTheme === "dark";
 
