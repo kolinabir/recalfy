@@ -5,11 +5,16 @@ import { MemoryModule } from '../memory/memory.module';
 import { RemindersModule } from '../reminders/reminders.module';
 import { BrainService } from './brain.service';
 import { ConversationWindow } from './conversation-window';
+import { HistorySearch } from './history-search';
+import { SearchHistoryTool } from './tools/search-history.tool';
 import { CancelReminderTool } from './tools/cancel-reminder.tool';
 import { ForgetTool } from './tools/forget.tool';
 import { ListRemindersTool } from './tools/list-reminders.tool';
+import { RecallSourceTool } from './tools/recall-source.tool';
 import { RememberTool } from './tools/remember.tool';
 import { RemindTool } from './tools/remind.tool';
+import { SetDailyBriefTool } from './tools/set-daily-brief.tool';
+import { SetEveningReflectionTool } from './tools/set-evening-reflection.tool';
 import { SetTimezoneTool } from './tools/set-timezone.tool';
 import { TOOLS, Tool } from './tools/tool';
 import { ToolExecutor } from './tools/tool-executor';
@@ -22,17 +27,22 @@ const TOOL_CLASSES = [
   RemindTool,
   ListRemindersTool,
   CancelReminderTool,
+  SetDailyBriefTool,
+  SetEveningReflectionTool,
+  SearchHistoryTool,
+  RecallSourceTool,
 ];
 
 @Module({
   imports: [LlmModule, MemoryModule, RemindersModule],
   providers: [
+    HistorySearch,
     ...TOOL_CLASSES,
     { provide: TOOLS, useFactory: (...tools: Tool[]) => tools, inject: TOOL_CLASSES },
     ToolExecutor,
     ConversationWindow,
     BrainService,
   ],
-  exports: [BrainService],
+  exports: [BrainService, ConversationWindow],
 })
 export class BrainModule {}

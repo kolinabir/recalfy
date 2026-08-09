@@ -10,5 +10,6 @@ import { Responder } from './responder';
 @Module({
   imports: [TelegramModule, MemoryModule, BrainModule],
   providers: [ConversationLog, Responder, BotService],
+  exports: [ConversationLog],
 })
 export class BotModule {}

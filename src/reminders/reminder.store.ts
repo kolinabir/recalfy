@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ObjectId } from 'mongodb';
 
-import { ReminderDoc, UserId } from '../mongo/collections';
+import { ReminderDoc, Repeat, UserId } from '../mongo/collections';
 import { MongoService } from '../mongo/mongo.service';
+import { nextOccurrence } from './next-occurrence';
 
 /** A reminder stuck in `claimed` this long is assumed to have died mid-send. */
 const CLAIM_EXPIRY_MS = 5 * 60 * 1000;
@@ -19,7 +20,12 @@ export class ReminderStore {
 
   constructor(private readonly mongo: MongoService) {}
 
-  async schedule(userId: UserId, text: string, at: Date): Promise<ReminderDoc> {
+  async schedule(
+    userId: UserId,
+    text: string,
+    at: Date,
+    recurrence?: { repeat: Repeat; tz: string },
+  ): Promise<ReminderDoc> {
     const reminder: ReminderDoc = {
       _id: new ObjectId(),
       userId,
@@ -28,6 +34,7 @@ export class ReminderStore {
       status: 'pending',
       attempts: 0,
       createdAt: new Date(),
+      ...(recurrence && { repeat: recurrence.repeat, tz: recurrence.tz, anchorAt: at }),
     };
     await this.mongo.reminders.insertOne(reminder);
     this.logger.log(`scheduled ${reminder._id.toHexString()} for ${at.toISOString()}`);
@@ -63,8 +70,35 @@ export class ReminderStore {
     );
   }
 
-  async markSent(id: ObjectId): Promise<void> {
-    await this.mongo.reminders.updateOne({ _id: id }, { $set: { status: 'sent' } });
+  /**
+   * Closes out a delivered reminder. A recurring one seeds its next
+   * occurrence as a fresh pending row — the fired row stays `sent` for audit,
+   * and only ever one row of a series is pending, so cancelling that row ends
+   * the series.
+   */
+  async complete(reminder: ReminderDoc, now: Date): Promise<ReminderDoc | null> {
+    await this.mongo.reminders.updateOne({ _id: reminder._id }, { $set: { status: 'sent' } });
+
+    const { repeat, tz, anchorAt, userId, text } = reminder;
+    if (!repeat || !tz || !anchorAt) return null;
+
+    const next: ReminderDoc = {
+      _id: new ObjectId(),
+      userId,
+      text,
+      dueAt: nextOccurrence(anchorAt, repeat, tz, now),
+      status: 'pending',
+      repeat,
+      anchorAt,
+      tz,
+      attempts: 0,
+      createdAt: new Date(),
+    };
+    await this.mongo.reminders.insertOne(next);
+    this.logger.log(
+      `rescheduled series ${anchorAt.toISOString()} → ${next.dueAt.toISOString()}`,
+    );
+    return next;
   }
 
   /** Crash recovery: anything claimed but never sent goes back in the queue. */

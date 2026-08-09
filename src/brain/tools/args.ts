@@ -29,6 +29,18 @@ export function optionalString(args: Record<string, unknown>, key: string): stri
   return value.trim() || undefined;
 }
 
+export function optionalPositiveInteger(
+  args: Record<string, unknown>,
+  key: string,
+): number | undefined {
+  const value = args[key];
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 1) {
+    throw new BadArguments(`"${key}" must be a positive integer.`);
+  }
+  return value;
+}
+
 export function requireStringArray(args: Record<string, unknown>, key: string): string[] {
   const value = args[key];
   if (!Array.isArray(value)) throw new BadArguments(`"${key}" must be an array.`);

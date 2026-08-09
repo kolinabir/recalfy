@@ -28,8 +28,12 @@ export class CancelReminderTool extends Tool {
     const id = requireString(asObject(args), 'id');
     const cancelled = await this.reminders.cancel(context.userId, id);
 
-    return cancelled
-      ? `Cancelled "${cancelled.text}".`
-      : 'No pending reminder with that id — it may have already fired or been cancelled.';
+    if (!cancelled) {
+      return 'No pending reminder with that id — it may have already fired or been cancelled.';
+    }
+    // Only one row of a recurring series is ever pending, so this ends it.
+    return cancelled.repeat
+      ? `Cancelled "${cancelled.text}" — the whole recurring series is stopped.`
+      : `Cancelled "${cancelled.text}".`;
   }
 }

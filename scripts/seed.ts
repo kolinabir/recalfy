@@ -57,7 +57,7 @@ async function main(): Promise<void> {
     .updateOne({ _id: userId }, { $set: { sidCounter: seeded.length } });
 
   const user = await db.collection<UserDoc>(COLLECTIONS.users).findOne({ _id: userId });
-  console.log(renderMemoryDocument({ timezone: user?.tz ?? 'UTC', memories: seeded }));
+  console.log(renderMemoryDocument({ timezone: user?.tz ?? 'UTC', now: new Date(), memories: seeded }));
 
   await client.close();
 }

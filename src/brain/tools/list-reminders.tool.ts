@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { JsonSchema } from '../../llm/llm.types';
+import { describeRepeat } from '../../reminders/next-occurrence';
 import { ReminderStore } from '../../reminders/reminder.store';
 import { describeInstant } from '../../reminders/resolve-when';
 import { Tool, ToolContext } from './tool';
@@ -23,7 +24,10 @@ export class ListRemindersTool extends Tool {
     if (upcoming.length === 0) return 'No upcoming reminders.';
 
     return upcoming
-      .map((r) => `${describeInstant(r.dueAt, context.timezone)} — ${r.text} [${r._id.toHexString()}]`)
+      .map((r) => {
+        const cadence = r.repeat ? ` (repeats ${describeRepeat(r.repeat)})` : '';
+        return `${describeInstant(r.dueAt, context.timezone)} — ${r.text}${cadence} [${r._id.toHexString()}]`;
+      })
       .join('\n');
   }
 }

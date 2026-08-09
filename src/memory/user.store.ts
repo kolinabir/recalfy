@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
 
 import { ENV, Env } from '../config/env';
-import { UserDoc, UserId } from '../mongo/collections';
+import { BriefConfig, UserDoc, UserId } from '../mongo/collections';
 import { MongoService } from '../mongo/mongo.service';
 
 /**
@@ -48,5 +48,43 @@ export class UserStore {
       { $set: { tz }, $min: { onboardedAt: new Date() } },
     );
     return true;
+  }
+
+  async setBrief(userId: UserId, brief: BriefConfig): Promise<void> {
+    await this.mongo.users.updateOne({ _id: userId }, { $set: { brief } });
+  }
+
+  async setReflection(userId: UserId, reflection: BriefConfig): Promise<void> {
+    await this.mongo.users.updateOne({ _id: userId }, { $set: { reflection } });
+  }
+
+  /** Everyone the daily brief could apply to. One user today; a cursor never hurts. */
+  onboarded(): Promise<UserDoc[]> {
+    return this.mongo.users.find({ onboardedAt: { $exists: true } }).toArray();
+  }
+
+  /**
+   * Takes today's brief slot for this user, atomically — two ticks (or two
+   * processes) can never both send it. False means someone else already did.
+   */
+  claimBrief(userId: UserId, day: string): Promise<boolean> {
+    return this.claimDay(userId, 'lastBriefDay', day);
+  }
+
+  claimReflection(userId: UserId, day: string): Promise<boolean> {
+    return this.claimDay(userId, 'lastReflectionDay', day);
+  }
+
+  private async claimDay(
+    userId: UserId,
+    field: 'lastBriefDay' | 'lastReflectionDay',
+    day: string,
+  ): Promise<boolean> {
+    const claimed = await this.mongo.users.findOneAndUpdate(
+      // $ne matches a missing field too, so first-ever claims work cleanly.
+      { _id: userId, [field]: { $ne: day } },
+      { $set: { [field]: day } },
+    );
+    return claimed !== null;
   }
 }

@@ -54,7 +54,7 @@ async function printMemory(db: Db, user: UserDoc): Promise<void> {
     .toArray();
 
   heading('MEMORY (exactly what the model sees)');
-  console.log(indent(renderMemoryDocument({ timezone: user.tz, memories: all.filter(live) })));
+  console.log(indent(renderMemoryDocument({ timezone: user.tz, now: new Date(), memories: all.filter(live) })));
 
   const hidden = all.filter((memory) => !live(memory));
   if (hidden.length > 0) {

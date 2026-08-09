@@ -11,6 +11,14 @@ import { SidMinter } from './sid-minter';
 
 const FALLBACK_TIMEZONE = 'UTC';
 
+/** A fact traced back to the message that taught it. */
+export interface Provenance {
+  sid: string;
+  text: string;
+  createdAt: Date;
+  source?: { text: string; at: Date };
+}
+
 /**
  * Everything the assistant knows, and the only way to change it.
  *
@@ -54,13 +62,43 @@ export class MemoryStore {
   }
 
   /** The live memory as markdown — this is what goes into the system prompt. */
-  async render(userId: UserId): Promise<string> {
+  async render(userId: UserId, now: Date = new Date()): Promise<string> {
     const [user, memories] = await Promise.all([
       this.mongo.users.findOne({ _id: userId }),
       this.liveMemoriesOf(userId),
     ]);
 
-    return renderMemoryDocument({ timezone: user?.tz ?? FALLBACK_TIMEZONE, memories });
+    return renderMemoryDocument({ timezone: user?.tz ?? FALLBACK_TIMEZONE, memories, now });
+  }
+
+  /**
+   * Where a fact came from: the memory row joined to the message that taught
+   * it. This is what lets "when did I tell you that?" get a real answer.
+   */
+  async provenance(userId: UserId, sids: string[]): Promise<Provenance[]> {
+    if (sids.length === 0) return [];
+
+    const memories = await this.mongo.memories.find({ userId, sid: { $in: sids } }).toArray();
+
+    const sourceIds = memories
+      .map((memory) => memory.sourceMessageId)
+      .filter((id): id is ObjectId => id !== undefined);
+    const sources = new Map(
+      (await this.mongo.messages.find({ userId, _id: { $in: sourceIds } }).toArray()).map(
+        (message) => [message._id.toHexString(), message],
+      ),
+    );
+
+    return memories.map((memory) => {
+      const source =
+        memory.sourceMessageId && sources.get(memory.sourceMessageId.toHexString());
+      return {
+        sid: memory.sid,
+        text: memory.text,
+        createdAt: memory.createdAt,
+        ...(source ? { source: { text: source.text, at: source.createdAt } } : {}),
+      };
+    });
   }
 
   /** Soft-deletes by short id. Returns what actually went, for the confirmation. */

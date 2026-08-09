@@ -29,6 +29,7 @@ export function buildMemory({
     text: fact.text.trim(),
     group: fact.group?.trim() || DEFAULT_GROUP,
     ...(supersedes ? { supersedes } : {}),
+    ...(fact.staleAfter ? { staleAfter: fact.staleAfter } : {}),
     ...(sourceMessageId ? { sourceMessageId } : {}),
     createdAt: new Date(),
   };

@@ -12,6 +12,8 @@ export interface Fact {
    * drop out of the rendered memory but stay in the collection.
    */
   supersedes?: string[];
+  /** When a temporary fact stops being true and leaves the rendered memory. */
+  staleAfter?: Date;
 }
 
 export interface Memory {

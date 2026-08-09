@@ -1,9 +1,17 @@
 import { Injectable } from '@nestjs/common';
+import { DateTime } from 'luxon';
 
 import { MemoryStore } from '../../memory/memory.store';
 import { Fact } from '../../memory/memory.types';
 import { JsonSchema } from '../../llm/llm.types';
-import { asObject, optionalString, optionalStringArray, requireObjectArray, requireString } from './args';
+import {
+  BadArguments,
+  asObject,
+  optionalString,
+  optionalStringArray,
+  requireObjectArray,
+  requireString,
+} from './args';
 import { Tool, ToolContext } from './tool';
 
 @Injectable()
@@ -34,6 +42,13 @@ export class RememberTool extends Tool {
               items: { type: 'string' },
               description: 'Ids of existing facts this replaces.',
             },
+            expires: {
+              type: 'string',
+              description:
+                'For inherently temporary facts only ("visiting parents next week"): ' +
+                'the local date (YYYY-MM-DD) after which it stops being true. Omit for ' +
+                'anything durable.',
+            },
           },
           required: ['text'],
         },
@@ -47,7 +62,7 @@ export class RememberTool extends Tool {
   }
 
   async execute(context: ToolContext, args: unknown): Promise<string> {
-    const facts = requireObjectArray(asObject(args), 'facts').map(toFact);
+    const facts = requireObjectArray(asObject(args), 'facts').map((raw) => toFact(raw, context));
     const stored = await this.memories.remember(context.userId, facts, context.sourceMessageId);
 
     if (stored.length === 0) {
@@ -57,10 +72,25 @@ export class RememberTool extends Tool {
   }
 }
 
-function toFact(raw: Record<string, unknown>): Fact {
+function toFact(raw: Record<string, unknown>, context: ToolContext): Fact {
   return {
     text: requireString(raw, 'text'),
     group: optionalString(raw, 'group'),
     supersedes: optionalStringArray(raw, 'supersedes'),
+    staleAfter: resolveExpiry(optionalString(raw, 'expires'), context),
   };
+}
+
+/** A local date becomes end-of-that-day in the user's zone — never a misparse. */
+function resolveExpiry(expires: string | undefined, context: ToolContext): Date | undefined {
+  if (expires === undefined) return undefined;
+
+  const day = DateTime.fromISO(expires, { zone: context.timezone });
+  if (!day.isValid) throw new BadArguments(`"expires" must be a date like 2026-08-17.`);
+
+  const at = day.endOf('day');
+  if (at.toMillis() <= context.now.getTime()) {
+    throw new BadArguments(`"expires" (${expires}) is already in the past.`);
+  }
+  return at.toJSDate();
 }

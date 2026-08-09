@@ -121,7 +121,7 @@ export class BrainService {
 
   private async systemPrompt(context: ToolContext): Promise<string> {
     return buildSystemPrompt({
-      memory: await this.memories.render(context.userId),
+      memory: await this.memories.render(context.userId, context.now),
       timezone: context.timezone,
       now: context.now,
       onboarded: context.onboarded,

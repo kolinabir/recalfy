@@ -18,6 +18,7 @@
     "webhook:info": "ts-node -T scripts/set-webhook.ts info",
     "webhook:delete": "ts-node -T scripts/set-webhook.ts delete",
     "chat": "ts-node -T scripts/chat.ts",
+    "eval": "ts-node -T scripts/eval.ts",
     "inspect": "ts-node -T scripts/inspect.ts",
     "seed": "ts-node -T scripts/seed.ts",
     "test": "node --no-experimental-strip-types --require ts-node/register --test 'test/*.test.ts'",

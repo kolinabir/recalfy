@@ -62,7 +62,7 @@ export class ReminderScheduler {
       for (const handler of this.handlers) {
         await handler(reminder);
       }
-      await this.reminders.markSent(reminder._id);
+      await this.reminders.complete(reminder, new Date());
     } catch (error) {
       this.logger.error(`Delivery failed for ${reminder._id.toHexString()}: ${message(error)}`);
     }
