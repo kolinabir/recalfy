@@ -1,247 +1,299 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Dialog } from "radix-ui";
+import { useCallback, useEffect, useState } from "react";
 
 type Handshake = { url: string; qr: string; expiresAt: string };
+type View = "choose" | "here" | "scan" | "manual";
 
 const POLL_MS = 2500;
 
 /**
- * The device you're reading this on is often not the device Telegram is on, so
- * the handshake offers three routes to the same token rather than assuming:
- * open it here, scan it with a phone, or carry the link somewhere else.
- *
- * The "open" control is a real anchor, not window.open — popup blockers and
- * the in-app browsers inside Instagram and Facebook silently drop programmatic
- * opens, and a link they can't intercept is the difference between the flow
- * working and appearing to do nothing.
+ * Three routes to the same link, because the browser and the Telegram account
+ * are usually not on the same device — and sometimes the two convenient routes
+ * are both unavailable at once. The chooser states that plainly rather than
+ * stacking every affordance on top of each other and hoping one lands.
  */
-export function ConnectTelegram() {
+export function ConnectTelegram({ botUsername }: { botUsername: string }) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [view, setView] = useState<View>("choose");
   const [handshake, setHandshake] = useState<Handshake | null>(null);
   const [pending, setPending] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [remaining, setRemaining] = useState<number>(0);
-  const [copied, setCopied] = useState(false);
-  const openRef = useRef<HTMLAnchorElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const start = useCallback(async () => {
+  // Minted only for the two routes that need a token; the manual code comes
+  // from the bot instead, so picking it spends nothing.
+  const ensureHandshake = useCallback(async (): Promise<Handshake | null> => {
+    if (handshake) return handshake;
+
     setPending(true);
-    setMessage(null);
-
+    setError(null);
     try {
       const res = await fetch("/api/telegram/link", { method: "POST" });
       const body = await res.json();
 
       if (!res.ok) {
-        setMessage(
+        setError(
           body.error === "already-linked"
             ? "This account is already connected."
             : body.error === "bot-not-configured"
               ? "The bot username isn't configured on the server."
               : "Couldn't start the handshake. Try again in a moment.",
         );
-        return;
+        return null;
       }
 
       setHandshake(body);
-      // Focus the open control so keyboard users land on the next action
-      // rather than having to hunt for what appeared.
-      requestAnimationFrame(() => openRef.current?.focus());
+      return body as Handshake;
     } catch {
-      setMessage("Network error. Try again.");
+      setError("Network error. Try again.");
+      return null;
     } finally {
       setPending(false);
     }
-  }, []);
+  }, [handshake]);
 
-  // Poll for the other half of the handshake landing, wherever it happens.
+  const choose = async (next: View) => {
+    if (next === "manual") {
+      setView("manual");
+      return;
+    }
+    if (await ensureHandshake()) setView(next);
+  };
+
+  // Poll while the dialog is open, whichever route is on screen — the link may
+  // land from a phone the browser knows nothing about.
   useEffect(() => {
-    if (!handshake) return;
+    if (!open) return;
 
     const id = setInterval(async () => {
       try {
         const res = await fetch("/api/telegram/link");
         if (!res.ok) return;
         const { linked } = await res.json();
-        if (linked) router.refresh();
+        if (linked) {
+          setOpen(false);
+          router.refresh();
+        }
       } catch {
         // A dropped poll isn't worth surfacing; the next tick retries.
       }
     }, POLL_MS);
 
     return () => clearInterval(id);
-  }, [handshake, router]);
-
-  // Countdown, so an expired QR explains itself instead of just failing.
-  useEffect(() => {
-    if (!handshake) return;
-
-    const tick = () => {
-      const left = new Date(handshake.expiresAt).getTime() - Date.now();
-      setRemaining(Math.max(0, left));
-      if (left <= 0) {
-        setHandshake(null);
-        setMessage("That link expired. Press Connect for a fresh one.");
-      }
-    };
-
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [handshake]);
-
-  if (!handshake) {
-    return (
-      <div>
-        <button
-          type="button"
-          onClick={start}
-          disabled={pending}
-          className="rounded-xl bg-fg px-5 py-3 text-[0.9375rem] font-medium text-[var(--primary-foreground)] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.99] disabled:scale-100 disabled:opacity-50"
-        >
-          {pending ? "Preparing…" : "Connect Telegram"}
-        </button>
-        {message ? (
-          <p role="status" className="mt-3 text-[0.8125rem] text-fg-subtle">
-            {message}
-          </p>
-        ) : null}
-      </div>
-    );
-  }
+  }, [open, router]);
 
   return (
-    <HandshakePanel
-      url={handshake.url}
-      qr={handshake.qr}
-      remaining={remaining}
-      message={message}
-      copied={copied}
-      openRef={openRef}
-      onCopy={async () => {
-        try {
-          await navigator.clipboard.writeText(handshake.url);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-        } catch {
-          setMessage("Couldn't copy — select the link manually.");
+    <Dialog.Root
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) {
+          setView("choose");
+          setError(null);
         }
       }}
-    />
+    >
+      <Dialog.Trigger className="rounded-xl bg-fg px-5 py-3 text-[0.9375rem] font-medium text-[var(--primary-foreground)] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.99]">
+        Connect Telegram
+      </Dialog.Trigger>
+
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-[color-mix(in_oklab,var(--bg)_72%,transparent)] backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 z-50 max-h-[90dvh] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-line bg-s1 p-7 shadow-2xl sm:p-8">
+          <Dialog.Title className="display-sm text-[1.375rem]">
+            {view === "choose" ? "Connect Telegram" : null}
+            {view === "here" ? "Open it here" : null}
+            {view === "scan" ? "Scan with your phone" : null}
+            {view === "manual" ? "Type a code" : null}
+          </Dialog.Title>
+
+          <Dialog.Description className="mt-2 text-[0.9375rem] leading-relaxed text-fg-subtle">
+            {view === "choose"
+              ? "Pressing Start in the chat is what proves the account is yours. Pick whichever way suits the device you have."
+              : "This page updates on its own once the chat is connected."}
+          </Dialog.Description>
+
+          <div className="mt-7">
+            {view === "choose" ? (
+              <Chooser onPick={choose} pending={pending} />
+            ) : null}
+            {view === "here" && handshake ? (
+              <OpenHere url={handshake.url} expiresAt={handshake.expiresAt} />
+            ) : null}
+            {view === "scan" && handshake ? (
+              <ScanCode qr={handshake.qr} expiresAt={handshake.expiresAt} />
+            ) : null}
+            {view === "manual" ? <Manual botUsername={botUsername} /> : null}
+          </div>
+
+          {error ? (
+            <p role="alert" className="mt-5 text-[0.8125rem] text-fg-subtle">
+              {error}
+            </p>
+          ) : null}
+
+          <div className="mt-7 flex items-center justify-between border-t border-line pt-5">
+            {view === "choose" ? (
+              <span />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setView("choose")}
+                className="font-mono text-[0.6875rem] text-fg-subtle underline-offset-4 transition-colors hover:text-fg hover:underline"
+              >
+                ← All options
+              </button>
+            )}
+
+            <Dialog.Close className="font-mono text-[0.6875rem] text-fg-faint underline-offset-4 transition-colors hover:text-fg-subtle hover:underline">
+              Close
+            </Dialog.Close>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
-/** Presentational, so the layout can be rendered from a fixture. */
-export function HandshakePanel({
-  url,
-  qr,
-  remaining,
-  message,
-  copied,
-  onCopy,
-  openRef,
+const OPTIONS: { view: View; label: string; hint: string }[] = [
+  {
+    view: "here",
+    label: "Telegram is on this device",
+    hint: "Opens the app or Telegram Desktop",
+  },
+  {
+    view: "scan",
+    label: "Telegram is on my phone",
+    hint: "Scan a QR code with the camera",
+  },
+  {
+    view: "manual",
+    label: "Neither — let me type a code",
+    hint: "Works anywhere, nothing to click",
+  },
+];
+
+function Chooser({
+  onPick,
+  pending,
 }: {
-  url: string;
-  qr: string;
-  remaining: number;
-  message?: string | null;
-  copied?: boolean;
-  onCopy?: () => void;
-  openRef?: React.Ref<HTMLAnchorElement>;
+  onPick: (view: View) => void;
+  pending: boolean;
 }) {
-  const mins = Math.floor(remaining / 60000);
-  const secs = Math.floor((remaining % 60000) / 1000);
+  return (
+    <div className="grid gap-2.5">
+      {OPTIONS.map((option) => (
+        <button
+          key={option.view}
+          type="button"
+          disabled={pending}
+          onClick={() => onPick(option.view)}
+          className="group flex items-center justify-between gap-4 rounded-lg border border-line px-5 py-4 text-left transition-colors hover:border-fg-faint hover:bg-s2 disabled:opacity-50"
+        >
+          <span className="min-w-0">
+            <span className="block text-[0.9375rem]">{option.label}</span>
+            <span className="mt-0.5 block text-[0.8125rem] text-fg-subtle">
+              {option.hint}
+            </span>
+          </span>
+          <span
+            aria-hidden
+            className="shrink-0 text-fg-faint transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-fg-muted"
+          >
+            →
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function OpenHere({ url, expiresAt }: { url: string; expiresAt: string }) {
+  const [copied, setCopied] = useState(false);
 
   return (
-    <div className="rounded-lg border border-line bg-s2/40 p-6 sm:p-7">
-      <div className="flex flex-col gap-7 sm:flex-row sm:items-start">
+    <div>
+      <Waiting />
+
+      <div className="mt-5 flex flex-wrap items-center gap-2.5">
         {/*
-          Hidden on small screens: you can't scan the screen you're holding,
-          and at this size the code would push the one control that does work
-          on a phone — the deep link — below the fold.
+          A real anchor, not window.open: popup blockers and the in-app
+          browsers inside Instagram and Facebook drop programmatic opens
+          silently, which reads as a dead button.
         */}
-        <div className="hidden shrink-0 sm:block">
-          <div
-            aria-hidden
-            className="w-[9.5rem] rounded-lg bg-white p-3 [&_svg]:block [&_svg]:h-auto [&_svg]:w-full"
-            dangerouslySetInnerHTML={{ __html: qr }}
-          />
-          <p className="eyebrow mt-3 text-center">Scan with your phone</p>
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2.5 text-[0.9375rem]">
-            <span
-              aria-hidden
-              className="size-1.5 shrink-0 animate-pulse rounded-full bg-accent"
-            />
-            Waiting for you to press Start
-          </p>
-
-          <p className="mt-2.5 max-w-prose text-[0.875rem] leading-relaxed text-fg-subtle">
-            <span className="hidden sm:inline">
-              Telegram opens on whichever device scans or clicks.{" "}
-            </span>
-            Press <strong className="font-medium text-fg-muted">Start</strong>{" "}
-            in the chat and this page updates on its own.
-          </p>
-
-          <div className="mt-5 flex flex-wrap items-center gap-2.5">
-            <a
-              ref={openRef}
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-xl bg-fg px-5 py-2.5 text-[0.875rem] font-medium text-[var(--primary-foreground)] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.99]"
-            >
-              Open Telegram here
-            </a>
-
-            <button
-              type="button"
-              onClick={onCopy}
-              className="rounded-xl border border-line px-4 py-2.5 text-[0.875rem] text-fg-muted transition-colors hover:border-fg-faint hover:text-fg"
-            >
-              {copied ? "Copied" : "Copy link"}
-            </button>
-          </div>
-
-          <p className="eyebrow mt-5">
-            {remaining > 0
-              ? `Expires in ${mins}:${String(secs).padStart(2, "0")}`
-              : "Expired"}
-          </p>
-
-          {message ? (
-            <p role="status" className="mt-3 text-[0.8125rem] text-fg-subtle">
-              {message}
-            </p>
-          ) : null}
-        </div>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-xl bg-fg px-5 py-2.5 text-[0.875rem] font-medium text-[var(--primary-foreground)] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.99]"
+        >
+          Open Telegram
+        </a>
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(url);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            } catch {
+              // Clipboard is blocked in some embedded browsers; the link is
+              // still selectable below.
+            }
+          }}
+          className="rounded-xl border border-line px-4 py-2.5 text-[0.875rem] text-fg-muted transition-colors hover:border-fg-faint hover:text-fg"
+        >
+          {copied ? "Copied" : "Copy link"}
+        </button>
       </div>
 
-      <ManualPairing />
+      <Expiry expiresAt={expiresAt} />
+    </div>
+  );
+}
+
+function ScanCode({ qr, expiresAt }: { qr: string; expiresAt: string }) {
+  return (
+    <div>
+      <div className="flex justify-center">
+        <div
+          aria-hidden
+          className="w-[11rem] rounded-lg bg-white p-3.5 [&_svg]:block [&_svg]:h-auto [&_svg]:w-full"
+          dangerouslySetInnerHTML={{ __html: qr }}
+        />
+      </div>
+
+      <ol className="mt-6 space-y-2.5">
+        <Step n={1}>Open the camera on your phone and point it at the code.</Step>
+        <Step n={2}>
+          Telegram opens on the bot. Press{" "}
+          <strong className="font-medium text-fg-muted">Start</strong>.
+        </Step>
+      </ol>
+
+      <div className="mt-6">
+        <Waiting />
+      </div>
+      <Expiry expiresAt={expiresAt} />
     </div>
   );
 }
 
 /**
- * The third route, for when neither the link nor the QR is usable — a locked
- * down machine, no Telegram Desktop, nothing to scan with.
- *
- * The code runs bot → person → this form, never the other way. A code heading
- * towards an authenticated form is one an attacker must persuade someone to
- * reveal; a code heading towards the bot is one they can persuade someone to
- * paste, which is the shape every malicious-link scam already uses.
+ * The fallback for a locked-down machine with no Telegram Desktop and no phone
+ * free to scan. The code runs bot → person → this form, never the other way:
+ * a code heading towards an authenticated form is one an attacker must
+ * persuade someone to reveal, rather than one they can persuade them to paste.
  */
-function ManualPairing() {
+function Manual({ botUsername }: { botUsername: string }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -265,8 +317,8 @@ function ManualPairing() {
         body.error === "already-linked"
           ? "This account is already connected."
           : body.error === "telegram-taken"
-            ? "That Telegram account is connected to a different account."
-            : "That code isn't valid. Send /code to the bot for a fresh one.",
+            ? "That Telegram account belongs to a different account."
+            : "That code isn't valid. Send /code again for a fresh one.",
       );
     } catch {
       setError("Network error. Try again.");
@@ -275,56 +327,132 @@ function ManualPairing() {
     }
   };
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="mt-6 font-mono text-[0.6875rem] text-fg-faint underline-offset-4 transition-colors hover:text-fg-subtle hover:underline"
-      >
-        Neither works? Connect manually
-      </button>
-    );
-  }
-
   return (
-    <form onSubmit={submit} className="mt-6 border-t border-line pt-6">
-      <p className="text-[0.875rem] leading-relaxed text-fg-subtle">
-        Send{" "}
-        <code className="font-mono text-[0.8125rem] text-fg-muted">/code</code>{" "}
-        to the bot in Telegram, then type what it replies with here.
-      </p>
+    <div>
+      <ol className="space-y-3">
+        <Step n={1}>Open Telegram on any device.</Step>
+        <Step n={2}>
+          Search for{" "}
+          {/* Chip and hint travel together, so a narrow screen wraps the pair
+              rather than orphaning "tap to copy" on its own line. */}
+          <span className="inline-flex items-center gap-2 whitespace-nowrap">
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(`@${botUsername}`);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                } catch {
+                  // Selectable either way.
+                }
+              }}
+              className="rounded border border-line bg-s2 px-1.5 py-0.5 font-mono text-[0.8125rem] text-fg transition-colors hover:border-fg-faint"
+            >
+              @{botUsername}
+            </button>
+            <span
+              className={`font-mono text-[0.6875rem] ${copied ? "text-accent" : "text-fg-faint"}`}
+            >
+              {copied ? "copied" : "tap to copy"}
+            </span>
+          </span>
+        </Step>
+        <Step n={3}>
+          Open the chat and press{" "}
+          <strong className="font-medium text-fg-muted">Start</strong>.
+        </Step>
+        <Step n={4}>
+          Send{" "}
+          <code className="rounded border border-line bg-s2 px-1.5 py-0.5 font-mono text-[0.8125rem] text-fg">
+            /code
+          </code>{" "}
+          and it replies with eight characters.
+        </Step>
+        <Step n={5}>Type them here.</Step>
+      </ol>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2.5">
+      <form onSubmit={submit} className="mt-6 flex flex-wrap items-center gap-2.5">
         <input
-          autoFocus
           value={code}
           onChange={(event) => setCode(event.target.value)}
           placeholder="K7M2-QX9F"
-          // Codes are Crockford base32; nothing here should be autocorrected
-          // or capitalised by the browser on the way in.
+          // Crockford base32; nothing here should be autocorrected on the way in.
           autoCapitalize="characters"
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
           maxLength={12}
           aria-label="Pairing code"
-          className="w-[10rem] rounded-xl border border-line bg-s1 px-4 py-2.5 font-mono text-[0.9375rem] tracking-[0.08em] uppercase outline-none placeholder:text-fg-faint focus:border-fg-faint"
+          className="w-[10.5rem] rounded-xl border border-line bg-s1 px-4 py-2.5 font-mono text-[0.9375rem] tracking-[0.08em] uppercase outline-none placeholder:text-fg-faint focus:border-fg-faint"
         />
         <button
           type="submit"
           disabled={pending || code.trim().length === 0}
-          className="rounded-xl border border-line px-4 py-2.5 text-[0.875rem] text-fg-muted transition-colors hover:border-fg-faint hover:text-fg disabled:opacity-50"
+          className="rounded-xl bg-fg px-5 py-2.5 text-[0.875rem] font-medium text-[var(--primary-foreground)] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.99] disabled:scale-100 disabled:opacity-50"
         >
           {pending ? "Checking…" : "Connect"}
         </button>
-      </div>
+      </form>
+
+      <p className="mt-4 text-[0.8125rem] leading-relaxed text-fg-faint">
+        Recalfy will never ask you for this code anywhere else. If someone asks
+        you for one, they are trying to read your memory.
+      </p>
 
       {error ? (
         <p role="alert" className="mt-3 text-[0.8125rem] text-fg-subtle">
           {error}
         </p>
       ) : null}
-    </form>
+    </div>
+  );
+}
+
+function Step({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <li className="flex gap-3.5 text-[0.9375rem] leading-relaxed text-fg-muted">
+      <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border border-line font-mono text-[0.625rem] text-fg-subtle">
+        {n}
+      </span>
+      <span className="min-w-0">{children}</span>
+    </li>
+  );
+}
+
+function Waiting() {
+  return (
+    <p className="flex items-center gap-2.5 text-[0.9375rem]">
+      <span
+        aria-hidden
+        className="size-1.5 shrink-0 animate-pulse rounded-full bg-accent"
+      />
+      Waiting for you to press Start
+    </p>
+  );
+}
+
+/** A countdown so an expired link explains itself instead of just failing. */
+function Expiry({ expiresAt }: { expiresAt: string }) {
+  const [remaining, setRemaining] = useState(() =>
+    Math.max(0, new Date(expiresAt).getTime() - Date.now()),
+  );
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setRemaining(Math.max(0, new Date(expiresAt).getTime() - Date.now()));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+
+  return (
+    <p className="eyebrow mt-5">
+      {remaining > 0
+        ? `Expires in ${mins}:${String(secs).padStart(2, "0")}`
+        : "Expired — close and try again"}
+    </p>
   );
 }
