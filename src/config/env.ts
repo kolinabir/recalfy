@@ -22,6 +22,57 @@ export class Env {
     return this.required('TELEGRAM_WEBHOOK_SECRET');
   }
 
+  /**
+   * WhatsApp is optional: the bot runs on Telegram alone if these are unset,
+   * which is what keeps a half-configured deploy from failing to boot. The
+   * adapter checks `whatsappEnabled` and stays dormant otherwise.
+   */
+  get whatsappEnabled(): boolean {
+    return Boolean(
+      this.config.get<string>('WHATSAPP_PHONE_NUMBER_ID') &&
+        this.config.get<string>('WHATSAPP_ACCESS_TOKEN'),
+    );
+  }
+
+  get whatsappPhoneNumberId(): string {
+    return this.required('WHATSAPP_PHONE_NUMBER_ID');
+  }
+
+  /** System-user token. Permanent, unlike the 24-hour one on the dashboard. */
+  get whatsappAccessToken(): string {
+    return this.required('WHATSAPP_ACCESS_TOKEN');
+  }
+
+  /** Echoed back during Meta's GET handshake. Any long random string. */
+  get whatsappVerifyToken(): string {
+    return this.required('WHATSAPP_VERIFY_TOKEN');
+  }
+
+  /**
+   * The app secret, used to check the X-Hub-Signature-256 HMAC on every
+   * webhook call. Without it any host that learns the URL can post messages.
+   */
+  get whatsappAppSecret(): string {
+    return this.required('WHATSAPP_APP_SECRET');
+  }
+
+  /**
+   * Name of the approved utility template used to reach someone outside
+   * WhatsApp's 24-hour window. One body parameter, which is the message text.
+   */
+  get whatsappNotifyTemplate(): string {
+    return this.config.get<string>('WHATSAPP_NOTIFY_TEMPLATE') ?? 'recalfy_notification';
+  }
+
+  /** Language code the template was approved under, e.g. "en" or "en_US". */
+  get whatsappTemplateLocale(): string {
+    return this.config.get<string>('WHATSAPP_TEMPLATE_LOCALE') ?? 'en';
+  }
+
+  get graphApiVersion(): string {
+    return this.config.get<string>('GRAPH_API_VERSION') ?? 'v23.0';
+  }
+
   get glmApiKey(): string {
     return this.required('ZAPI_KEY');
   }

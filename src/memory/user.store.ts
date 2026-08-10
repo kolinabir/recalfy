@@ -2,12 +2,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
 
 import { ENV, Env } from '../config/env';
-import { BriefConfig, UserDoc, UserId } from '../mongo/collections';
+import { BriefConfig, Channel, UserDoc, UserId } from '../mongo/collections';
 import { MongoService } from '../mongo/mongo.service';
 
 /**
- * The user record: timezone and the short-id counter. Small on purpose —
- * identity is the Telegram user id, so there is nothing to authenticate.
+ * The user record: timezone, the short-id counter, and where the person was
+ * last reachable. Small on purpose — identity is settled before a message
+ * gets here, by resolving a channel handle to a linked account.
  */
 @Injectable()
 export class UserStore {
@@ -31,6 +32,26 @@ export class UserStore {
     );
     if (!user) throw new Error(`Failed to upsert user ${userId}`);
     return user;
+  }
+
+  /**
+   * Records that the user just spoke, and where. Drives two things: which
+   * chat an unprompted message goes to, and whether WhatsApp's 24-hour
+   * free-form window is open — see channels/outbox.ts.
+   */
+  async noteInbound(userId: UserId, channel: Channel, at: Date): Promise<void> {
+    await this.mongo.users.updateOne(
+      { _id: userId },
+      { $set: { lastChannel: channel, [`lastInboundAt.${channel}`]: at } },
+    );
+  }
+
+  /** What the router needs, and nothing else. */
+  async routing(userId: UserId): Promise<Pick<UserDoc, 'lastChannel' | 'lastInboundAt'> | null> {
+    return this.mongo.users.findOne(
+      { _id: userId },
+      { projection: { lastChannel: 1, lastInboundAt: 1 } },
+    );
   }
 
   /**

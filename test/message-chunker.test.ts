@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { chunkMessage } from '../src/telegram/message-chunker';
+import { chunkMessage } from '../src/channels/message-chunker';
 
 test('leaves a short message alone', () => {
   assert.deepEqual(chunkMessage('hello'), ['hello']);

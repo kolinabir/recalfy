@@ -1,6 +1,6 @@
 import { IndexDescription } from 'mongodb';
 
-import { COLLECTIONS } from './collections';
+import { CHANNELS, COLLECTIONS } from './collections';
 
 /**
  * Ordinary B-tree indexes plus one plain Mongo text index — no Atlas Search,
@@ -31,16 +31,15 @@ export const INDEXES: Record<string, IndexDescription[]> = {
   ],
   [COLLECTIONS.pairingCodes]: [
     { key: { expiresAt: 1 }, name: 'ttl', expireAfterSeconds: 0 },
-    { key: { telegramUserId: 1 }, name: 'by_telegram_user' },
+    { key: { channel: 1, handle: 1 }, name: 'by_chat_account' },
   ],
-  [COLLECTIONS.webUsers]: [
-    // One Telegram account maps to at most one web account. Partial rather
-    // than sparse so the constraint ignores the unlinked majority.
-    {
-      key: { telegramUserId: 1 },
-      name: 'telegram_link',
-      unique: true,
-      partialFilterExpression: { telegramUserId: { $type: 'number' } },
-    },
-  ],
+  // One chat account maps to at most one web account, per channel. Partial
+  // rather than sparse so each constraint ignores the accounts that have not
+  // connected that channel — which, for any given channel, is most of them.
+  [COLLECTIONS.webUsers]: CHANNELS.map((channel) => ({
+    key: { [`channels.${channel}.handle`]: 1 },
+    name: `${channel}_link`,
+    unique: true,
+    partialFilterExpression: { [`channels.${channel}.handle`]: { $type: 'string' } },
+  })),
 };

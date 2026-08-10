@@ -2,13 +2,16 @@
  * Shows everything the bot currently knows about a user — the same memory
  * document the model sees, plus reminders and the recent transcript.
  *
- *   npm run inspect -- 1228558424
- *   npm run inspect -- 1228558424 --messages 20
+ *   npm run inspect -- 665f1c2a9b4e3d0012a4b7c9
+ *   npm run inspect -- 665f1c2a9b4e3d0012a4b7c9 --messages 20
+ *
+ * The id is the account id, not a Telegram or WhatsApp one — `npm run whoami`
+ * lists the ones that have messaged.
  */
 import 'dotenv/config';
 import { MongoClient } from 'mongodb';
 
-import { COLLECTIONS, MemoryDoc, MessageDoc, ReminderDoc, UserDoc } from '../src/mongo/collections';
+import { COLLECTIONS, MemoryDoc, MessageDoc, ReminderDoc, UserDoc, UserId } from '../src/mongo/collections';
 import { renderMemoryDocument } from '../src/memory/memory-document';
 import { describeInstant } from '../src/reminders/resolve-when';
 
@@ -112,10 +115,10 @@ function indent(block: string): string {
     .join('\n');
 }
 
-function parseArgv(argv: string[]): { userId: number; messageCount: number } {
-  const userId = Number(argv[0]);
-  if (!Number.isInteger(userId)) {
-    throw new Error('Pass a Telegram user id: npm run inspect -- 1228558424');
+function parseArgv(argv: string[]): { userId: UserId; messageCount: number } {
+  const userId = argv[0];
+  if (!userId) {
+    throw new Error('Pass an account id: npm run inspect -- 665f1c2a9b4e3d0012a4b7c9');
   }
 
   const flag = argv.indexOf('--messages');

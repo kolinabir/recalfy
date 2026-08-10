@@ -21,6 +21,7 @@
     "eval": "ts-node -T scripts/eval.ts",
     "inspect": "ts-node -T scripts/inspect.ts",
     "seed": "ts-node -T scripts/seed.ts",
+    "migrate:channels": "ts-node -T scripts/migrate-channels.ts",
     "test": "node --no-experimental-strip-types --require ts-node/register --test 'test/*.test.ts'",
     "typecheck": "tsc --noEmit"
   },

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
+import { Channel, isChannel } from "@/lib/linking";
 import { db } from "@/lib/mongo";
 import { normalisePairingCode } from "@/lib/pairing-code";
 
@@ -15,10 +16,15 @@ export const runtime = "nodejs";
  */
 const MAX_ATTEMPTS = 5;
 
-export async function POST(request: Request) {
+export async function POST(request: Request, params: { params: Promise<{ channel: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+  }
+
+  const { channel } = await params.params;
+  if (!isChannel(channel)) {
+    return NextResponse.json({ error: "unknown-channel" }, { status: 404 });
   }
 
   const body = await request.json().catch(() => null);
@@ -35,17 +41,19 @@ export async function POST(request: Request) {
 
   const already = await users.findOne(
     { _id: new ObjectId(session.user.id) },
-    { projection: { telegramUserId: 1 } },
+    { projection: { [`channels.${channel}`]: 1 } },
   );
-  if (typeof already?.telegramUserId === "number") {
+  if (already?.channels?.[channel]) {
     return NextResponse.json({ error: "already-linked" }, { status: 409 });
   }
 
-  // Single-use, unexpired and under the attempt cap, claimed in one write so
-  // two submissions racing each other cannot both win.
+  // Single-use, unexpired, under the attempt cap, and issued on the channel
+  // being connected — claimed in one write so two submissions racing each
+  // other cannot both win.
   const claimed = await codes.findOneAndUpdate(
     {
       _id: code as never,
+      channel,
       consumedAt: { $exists: false },
       expiresAt: { $gt: new Date() },
       attempts: { $lt: MAX_ATTEMPTS },
@@ -64,17 +72,23 @@ export async function POST(request: Request) {
     return invalid();
   }
 
-  const telegramUserId = claimed.telegramUserId as number;
+  const handle = claimed.handle as string;
 
   // Refuse to move an existing link rather than silently repointing it.
-  const taken = await users.findOne({ telegramUserId }, { projection: { _id: 1 } });
+  const taken = await users.findOne(
+    { [`channels.${channel}.handle`]: handle },
+    { projection: { _id: 1 } },
+  );
   if (taken) {
-    return NextResponse.json({ error: "telegram-taken" }, { status: 409 });
+    return NextResponse.json({ error: "chat-taken" }, { status: 409 });
   }
 
   const linked = await users.findOneAndUpdate(
-    { _id: new ObjectId(session.user.id), telegramUserId: { $exists: false } },
-    { $set: { telegramUserId, telegramLinkedAt: new Date() } },
+    {
+      _id: new ObjectId(session.user.id),
+      [`channels.${channel}`]: { $exists: false },
+    },
+    { $set: { [`channels.${channel}`]: { handle, linkedAt: new Date() } } },
     { returnDocument: "after" },
   );
 
@@ -83,26 +97,45 @@ export async function POST(request: Request) {
   }
 
   // The in-chat confirmation is the backstop for every linking path: whoever
-  // holds the Telegram account finds out which email now reads it, even if
-  // they were talked into the handshake.
-  await notify(telegramUserId, session.user.email);
+  // holds the chat account finds out which email now reads it, even if they
+  // were talked into the handshake.
+  await notify(channel, handle, session.user.email);
 
   return NextResponse.json({ linked: true });
 }
 
-async function notify(chatId: number, email: string): Promise<void> {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) return;
+const CONFIRMATION = (email: string, unlink: string) =>
+  `Connected to ${email}.\n\n` +
+  `Tell me anything you'd rather not hold in your head. If this wasn't you, send ${unlink}.`;
 
+async function notify(channel: Channel, handle: string, email: string): Promise<void> {
   try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    if (channel === "telegram") {
+      const token = process.env.TELEGRAM_BOT_TOKEN;
+      if (!token) return;
+
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: handle, text: CONFIRMATION(email, "/unlink") }),
+      });
+      return;
+    }
+
+    const token = process.env.WHATSAPP_ACCESS_TOKEN;
+    const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+    if (!token || !phoneNumberId) return;
+
+    const version = process.env.GRAPH_API_VERSION ?? "v23.0";
+    await fetch(`https://graph.facebook.com/${version}/${phoneNumberId}/messages`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        chat_id: chatId,
-        text:
-          `Connected to ${email}.\n\n` +
-          "Tell me anything you'd rather not hold in your head. If this wasn't you, send /unlink.",
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: handle,
+        type: "text",
+        text: { preview_url: false, body: CONFIRMATION(email, '"unlink"') },
       }),
     });
   } catch {

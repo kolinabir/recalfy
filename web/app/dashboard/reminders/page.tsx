@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   getBotProfile,
   getReminders,
+  isConnected,
   requireViewer,
   type ReminderItem,
 } from "@/lib/dashboard-data";
@@ -16,12 +17,12 @@ export const metadata: Metadata = {
 
 export default async function RemindersPage() {
   const viewer = await requireViewer();
-  const linked = typeof viewer.telegramUserId === "number";
+  const linked = isConnected(viewer);
 
   const [reminders, profile] = linked
     ? await Promise.all([
-        getReminders(viewer.telegramUserId!),
-        getBotProfile(viewer.telegramUserId!),
+        getReminders(viewer.id),
+        getBotProfile(viewer.id),
       ])
     : [[], {} as Awaited<ReturnType<typeof getBotProfile>>];
 

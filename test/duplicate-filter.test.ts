@@ -8,7 +8,7 @@ import type { MemoryDoc } from '../src/mongo/collections';
 function existing(text: string, overrides: Partial<MemoryDoc> = {}): MemoryDoc {
   return {
     _id: new ObjectId(),
-    userId: 1,
+    userId: 'u1',
     sid: '01',
     text,
     group: 'General',

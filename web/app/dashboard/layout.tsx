@@ -5,7 +5,7 @@ import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { DashHeader } from "@/components/dashboard/dash-header";
 import { Splash } from "@/components/splash";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { requireViewer } from "@/lib/dashboard-data";
+import { isConnected, requireViewer } from "@/lib/dashboard-data";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -37,7 +37,7 @@ async function DashboardShell({
         name={viewer.name}
         email={viewer.email}
         image={viewer.image}
-        linked={typeof viewer.telegramUserId === "number"}
+        linked={isConnected(viewer)}
       />
       <SidebarInset className="bg-bg">
         <DashHeader />

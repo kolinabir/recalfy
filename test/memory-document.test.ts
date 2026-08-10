@@ -5,7 +5,7 @@ import { ObjectId } from 'mongodb';
 import { renderMemoryDocument } from '../src/memory/memory-document';
 import type { MemoryDoc } from '../src/mongo/collections';
 
-const USER_ID = 1;
+const USER_ID = 'u1';
 const NOW = new Date('2026-08-10T00:00:00Z');
 
 function memory(overrides: Partial<MemoryDoc> & Pick<MemoryDoc, 'sid' | 'text'>): MemoryDoc {

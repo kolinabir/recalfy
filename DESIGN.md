@@ -114,8 +114,19 @@ Hides the tick, atomic claiming, at-least-once delivery, restart recovery.
 
 ## 4. Data model
 
+`userId` is the **account** id — the hex form of the Better Auth `user._id` — not a chat network's id. A chat account is an *address* that resolves to it:
+
 ```
-users     { _id: telegramUserId, tz: "Asia/Kolkata", createdAt }
+user      { _id, email,                                        // Better Auth owns this
+            channels: { telegram?: { handle, linkedAt },
+                        whatsapp?: { handle, linkedAt } } }     // we add only this
+```
+
+That indirection is what lets one person reach the same memory from Telegram and from WhatsApp. A `handle` is that network's own id as a string: a Telegram numeric id, or a WhatsApp `wa_id` (E.164 digits, no `+`). Resolution is one indexed lookup per inbound message, and it doubles as the access gate — an unresolved handle is a stranger, and the message is dropped before storage or a model call.
+
+```
+users     { _id: userId, tz: "Asia/Kolkata", createdAt,
+            lastChannel, lastInboundAt: { telegram?, whatsapp? } }
 messages  { userId, role, text, createdAt }                    // raw log, append-only
 memories  { userId, sid: "a1", text, group: "People",
             supersedes: ObjectId?, supersededBy: ObjectId?,
@@ -127,6 +138,17 @@ reminders { userId, text, dueAt, status: pending|claimed|sent|cancelled,
 Indexes: `memories { userId: 1, deletedAt: 1 }`, `reminders { status: 1, dueAt: 1 }`, `messages { userId: 1, createdAt: -1 }`. Three ordinary B-tree indexes — all fine on M0.
 
 `sid` is the short human/LLM-facing id (`a1`, `b7`) that appears in the rendered markdown.
+
+### 4.1 Why `lastInboundAt` is per channel
+
+WhatsApp only permits a free-form message within **24 hours** of the user's own last one. Past that, reaching them at all requires a pre-approved template, which is billed and counts against a daily cap. Telegram has no such rule.
+
+So outbound splits in two, and `channels/outbox.ts` is the only thing that knows which is which:
+
+- **`reply`** — answering something they just said. Window open by construction, always free-form.
+- **`notify`** — a due reminder or the daily brief. Free-form if they happen to have messaged in the last 24 hours, an approved template otherwise.
+
+`lastInboundAt` is keyed by channel rather than being a single timestamp because the answer differs per network: someone active on Telegram this morning may have a WhatsApp window that closed days ago.
 
 ---
 

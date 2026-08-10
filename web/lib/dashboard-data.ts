@@ -1,5 +1,6 @@
 import "server-only";
 
+import { ObjectId } from "mongodb";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -27,11 +28,21 @@ export interface ReminderItem {
   repeat?: { unit: "day" | "week" | "month" | "year"; interval: number };
 }
 
+export type Channel = "telegram" | "whatsapp";
+
 export interface Viewer {
+  /** The account id — and, since the channels migration, the bot's `userId`. */
+  id: string;
   email: string;
   name?: string | null;
   image?: string | null;
-  telegramUserId?: number;
+  /** Which chats are connected. Empty means the bot has never met them. */
+  channels: Partial<Record<Channel, { handle: string; linkedAt?: string }>>;
+}
+
+/** True if any chat is connected — the dashboard has data either way. */
+export function isConnected(viewer: Viewer): boolean {
+  return Object.keys(viewer.channels).length > 0;
 }
 
 /** Session gate every dashboard page runs. The proxy only checked the cookie exists. */
@@ -39,16 +50,22 @@ export async function requireViewer(): Promise<Viewer> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
 
-  // Written by the bot when it redeems a link token — authoritative here,
-  // the client never gets to assert it.
-  const telegramUserId = (session.user as { telegramUserId?: number })
-    .telegramUserId;
+  // Read from the collection rather than the session: the bot writes this
+  // when it redeems a link token, and a session minted before that would
+  // still be carrying the old answer.
+  const row = await db
+    .collection("user")
+    .findOne(
+      { _id: new ObjectId(session.user.id) },
+      { projection: { channels: 1 } },
+    );
 
   return {
+    id: session.user.id,
     email: session.user.email,
     name: session.user.name,
     image: session.user.image,
-    telegramUserId,
+    channels: (row?.channels as Viewer["channels"]) ?? {},
   };
 }
 
@@ -56,14 +73,12 @@ export async function requireViewer(): Promise<Viewer> {
  * The rendered memory: what the bot itself would recite. Superseded, deleted
  * and expired facts stay in the collection for audit but are not memory.
  */
-export async function getMemories(
-  telegramUserId: number,
-): Promise<MemoryItem[]> {
+export async function getMemories(userId: string): Promise<MemoryItem[]> {
   const rows = await db
     .collection("memories")
     .find(
       {
-        userId: telegramUserId,
+        userId,
         deletedAt: { $exists: false },
         supersededBy: { $exists: false },
         $or: [
@@ -85,13 +100,11 @@ export async function getMemories(
   }));
 }
 
-export async function getReminders(
-  telegramUserId: number,
-): Promise<ReminderItem[]> {
+export async function getReminders(userId: string): Promise<ReminderItem[]> {
   const rows = await db
     .collection("reminders")
     .find(
-      { userId: telegramUserId, status: "pending" },
+      { userId, status: "pending" },
       { projection: { text: 1, dueAt: 1, repeat: 1 } },
     )
     .sort({ dueAt: 1 })
@@ -139,14 +152,13 @@ export interface BotProfile {
 }
 
 /** The bot's own record of this person — timezone and brief schedule. */
-export async function getBotProfile(
-  telegramUserId: number,
-): Promise<BotProfile> {
+export async function getBotProfile(userId: string): Promise<BotProfile> {
   const row = await db
     .collection("users")
     .findOne(
-      // The bot keys `users` by the numeric Telegram id, not an ObjectId.
-      { _id: telegramUserId as unknown as import("mongodb").ObjectId },
+      // The bot keys `users` by the account id as a plain string, not an
+      // ObjectId — see the channels migration.
+      { _id: userId as unknown as import("mongodb").ObjectId },
       { projection: { tz: 1, brief: 1, createdAt: 1 } },
     );
 

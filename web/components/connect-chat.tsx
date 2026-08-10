@@ -9,13 +9,49 @@ type View = "choose" | "here" | "scan" | "manual";
 
 const POLL_MS = 2500;
 
+export type Channel = "telegram" | "whatsapp";
+
 /**
- * Three routes to the same link, because the browser and the Telegram account
- * are usually not on the same device — and sometimes the two convenient routes
- * are both unavailable at once. The chooser states that plainly rather than
+ * Everything that differs between the two chats. The flow is identical —
+ * three routes to one token — but the last step genuinely is not: Telegram
+ * carries the payload in a deep link the user only has to accept, while
+ * WhatsApp can merely pre-fill the box and needs them to press send.
+ */
+export interface ChannelCopy {
+  /** Product name, as it appears in every label. */
+  name: string;
+  /** The bot's public address: "@recalfy_bot", or a phone number. */
+  address: string;
+  /** What the person does in the chat to finish. Sentence case, no full stop. */
+  action: string;
+  /** What they send to get a pairing code manually. */
+  codeCommand: string;
+}
+
+export const CHANNEL_COPY: Record<Channel, Omit<ChannelCopy, "address">> = {
+  telegram: { name: "Telegram", action: "press Start", codeCommand: "/code" },
+  whatsapp: {
+    name: "WhatsApp",
+    // The link only fills the message box; nothing is sent until they tap.
+    action: "press send",
+    codeCommand: "code",
+  },
+};
+
+/**
+ * Three routes to the same link, because the browser and the chat account are
+ * usually not on the same device — and sometimes the two convenient routes are
+ * both unavailable at once. The chooser states that plainly rather than
  * stacking every affordance on top of each other and hoping one lands.
  */
-export function ConnectTelegram({ botUsername }: { botUsername: string }) {
+export function ConnectChat({
+  channel,
+  address,
+}: {
+  channel: Channel;
+  address: string;
+}) {
+  const copy = { ...CHANNEL_COPY[channel], address };
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View>("choose");
@@ -31,15 +67,15 @@ export function ConnectTelegram({ botUsername }: { botUsername: string }) {
     setPending(true);
     setError(null);
     try {
-      const res = await fetch("/api/telegram/link", { method: "POST" });
+      const res = await fetch(`/api/link/${channel}`, { method: "POST" });
       const body = await res.json();
 
       if (!res.ok) {
         setError(
           body.error === "already-linked"
             ? "This account is already connected."
-            : body.error === "bot-not-configured"
-              ? "The bot username isn't configured on the server."
+            : body.error === "channel-not-configured"
+              ? "That chat isn't configured on the server."
               : "Couldn't start the handshake. Try again in a moment.",
         );
         return null;
@@ -70,7 +106,7 @@ export function ConnectTelegram({ botUsername }: { botUsername: string }) {
 
     const id = setInterval(async () => {
       try {
-        const res = await fetch("/api/telegram/link");
+        const res = await fetch(`/api/link/${channel}`);
         if (!res.ok) return;
         const { linked } = await res.json();
         if (linked) {
@@ -97,14 +133,14 @@ export function ConnectTelegram({ botUsername }: { botUsername: string }) {
       }}
     >
       <Dialog.Trigger className="rounded-xl bg-fg px-5 py-3 text-[0.9375rem] font-medium text-[var(--primary-foreground)] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.99]">
-        Connect Telegram
+        Connect {copy.name}
       </Dialog.Trigger>
 
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-[color-mix(in_oklab,var(--bg)_72%,transparent)] backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in" />
         <Dialog.Content className="fixed top-1/2 left-1/2 z-50 max-h-[90dvh] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-line bg-s1 p-7 shadow-2xl sm:p-8">
           <Dialog.Title className="display-sm text-[1.375rem]">
-            {view === "choose" ? "Connect Telegram" : null}
+            {view === "choose" ? `Connect ${copy.name}` : null}
             {view === "here" ? "Open it here" : null}
             {view === "scan" ? "Scan with your phone" : null}
             {view === "manual" ? "Type a code" : null}
@@ -112,21 +148,21 @@ export function ConnectTelegram({ botUsername }: { botUsername: string }) {
 
           <Dialog.Description className="mt-2 text-[0.9375rem] leading-relaxed text-fg-subtle">
             {view === "choose"
-              ? "Pressing Start in the chat is what proves the account is yours. Pick whichever way suits the device you have."
+              ? `Sending the message from ${copy.name} is what proves the account is yours. Pick whichever way suits the device you have.`
               : "This page updates on its own once the chat is connected."}
           </Dialog.Description>
 
           <div className="mt-7">
             {view === "choose" ? (
-              <Chooser onPick={choose} pending={pending} />
+              <Chooser onPick={choose} pending={pending} copy={copy} />
             ) : null}
             {view === "here" && handshake ? (
-              <OpenHere url={handshake.url} expiresAt={handshake.expiresAt} />
+              <OpenHere url={handshake.url} expiresAt={handshake.expiresAt} copy={copy} />
             ) : null}
             {view === "scan" && handshake ? (
-              <ScanCode qr={handshake.qr} expiresAt={handshake.expiresAt} />
+              <ScanCode qr={handshake.qr} expiresAt={handshake.expiresAt} copy={copy} />
             ) : null}
-            {view === "manual" ? <Manual botUsername={botUsername} /> : null}
+            {view === "manual" ? <Manual channel={channel} copy={copy} /> : null}
           </div>
 
           {error ? (
@@ -158,15 +194,15 @@ export function ConnectTelegram({ botUsername }: { botUsername: string }) {
   );
 }
 
-const OPTIONS: { view: View; label: string; hint: string }[] = [
+const options = (name: string): { view: View; label: string; hint: string }[] => [
   {
     view: "here",
-    label: "Telegram is on this device",
-    hint: "Opens the app or Telegram Desktop",
+    label: `${name} is on this device`,
+    hint: `Opens ${name} on this machine`,
   },
   {
     view: "scan",
-    label: "Telegram is on my phone",
+    label: `${name} is on my phone`,
     hint: "Scan a QR code with the camera",
   },
   {
@@ -179,13 +215,15 @@ const OPTIONS: { view: View; label: string; hint: string }[] = [
 function Chooser({
   onPick,
   pending,
+  copy,
 }: {
   onPick: (view: View) => void;
   pending: boolean;
+  copy: ChannelCopy;
 }) {
   return (
     <div className="grid gap-2.5">
-      {OPTIONS.map((option) => (
+      {options(copy.name).map((option) => (
         <button
           key={option.view}
           type="button"
@@ -211,12 +249,20 @@ function Chooser({
   );
 }
 
-function OpenHere({ url, expiresAt }: { url: string; expiresAt: string }) {
+function OpenHere({
+  url,
+  expiresAt,
+  copy,
+}: {
+  url: string;
+  expiresAt: string;
+  copy: ChannelCopy;
+}) {
   const [copied, setCopied] = useState(false);
 
   return (
     <div>
-      <Waiting />
+      <Waiting action={copy.action} />
 
       <div className="mt-5 flex flex-wrap items-center gap-2.5">
         {/*
@@ -230,7 +276,7 @@ function OpenHere({ url, expiresAt }: { url: string; expiresAt: string }) {
           rel="noopener noreferrer"
           className="rounded-xl bg-fg px-5 py-2.5 text-[0.875rem] font-medium text-[var(--primary-foreground)] transition-transform duration-300 hover:scale-[1.02] active:scale-[0.99]"
         >
-          Open Telegram
+          Open {copy.name}
         </a>
         <button
           type="button"
@@ -255,7 +301,15 @@ function OpenHere({ url, expiresAt }: { url: string; expiresAt: string }) {
   );
 }
 
-function ScanCode({ qr, expiresAt }: { qr: string; expiresAt: string }) {
+function ScanCode({
+  qr,
+  expiresAt,
+  copy,
+}: {
+  qr: string;
+  expiresAt: string;
+  copy: ChannelCopy;
+}) {
   return (
     <div>
       <div className="flex justify-center">
@@ -269,13 +323,13 @@ function ScanCode({ qr, expiresAt }: { qr: string; expiresAt: string }) {
       <ol className="mt-6 space-y-2.5">
         <Step n={1}>Open the camera on your phone and point it at the code.</Step>
         <Step n={2}>
-          Telegram opens on the bot. Press{" "}
-          <strong className="font-medium text-fg-muted">Start</strong>.
+          {copy.name} opens on the bot —{" "}
+          <strong className="font-medium text-fg-muted">{copy.action}</strong>.
         </Step>
       </ol>
 
       <div className="mt-6">
-        <Waiting />
+        <Waiting action={copy.action} />
       </div>
       <Expiry expiresAt={expiresAt} />
     </div>
@@ -283,12 +337,12 @@ function ScanCode({ qr, expiresAt }: { qr: string; expiresAt: string }) {
 }
 
 /**
- * The fallback for a locked-down machine with no Telegram Desktop and no phone
+ * The fallback for a locked-down machine with no desktop app and no phone
  * free to scan. The code runs bot → person → this form, never the other way:
  * a code heading towards an authenticated form is one an attacker must
  * persuade someone to reveal, rather than one they can persuade them to paste.
  */
-function Manual({ botUsername }: { botUsername: string }) {
+function Manual({ channel, copy }: { channel: Channel; copy: ChannelCopy }) {
   const router = useRouter();
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
@@ -301,7 +355,7 @@ function Manual({ botUsername }: { botUsername: string }) {
     setError(null);
 
     try {
-      const res = await fetch("/api/telegram/link/verify", {
+      const res = await fetch(`/api/link/${channel}/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code }),
@@ -316,8 +370,8 @@ function Manual({ botUsername }: { botUsername: string }) {
       setError(
         body.error === "already-linked"
           ? "This account is already connected."
-          : body.error === "telegram-taken"
-            ? "That Telegram account belongs to a different account."
+          : body.error === "chat-taken"
+            ? `That ${copy.name} account belongs to a different account.`
             : "That code isn't valid. Send /code again for a fresh one.",
       );
     } catch {
@@ -330,7 +384,7 @@ function Manual({ botUsername }: { botUsername: string }) {
   return (
     <div>
       <ol className="space-y-3">
-        <Step n={1}>Open Telegram on any device.</Step>
+        <Step n={1}>Open {copy.name} on any device.</Step>
         <Step n={2}>
           Search for{" "}
           {/* Chip and hint travel together, so a narrow screen wraps the pair
@@ -340,7 +394,7 @@ function Manual({ botUsername }: { botUsername: string }) {
               type="button"
               onClick={async () => {
                 try {
-                  await navigator.clipboard.writeText(`@${botUsername}`);
+                  await navigator.clipboard.writeText(copy.address);
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 } catch {
@@ -349,7 +403,7 @@ function Manual({ botUsername }: { botUsername: string }) {
               }}
               className="rounded border border-line bg-s2 px-1.5 py-0.5 font-mono text-[0.8125rem] text-fg transition-colors hover:border-fg-faint"
             >
-              @{botUsername}
+              {copy.address}
             </button>
             <span
               className={`font-mono text-[0.6875rem] ${copied ? "text-accent" : "text-fg-faint"}`}
@@ -359,13 +413,13 @@ function Manual({ botUsername }: { botUsername: string }) {
           </span>
         </Step>
         <Step n={3}>
-          Open the chat and press{" "}
-          <strong className="font-medium text-fg-muted">Start</strong>.
+          Open the chat and{" "}
+          <strong className="font-medium text-fg-muted">{copy.action}</strong>.
         </Step>
         <Step n={4}>
           Send{" "}
           <code className="rounded border border-line bg-s2 px-1.5 py-0.5 font-mono text-[0.8125rem] text-fg">
-            /code
+            {copy.codeCommand}
           </code>{" "}
           and it replies with eight characters.
         </Step>
@@ -420,14 +474,14 @@ function Step({ n, children }: { n: number; children: React.ReactNode }) {
   );
 }
 
-function Waiting() {
+function Waiting({ action }: { action: string }) {
   return (
     <p className="flex items-center gap-2.5 text-[0.9375rem]">
       <span
         aria-hidden
         className="size-1.5 shrink-0 animate-pulse rounded-full bg-accent"
       />
-      Waiting for you to press Start
+      Waiting for you to {action}
     </p>
   );
 }

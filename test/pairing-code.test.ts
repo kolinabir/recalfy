@@ -5,7 +5,7 @@ import {
   formatPairingCode,
   generatePairingCode,
   normalisePairingCode,
-} from '../src/telegram/pairing-code';
+} from '../src/channels/pairing-code';
 
 // The code is read off one screen and typed into another, so normalisation is
 // the difference between "wrong code" and "you typed an O instead of a zero".

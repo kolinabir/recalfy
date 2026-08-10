@@ -18,9 +18,12 @@ import { ConversationLog } from '../src/bot/conversation-log';
 import { MemoryStore } from '../src/memory/memory.store';
 import { UserStore } from '../src/memory/user.store';
 import { MongoService } from '../src/mongo/mongo.service';
+import { UserId } from '../src/mongo/collections';
 import { CASES, EvalCase, EvalTurn } from './eval-cases';
 
-const SCRATCH_BASE = 999_100_000;
+/** Synthetic account ids, one per case, disjoint from anything real. */
+const scratchUserId = (index: number): UserId =>
+  `0000000000000000000001${index.toString(16).padStart(2, '0')}`;
 
 interface CapturedCall {
   name: string;
@@ -38,7 +41,7 @@ async function main(): Promise<void> {
   let failures = 0;
   try {
     for (const [index, evalCase] of cases.entries()) {
-      const userId = SCRATCH_BASE + index;
+      const userId = scratchUserId(index);
       await wipe(app.get(MongoService), userId);
       try {
         const ok = await runCase(app, evalCase, userId, captured);
@@ -58,7 +61,7 @@ async function main(): Promise<void> {
 async function runCase(
   app: { get<T>(type: abstract new (...args: never[]) => T): T },
   evalCase: EvalCase,
-  userId: number,
+  userId: UserId,
   captured: CapturedCall[],
 ): Promise<boolean> {
   console.log(`\n■ ${evalCase.name}`);
@@ -149,7 +152,7 @@ function parse(raw: string): Record<string, unknown> {
   }
 }
 
-async function wipe(mongo: MongoService, userId: number): Promise<void> {
+async function wipe(mongo: MongoService, userId: UserId): Promise<void> {
   await Promise.all([
     mongo.users.deleteMany({ _id: userId }),
     mongo.messages.deleteMany({ userId }),

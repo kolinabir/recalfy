@@ -1,8 +1,9 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 
 import { BrainService } from '../brain/brain.service';
+import { CHANNEL_ADAPTERS, ChannelAdapter, InboundMessage } from '../channels/channel';
+import { Outbox } from '../channels/outbox';
 import { UserStore } from '../memory/user.store';
-import { InboundMessage, Ingress } from '../telegram/ingress';
 import { ConversationLog } from './conversation-log';
 import { Responder } from './responder';
 
@@ -17,7 +18,8 @@ import { Responder } from './responder';
 @Injectable()
 export class BotService implements OnModuleInit {
   constructor(
-    private readonly ingress: Ingress,
+    @Inject(CHANNEL_ADAPTERS) private readonly adapters: ChannelAdapter[],
+    private readonly outbox: Outbox,
     private readonly users: UserStore,
     private readonly log: ConversationLog,
     private readonly brain: BrainService,
@@ -25,12 +27,19 @@ export class BotService implements OnModuleInit {
   ) {}
 
   onModuleInit(): void {
-    this.ingress.onMessage((message) => this.handle(message));
+    for (const adapter of this.adapters) {
+      adapter.onMessage((message) => this.handle(message));
+    }
   }
 
-  private async handle({ userId, text, receivedAt }: InboundMessage): Promise<void> {
+  private async handle({ userId, address, text, receivedAt }: InboundMessage): Promise<void> {
     await this.users.ensure(userId);
-    await this.ingress.typing(userId);
+
+    // Before anything slow, so a reminder that fires mid-conversation goes to
+    // the chat they are actually in — and so WhatsApp's 24-hour window is
+    // measured from the message we just received.
+    await this.users.noteInbound(userId, address.channel, receivedAt);
+    await this.outbox.typing(userId);
 
     const sourceMessageId = await this.log.record(userId, 'user', text);
     const reply = await this.brain.handle(userId, text, receivedAt, sourceMessageId);

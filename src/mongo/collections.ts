@@ -1,7 +1,32 @@
 import { ObjectId } from 'mongodb';
 
-/** Telegram numeric user id, stored as the `_id` of `users`. */
-export type UserId = number;
+/**
+ * The person, independent of where they are typing. Hex form of the Better
+ * Auth account `_id`, stored as the `_id` of `users`.
+ *
+ * It is deliberately *not* a channel's own id. Someone reaches Recalfy from
+ * Telegram and from WhatsApp, and both have to land on one memory — so the
+ * account they linked is the identity, and a channel id is only an address
+ * that points at it.
+ */
+export type UserId = string;
+
+/** Somewhere a person can be reached. Adding one means adding an adapter. */
+export type Channel = 'telegram' | 'whatsapp';
+
+export const CHANNELS: readonly Channel[] = ['telegram', 'whatsapp'];
+
+/**
+ * A channel's own id for a person, always as a string: a Telegram numeric
+ * user id in decimal, or a WhatsApp `wa_id` — E.164 digits with no leading
+ * `+`, which is the form Meta sends and expects back.
+ */
+export type Handle = string;
+
+export interface Address {
+  channel: Channel;
+  handle: Handle;
+}
 
 /** Local wall-clock time the daily brief goes out. */
 export interface BriefConfig {
@@ -31,6 +56,19 @@ export interface UserDoc {
   lastReflectionDay?: string;
   /** Monotonic counter behind the short ids (`sid`) shown to the model. */
   sidCounter: number;
+  /**
+   * The channel the last inbound message came from. Anything the user did not
+   * just ask for — a reminder, the daily brief — goes here, so the assistant
+   * answers where they last spoke rather than where they first signed up.
+   */
+  lastChannel?: Channel;
+  /**
+   * Last inbound message per channel. Routing recency, and on WhatsApp also a
+   * hard constraint: Meta only allows free-form replies within 24 hours of the
+   * user's own last message. Past that a send must be a template or not happen
+   * at all — see channels/outbox.ts.
+   */
+  lastInboundAt?: Partial<Record<Channel, Date>>;
   createdAt: Date;
 }
 
@@ -104,9 +142,10 @@ export interface ReminderDoc {
 }
 
 /**
- * A pending "connect Telegram" handshake. The web app mints one of these and
- * sends the person to `t.me/<bot>?start=<token>`; whoever presses Start proves
- * they hold the Telegram account, which typing a username never could.
+ * A pending "connect" handshake. The web app mints one of these and sends the
+ * person to the chat — `t.me/<bot>?start=<token>` on Telegram, `wa.me/<number>`
+ * with the token pre-filled on WhatsApp. Whoever sends it proves they hold
+ * that chat account, which typing a username never could.
  *
  * The token is public by construction — it travels in a URL and lands in chat
  * history — so it carries no identity of its own, only a pointer to the web
@@ -119,12 +158,18 @@ export interface LinkTokenDoc {
   webUserId: string;
   /** Shown in the bot's confirmation so the person can spot a wrong account. */
   webUserEmail: string;
+  /**
+   * Which channel the token was minted for. A token issued for WhatsApp is
+   * refused on Telegram: the two links are separate grants, and one press of
+   * "Connect WhatsApp" should not be redeemable as a Telegram connection.
+   */
+  channel: Channel;
   createdAt: Date;
   /** TTL index target. Also filtered on at redemption — see LinkStore. */
   expiresAt: Date;
   /** Set on redemption; the filter that makes a token single-use. */
   consumedAt?: Date;
-  consumedBy?: UserId;
+  consumedBy?: Handle;
 }
 
 /**
@@ -138,9 +183,11 @@ export interface LinkTokenDoc {
  * which is the shape every malicious-link scam already uses.
  */
 export interface PairingCodeDoc {
-  /** 8 Crockford base32 symbols, normalised — see telegram/pairing-code.ts. */
+  /** 8 Crockford base32 symbols, normalised — see channels/pairing-code.ts. */
   _id: string;
-  telegramUserId: UserId;
+  /** The chat account that asked for the code, and will be linked by it. */
+  channel: Channel;
+  handle: Handle;
   createdAt: Date;
   expiresAt: Date;
   /**
@@ -154,17 +201,36 @@ export interface PairingCodeDoc {
   consumedBy?: string;
 }
 
+/** One connected chat account. At most one per channel, per web account. */
+export interface ChannelLink {
+  handle: Handle;
+  linkedAt: Date;
+}
+
 /**
  * The Better Auth user record, as far as the bot is concerned. Better Auth
- * owns this collection and the rest of its shape; `telegramUserId` is the one
- * field we add, and the only one read here.
+ * owns this collection and the rest of its shape; `channels` is the one field
+ * we add, and the only one read here.
+ *
+ * This is also where identity resolution starts: an inbound message carries a
+ * channel handle, and the `_id` found by matching it is the `UserId` that
+ * every memory, reminder and message is filed under.
  */
 export interface WebUserDoc {
   /** Better Auth stores an ObjectId here and exposes it as a hex string. */
   _id: ObjectId;
   email: string;
   name?: string;
-  telegramUserId?: UserId;
+  /** Keyed by channel. A unique partial index per key enforces "one owner". */
+  channels?: Partial<Record<Channel, ChannelLink>>;
+  /**
+   * Where the Telegram link lived before channels existed. Read by the
+   * migration in scripts/migrate-channels.ts and by nothing else.
+   *
+   * @deprecated
+   */
+  telegramUserId?: number;
+  /** @deprecated see telegramUserId */
   telegramLinkedAt?: Date;
 }
 

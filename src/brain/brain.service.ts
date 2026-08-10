@@ -5,6 +5,7 @@ import { GlmClient } from '../llm/glm.client';
 import { Turn } from '../llm/llm.types';
 import { MemoryStore } from '../memory/memory.store';
 import { UserStore } from '../memory/user.store';
+import { UserId } from '../mongo/collections';
 import { NO_ACTION_TAKEN, claimsAction } from './claims-action';
 import { ConversationWindow } from './conversation-window';
 import { buildSystemPrompt } from './system-prompt';
@@ -36,7 +37,7 @@ export class BrainService {
     private readonly tools: ToolExecutor,
   ) {}
 
-  async handle(userId: number, text: string, now: Date, sourceMessageId: ObjectId): Promise<string> {
+  async handle(userId: UserId, text: string, now: Date, sourceMessageId: ObjectId): Promise<string> {
     try {
       return await this.converse(userId, text, now, sourceMessageId);
     } catch (error) {
@@ -48,7 +49,7 @@ export class BrainService {
   }
 
   private async converse(
-    userId: number,
+    userId: UserId,
     text: string,
     now: Date,
     sourceMessageId: ObjectId,
@@ -105,7 +106,7 @@ export class BrainService {
   }
 
   private async contextFor(
-    userId: number,
+    userId: UserId,
     now: Date,
     sourceMessageId: ObjectId,
   ): Promise<ToolContext> {

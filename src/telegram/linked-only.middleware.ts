@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import type { Context, MiddlewareFn } from 'grammy';
 
-import { LinkStore } from './link.store';
+import { LinkStore } from '../channels/link.store';
 
 /** `/start <token>` — a deep link arriving back from the website. */
 const START_WITH_TOKEN = /^\/start(?:@\w+)?\s+(\S+)$/;
@@ -47,7 +47,7 @@ export function linkedOnly(links: LinkStore, logger: Logger): MiddlewareFn<Conte
       return;
     }
 
-    if (await links.isLinked(senderId)) {
+    if (await links.resolve({ channel: 'telegram', handle: String(senderId) })) {
       await next();
       return;
     }

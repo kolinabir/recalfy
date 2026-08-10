@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { ConnectTelegram } from "@/components/connect-telegram";
+import { ConnectChat } from "@/components/connect-chat";
 import { MemoryListShell, MemoryRow } from "@/components/dashboard/memory-row";
 import {
   countThisWeek,
   getBotProfile,
   getMemories,
+  isConnected,
   getReminders,
   pickResurfaced,
   requireViewer,
   type MemoryItem,
   type ReminderItem,
 } from "@/lib/dashboard-data";
+import { channelConfig } from "@/lib/channel-config";
 import { dueLabel, relativeDate, repeatLabel } from "@/lib/format";
 
 export const metadata: Metadata = {
@@ -24,14 +26,14 @@ export default async function OverviewPage() {
   const viewer = await requireViewer();
   const firstName = viewer.name?.trim().split(" ")[0];
 
-  if (typeof viewer.telegramUserId !== "number") {
+  if (!isConnected(viewer)) {
     return <NotConnected firstName={firstName} />;
   }
 
   const [memories, reminders, profile] = await Promise.all([
-    getMemories(viewer.telegramUserId),
-    getReminders(viewer.telegramUserId),
-    getBotProfile(viewer.telegramUserId),
+    getMemories(viewer.id),
+    getReminders(viewer.id),
+    getBotProfile(viewer.id),
   ]);
 
   const thisWeek = countThisWeek(memories);
@@ -204,7 +206,7 @@ function FirstForward() {
 
 /** The pre-connection page: the empty dashboard is the onboarding. */
 function NotConnected({ firstName }: { firstName?: string }) {
-  const botUsername = process.env.TELEGRAM_BOT_USERNAME ?? "recalfy_bot";
+  const telegram = channelConfig("telegram");
 
   return (
     <div>
@@ -246,7 +248,7 @@ function NotConnected({ firstName }: { firstName?: string }) {
       </ol>
 
       <div className="mt-8">
-        <ConnectTelegram botUsername={botUsername} />
+        <ConnectChat channel="telegram" address={telegram.address} />
       </div>
 
       <div className="mt-12">

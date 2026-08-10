@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 
-import { TelegramModule } from '../telegram/telegram.module';
+import { ChannelsModule } from '../channels/channels.module';
 import { ReminderDelivery } from './reminder-delivery';
 import { ReminderScheduler } from './reminder.scheduler';
 import { ReminderStore } from './reminder.store';
 
 @Module({
-  imports: [TelegramModule],
+  imports: [ChannelsModule],
   providers: [ReminderStore, ReminderScheduler, ReminderDelivery],
   exports: [ReminderStore],
 })

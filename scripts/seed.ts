@@ -2,12 +2,12 @@
  * Seeds a handful of facts and prints the rendered memory document, so you can
  * see exactly what the model will be handed before wiring the model up.
  *
- *   npm run seed -- 123456789
+ *   npm run seed -- 665f1c2a9b4e3d0012a4b7c9
  */
 import 'dotenv/config';
 import { MongoClient, ObjectId } from 'mongodb';
 
-import { COLLECTIONS, MemoryDoc, UserDoc } from '../src/mongo/collections';
+import { COLLECTIONS, MemoryDoc, UserDoc, UserId } from '../src/mongo/collections';
 import { renderMemoryDocument } from '../src/memory/memory-document';
 
 const SAMPLE_FACTS: Array<Pick<MemoryDoc, 'text' | 'group'>> = [
@@ -18,9 +18,9 @@ const SAMPLE_FACTS: Array<Pick<MemoryDoc, 'text' | 'group'>> = [
 ];
 
 async function main(): Promise<void> {
-  const userId = Number(process.argv[2]);
-  if (!Number.isInteger(userId)) {
-    throw new Error('Pass your Telegram user id: npm run seed -- 123456789');
+  const userId = process.argv[2];
+  if (!userId) {
+    throw new Error('Pass your account id: npm run seed -- 665f1c2a9b4e3d0012a4b7c9');
   }
 
   const client = new MongoClient(required('MONGODB_URI'));

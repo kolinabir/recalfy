@@ -1,9 +1,10 @@
 import { ObjectId } from 'mongodb';
 
 import { JsonSchema } from '../../llm/llm.types';
+import { UserId } from '../../mongo/collections';
 
 export interface ToolContext {
-  userId: number;
+  userId: UserId;
   /** The user's IANA zone, already resolved. */
   timezone: string;
   /** False while the zone is still the default rather than a known location. */

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { MemoryExplorer } from "@/components/dashboard/memory-explorer";
-import { getMemories, requireViewer } from "@/lib/dashboard-data";
+import { getMemories, isConnected, requireViewer } from "@/lib/dashboard-data";
 
 export const metadata: Metadata = {
   title: "Memories",
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default async function MemoriesPage() {
   const viewer = await requireViewer();
 
-  if (typeof viewer.telegramUserId !== "number") {
+  if (!isConnected(viewer)) {
     return (
       <div>
         <PageHead count={0} />
@@ -30,7 +30,7 @@ export default async function MemoriesPage() {
     );
   }
 
-  const memories = await getMemories(viewer.telegramUserId);
+  const memories = await getMemories(viewer.id);
 
   return (
     <div>

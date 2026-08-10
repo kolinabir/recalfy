@@ -5,6 +5,7 @@ import {
   Home,
   Library,
   LogOut,
+  MessageCircle,
   Send,
   Settings2,
 } from "lucide-react";
@@ -46,8 +47,12 @@ const LIBRARY = [
 
 const ACCOUNT = [
   { href: "/dashboard/telegram", label: "Telegram", icon: Send },
+  { href: "/dashboard/whatsapp", label: "WhatsApp", icon: MessageCircle },
   { href: "/dashboard/settings", label: "Settings", icon: Settings2 },
 ];
+
+/** Rows that get the "not connected" dot while no chat is attached. */
+const CHAT_ROUTES = ["/dashboard/telegram", "/dashboard/whatsapp"];
 
 /**
  * The dashboard's frame. Same discipline as the rest of the site: canvas
@@ -135,7 +140,7 @@ function NavList({
               <Link href={item.href}>
                 <item.icon />
                 <span>{item.label}</span>
-                {badge && item.href === "/dashboard/telegram" ? (
+                {badge && CHAT_ROUTES.includes(item.href) ? (
                   <span
                     aria-label="Not connected"
                     className="ml-auto size-1.5 rounded-full bg-fg-faint/60"

@@ -8,7 +8,7 @@ import { MessageDoc } from '../src/mongo/collections';
 const DHAKA = 'Asia/Dhaka';
 
 function message(text: string, createdAt: string, role: 'user' | 'assistant' = 'user'): MessageDoc {
-  return { _id: new ObjectId(), userId: 1, role, text, createdAt: new Date(createdAt) };
+  return { _id: new ObjectId(), userId: 'u1', role, text, createdAt: new Date(createdAt) };
 }
 
 test('renders each hit as a dated line in the user zone', () => {

@@ -17,8 +17,13 @@ import { BrainService } from '../src/brain/brain.service';
 import { ConversationLog } from '../src/bot/conversation-log';
 import { MemoryStore } from '../src/memory/memory.store';
 import { MongoService } from '../src/mongo/mongo.service';
+import { UserId } from '../src/mongo/collections';
 
-const SCRATCH_USER_ID = 999_000_001;
+/**
+ * A UserId is an account's ObjectId hex. This one belongs to no real
+ * account, which is the point: `npm run chat` must never touch live memory.
+ */
+const SCRATCH_USER_ID = '000000000000000000000001';
 
 async function main(): Promise<void> {
   const { userId, text, reset } = parseArgv(process.argv.slice(2));
@@ -47,7 +52,7 @@ async function main(): Promise<void> {
   }
 }
 
-async function wipe(mongo: MongoService, userId: number): Promise<void> {
+async function wipe(mongo: MongoService, userId: UserId): Promise<void> {
   await Promise.all([
     mongo.users.deleteMany({ _id: userId }),
     mongo.messages.deleteMany({ userId }),
@@ -58,15 +63,15 @@ async function wipe(mongo: MongoService, userId: number): Promise<void> {
 }
 
 interface Invocation {
-  userId: number;
+  userId: UserId;
   text: string;
   reset: boolean;
 }
 
 function parseArgv(argv: string[]): Invocation {
   const userFlag = argv.indexOf('--user');
-  const userId = userFlag === -1 ? SCRATCH_USER_ID : Number(argv[userFlag + 1]);
-  if (!Number.isInteger(userId)) throw new Error('--user needs a numeric Telegram id');
+  const userId = userFlag === -1 ? SCRATCH_USER_ID : argv[userFlag + 1];
+  if (!userId) throw new Error('--user needs an account id (24 hex chars)');
 
   const rest = argv.filter((arg, index) => {
     if (arg === '--reset') return false;

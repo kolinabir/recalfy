@@ -4,7 +4,7 @@ import { Interval } from '@nestjs/schedule';
 import { ConversationLog } from '../bot/conversation-log';
 import { UserStore } from '../memory/user.store';
 import { UserDoc } from '../mongo/collections';
-import { Ingress } from '../telegram/ingress';
+import { Outbox } from '../channels/outbox';
 import { briefDueDay, reflectionDueDay } from './brief-time';
 import { BriefComposer } from './brief-composer';
 
@@ -29,7 +29,7 @@ export class BriefScheduler {
   constructor(
     private readonly users: UserStore,
     private readonly composer: BriefComposer,
-    private readonly ingress: Ingress,
+    private readonly outbox: Outbox,
     private readonly log: ConversationLog,
   ) {}
 
@@ -81,7 +81,7 @@ export class BriefScheduler {
         return;
       }
 
-      await this.ingress.send(user._id, text);
+      await this.outbox.notify(user._id, text);
       // Into the transcript, so "yes, it got fixed" resolves against the
       // question that was asked.
       await this.log.record(user._id, 'assistant', text);

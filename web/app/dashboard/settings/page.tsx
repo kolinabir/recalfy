@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { SignOutButton } from "@/components/sign-out-button";
-import { getBotProfile, requireViewer } from "@/lib/dashboard-data";
+import { getBotProfile, isConnected, requireViewer } from "@/lib/dashboard-data";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 
 export default async function SettingsPage() {
   const viewer = await requireViewer();
-  const linked = typeof viewer.telegramUserId === "number";
-  const profile = linked ? await getBotProfile(viewer.telegramUserId!) : {};
+  const linked = isConnected(viewer);
+  const profile = linked ? await getBotProfile(viewer.id) : {};
 
   return (
     <div>

@@ -7,8 +7,14 @@
 bot.example.com {
 	encode zstd gzip
 
-	# Only the two paths the app actually serves. Everything else is a probe.
+	# Only the paths the app actually serves. Everything else is a probe.
 	handle /telegram/webhook {
+		reverse_proxy 127.0.0.1:3000
+	}
+
+	# GET verifies the subscription (Meta's hub.challenge handshake), POST
+	# carries messages. Both live on this one path.
+	handle /whatsapp/webhook {
 		reverse_proxy 127.0.0.1:3000
 	}
 
