@@ -1,3 +1,4 @@
+import { Download } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -64,21 +65,81 @@ export default async function SettingsPage() {
           </p>
         </section>
 
+        <section className="rounded-xl border border-line px-6 py-6">
+          <h2 className="eyebrow">Your data</h2>
+          <p className="mt-3 max-w-prose text-[0.875rem] leading-relaxed text-fg-subtle">
+            Take the whole thing with you, today or the day you leave. Nothing
+            here is a request queue — the file downloads when you press it.
+          </p>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <ExportOption
+              format="md"
+              title="Markdown"
+              body="The document the bot recites, grouped the way it groups it. Readable in any editor."
+            />
+            <ExportOption
+              format="json"
+              title="JSON"
+              body="Every record, including corrections and the facts you asked it to forget."
+            />
+          </div>
+        </section>
+
         <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line px-6 py-5">
           <p className="text-[0.875rem] text-fg-subtle">
-            Done here?{" "}
+            Done here? Manage the{" "}
             <Link
               href="/dashboard/telegram"
               className="text-fg-muted underline underline-offset-4 hover:text-fg"
             >
-              Manage the Telegram link
+              Telegram
             </Link>{" "}
-            or sign out.
+            or{" "}
+            <Link
+              href="/dashboard/whatsapp"
+              className="text-fg-muted underline underline-offset-4 hover:text-fg"
+            >
+              WhatsApp
+            </Link>{" "}
+            link, or sign out.
           </p>
           <SignOutButton />
         </section>
       </div>
     </div>
+  );
+}
+
+/**
+ * A plain anchor, not a button with a fetch behind it: the route already
+ * answers with Content-Disposition, so the browser's own download is both
+ * less code and better behaved — it survives a slow connection and lands in
+ * the downloads folder without this page holding the bytes in memory.
+ */
+function ExportOption({
+  format,
+  title,
+  body,
+}: {
+  format: "md" | "json";
+  title: string;
+  body: string;
+}) {
+  return (
+    <a
+      href={`/api/export?format=${format}`}
+      download
+      className="group rounded-xl border border-line px-5 py-4 transition-colors duration-300 hover:border-fg-faint"
+    >
+      <span className="flex items-center gap-2.5">
+        <Download className="size-3.5 text-fg-faint transition-colors duration-300 group-hover:text-fg-muted" />
+        <span className="text-[0.9375rem] font-medium">{title}</span>
+      </span>
+      <span className="mt-2 block text-[0.8125rem] leading-relaxed text-fg-subtle">
+        {body}
+      </span>
+    </a>
   );
 }
 

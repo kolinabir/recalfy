@@ -26,7 +26,7 @@ export const PLANS: Plan[] = [
     includes: [
       "Every fact stored as its own record, with corrections that replace instead of pile up",
       "Reminders resolved in your timezone and read back before they're set",
-      "Export the whole memory as plain markdown, any day",
+      "Export the whole memory as plain markdown or JSON, any day",
       "Forget anything by asking, in words",
     ],
   },
@@ -45,7 +45,7 @@ export const PLANS: Plan[] = [
     ],
     includes: [
       "Everything in Keep",
-      "Every channel the moment it ships — WhatsApp, Slack, Discord, iMessage",
+      "Telegram and WhatsApp at once, one memory across both — and every new channel the day it ships",
       "Nightly encrypted backups you can download",
       "Recurring reminders and quiet hours",
       "Priority on the faster model, so replies land in under a second",

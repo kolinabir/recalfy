@@ -16,9 +16,9 @@ export function Hero() {
         <div className="mx-auto max-w-3xl text-center">
           <p className="resolve inline-flex items-center gap-2 rounded-full border border-line py-1 pr-3.5 pl-1 text-[0.8125rem] text-fg-muted">
             <span className="rounded-full bg-s2 px-2 py-0.5 font-mono text-[0.625rem] tracking-wide text-accent">
-              SOON
+              LIVE
             </span>
-            launching first on Telegram
+            now on Telegram and WhatsApp
           </p>
 
           <h1

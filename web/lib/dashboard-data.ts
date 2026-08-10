@@ -45,10 +45,14 @@ export function isConnected(viewer: Viewer): boolean {
   return Object.keys(viewer.channels).length > 0;
 }
 
-/** Session gate every dashboard page runs. The proxy only checked the cookie exists. */
-export async function requireViewer(): Promise<Viewer> {
+/**
+ * The signed-in account, or null. Route handlers use this: a redirect to
+ * /login is the right answer for a page and the wrong one for a download,
+ * where the caller wants a status code it can act on.
+ */
+export async function getViewer(): Promise<Viewer | null> {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/login");
+  if (!session) return null;
 
   // Read from the collection rather than the session: the bot writes this
   // when it redeems a link token, and a session minted before that would
@@ -67,6 +71,13 @@ export async function requireViewer(): Promise<Viewer> {
     image: session.user.image,
     channels: (row?.channels as Viewer["channels"]) ?? {},
   };
+}
+
+/** Session gate every dashboard page runs. The proxy only checked the cookie exists. */
+export async function requireViewer(): Promise<Viewer> {
+  const viewer = await getViewer();
+  if (!viewer) redirect("/login");
+  return viewer;
 }
 
 /**
@@ -100,7 +111,11 @@ export async function getMemories(userId: string): Promise<MemoryItem[]> {
   }));
 }
 
-export async function getReminders(userId: string): Promise<ReminderItem[]> {
+/** Pending reminders, soonest first. `limit: 0` means all of them — Mongo's own convention, and what the export wants. */
+export async function getReminders(
+  userId: string,
+  limit = 50,
+): Promise<ReminderItem[]> {
   const rows = await db
     .collection("reminders")
     .find(
@@ -108,7 +123,7 @@ export async function getReminders(userId: string): Promise<ReminderItem[]> {
       { projection: { text: 1, dueAt: 1, repeat: 1 } },
     )
     .sort({ dueAt: 1 })
-    .limit(50)
+    .limit(limit)
     .toArray();
 
   return rows.map((row) => ({
@@ -119,6 +134,76 @@ export async function getReminders(userId: string): Promise<ReminderItem[]> {
       ? { repeat: row.repeat as ReminderItem["repeat"] }
       : {}),
   }));
+}
+
+/**
+ * Why a fact is no longer part of the live memory. Only the archive carries
+ * this — everywhere else in the dashboard, a memory that isn't live isn't
+ * shown at all.
+ */
+export type MemoryStatus = "live" | "superseded" | "forgotten" | "expired";
+
+export interface ArchivedMemory extends MemoryItem {
+  status: MemoryStatus;
+  /** Set on "forgotten" rows: when the person asked for it to go. */
+  forgottenAt?: string;
+  /** Set on facts given a shelf life, whether or not it has passed. */
+  expiresAt?: string;
+}
+
+/**
+ * Every row the account owns, chronological, including the ones the bot no
+ * longer recites. An export that quietly dropped corrections and deletions
+ * would be a summary, not an export — and the point of the JSON format is
+ * that nothing is left behind.
+ */
+export async function getArchive(userId: string): Promise<ArchivedMemory[]> {
+  const rows = await db
+    .collection("memories")
+    .find(
+      { userId },
+      {
+        projection: {
+          sid: 1,
+          text: 1,
+          group: 1,
+          createdAt: 1,
+          supersededBy: 1,
+          deletedAt: 1,
+          staleAfter: 1,
+        },
+      },
+    )
+    .sort({ createdAt: 1 })
+    .toArray();
+
+  const now = Date.now();
+
+  return rows.map((row) => {
+    const staleAfter = row.staleAfter as Date | undefined;
+    const deletedAt = row.deletedAt as Date | undefined;
+
+    // Order matters: an explicit "forget" is the truer answer than an
+    // expiry that happened to pass first.
+    const status: MemoryStatus = deletedAt
+      ? "forgotten"
+      : row.supersededBy
+        ? "superseded"
+        : staleAfter && staleAfter.getTime() <= now
+          ? "expired"
+          : "live";
+
+    return {
+      id: row._id.toString(),
+      sid: String(row.sid),
+      text: String(row.text),
+      group: String(row.group ?? "General"),
+      createdAt: (row.createdAt as Date).toISOString(),
+      status,
+      ...(deletedAt ? { forgottenAt: deletedAt.toISOString() } : {}),
+      ...(staleAfter ? { expiresAt: staleAfter.toISOString() } : {}),
+    };
+  });
 }
 
 /** Memories younger than seven days — the momentum half of the counter line. */

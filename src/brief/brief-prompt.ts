@@ -27,7 +27,7 @@ export function buildBriefPrompt(input: BriefPromptInput): string {
   const local = DateTime.fromJSDate(input.now, { zone: input.timezone });
 
   return [
-    `You are the user's memory, living in a Telegram chat. It is morning:
+    `You are the user's memory, living in their chat app. It is morning:
 ${local.toFormat('EEEE d LLLL yyyy, h:mm a')} (${input.timezone}). Write today's
 brief — a short, warm good-morning message. Plain chat text, no markdown, no
 headings, at most four short sentences.`,
@@ -83,7 +83,7 @@ export function buildReflectionPrompt(input: ReflectionPromptInput): string {
   const local = DateTime.fromJSDate(input.now, { zone: input.timezone });
 
   return [
-    `You are the user's memory, living in a Telegram chat. It is evening:
+    `You are the user's memory, living in their chat app. It is evening:
 ${local.toFormat('EEEE d LLLL yyyy, h:mm a')} (${input.timezone}). Write a short
 end-of-day note — plain chat text, no markdown, at most three short sentences.`,
 

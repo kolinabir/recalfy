@@ -2,8 +2,8 @@ import { Reveal } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
 
 const CHANNELS = [
-  { name: "Telegram", note: "Launching soon", live: false },
-  { name: "WhatsApp", note: "In review", live: false },
+  { name: "Telegram", note: "Live", live: true },
+  { name: "WhatsApp", note: "Live", live: true },
   { name: "Slack", note: "Building", live: false },
   { name: "Discord", note: "Queued", live: false },
   { name: "iMessage", note: "Queued", live: false },

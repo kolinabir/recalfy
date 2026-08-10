@@ -8,6 +8,7 @@ import { ConversationWindow } from './conversation-window';
 import { HistorySearch } from './history-search';
 import { SearchHistoryTool } from './tools/search-history.tool';
 import { CancelReminderTool } from './tools/cancel-reminder.tool';
+import { ExportMemoryTool } from './tools/export-memory.tool';
 import { ForgetTool } from './tools/forget.tool';
 import { ListRemindersTool } from './tools/list-reminders.tool';
 import { RecallSourceTool } from './tools/recall-source.tool';
@@ -31,6 +32,7 @@ const TOOL_CLASSES = [
   SetEveningReflectionTool,
   SearchHistoryTool,
   RecallSourceTool,
+  ExportMemoryTool,
 ];
 
 @Module({

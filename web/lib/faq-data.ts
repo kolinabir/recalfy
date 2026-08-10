@@ -2,7 +2,7 @@
 export const QUESTIONS = [
   {
     q: "Who can read my memories?",
-    a: "You, and the model that answers you. Nothing is used for training, nothing is shared, and there's no team dashboard looking over your shoulder. Ask for an export and you get plain markdown — the same thing the model reads, with no proprietary format between you and your own facts.",
+    a: "You, and the model that answers you. Nothing is used for training, nothing is shared, and there's no team dashboard looking over your shoulder. Export whenever you like and you get plain markdown — the same thing the model reads — or JSON if you want every record, superseded and forgotten ones included. No proprietary format between you and your own facts.",
   },
   {
     q: "What happens if I stop paying?",

@@ -72,6 +72,19 @@ export class MemoryStore {
   }
 
   /**
+   * How many facts the live memory holds — the same set `render` returns,
+   * counted in the database rather than by rendering and re-parsing it.
+   */
+  count(userId: UserId, now: Date = new Date()): Promise<number> {
+    return this.mongo.memories.countDocuments({
+      userId,
+      deletedAt: { $exists: false },
+      supersededBy: { $exists: false },
+      $or: [{ staleAfter: { $exists: false } }, { staleAfter: { $gt: now } }],
+    });
+  }
+
+  /**
    * Where a fact came from: the memory row joined to the message that taught
    * it. This is what lets "when did I tell you that?" get a real answer.
    */
