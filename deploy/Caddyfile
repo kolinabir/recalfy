@@ -4,22 +4,22 @@
 #   sudo cp deploy/Caddyfile /etc/caddy/Caddyfile
 #   sudo systemctl reload caddy
 
-bot.example.com {
+bot.recalfy.com {
 	encode zstd gzip
 
 	# Only the paths the app actually serves. Everything else is a probe.
 	handle /telegram/webhook {
-		reverse_proxy 127.0.0.1:3000
+		reverse_proxy 127.0.0.1:3117
 	}
 
 	# GET verifies the subscription (Meta's hub.challenge handshake), POST
 	# carries messages. Both live on this one path.
 	handle /whatsapp/webhook {
-		reverse_proxy 127.0.0.1:3000
+		reverse_proxy 127.0.0.1:3117
 	}
 
 	handle /health {
-		reverse_proxy 127.0.0.1:3000
+		reverse_proxy 127.0.0.1:3117
 	}
 
 	handle {

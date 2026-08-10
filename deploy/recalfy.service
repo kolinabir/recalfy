@@ -5,9 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=bot
-WorkingDirectory=/srv/recalfy
-EnvironmentFile=/srv/recalfy/.env
+User=knkolin9
+WorkingDirectory=/home/knkolin9/recalfy
+EnvironmentFile=/home/knkolin9/recalfy/.env
 ExecStart=/usr/bin/node dist/main.js
 Restart=always
 RestartSec=5
@@ -17,7 +17,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/srv/recalfy
+ReadWritePaths=/home/knkolin9/recalfy
 
 [Install]
 WantedBy=multi-user.target
