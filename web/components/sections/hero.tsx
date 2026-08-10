@@ -11,6 +11,7 @@ import { ProductFrame } from "@/components/product-frame";
 export function Hero() {
   return (
     <section className="rails blueprint relative isolate pt-32 pb-16 sm:pt-40">
+      <div aria-hidden className="wash" />
       <div className="shell">
         <div className="mx-auto max-w-3xl text-center">
           <p className="resolve inline-flex items-center gap-2 rounded-full border border-line py-1 pr-3.5 pl-1 text-[0.8125rem] text-fg-muted">

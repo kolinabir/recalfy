@@ -35,6 +35,8 @@
   --accent-ink: oklch(0.196 0.044 62);
 
   --grid: oklch(0.972 0.002 265 / 0.045);
+  /* Ambient wash strength behind hero content — 0 keeps dark mode untouched. */
+  --wash: 0%;
 
   --background: var(--bg);
   --foreground: var(--fg);
@@ -68,13 +70,14 @@
 }
 
 .light {
-  --bg: oklch(0.992 0.001 265);
+  /* Warm near-white, not clinical white — the paper trick Cal.com uses. */
+  --bg: oklch(0.988 0.003 84);
   --s1: oklch(1 0 0);
-  --s2: oklch(0.972 0.002 265);
-  --s3: oklch(0.948 0.003 265);
+  --s2: oklch(0.97 0.004 84);
+  --s3: oklch(0.946 0.005 84);
 
-  --line: oklch(0.906 0.003 265);
-  --line-strong: oklch(0.848 0.004 265);
+  --line: oklch(0.902 0.006 84);
+  --line-strong: oklch(0.844 0.008 84);
 
   --fg: oklch(0.178 0.006 265);
   --fg-muted: oklch(0.402 0.008 265);
@@ -85,7 +88,8 @@
   --accent-hover: oklch(0.566 0.158 50);
   --accent-ink: oklch(0.995 0.002 90);
 
-  --grid: oklch(0.178 0.006 265 / 0.05);
+  --grid: oklch(0.32 0.03 74 / 0.075);
+  --wash: 9%;
 
   --primary: oklch(0.178 0.006 265);
   --primary-foreground: oklch(0.995 0 0);
@@ -265,6 +269,31 @@
     background-position: center top;
     -webkit-mask-image: radial-gradient(70% 60% at 50% 0%, #000, transparent 78%);
     mask-image: radial-gradient(70% 60% at 50% 0%, #000, transparent 78%);
+  }
+
+  /*
+    Ambient wash — an accent-tinted radial sitting under the grid, Attio-style.
+    Strength comes from --wash: 0% in dark (the ladder carries it), ~9% in light,
+    where a bare near-white canvas otherwise reads flat. Still a background
+    treatment, not elevation: the depth rule stands for components. A real
+    element, not ::after — .rails already owns that pseudo on the hero section.
+  */
+  .wash {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        48% 38% at 50% 0%,
+        color-mix(in oklab, var(--accent) var(--wash), transparent),
+        transparent 100%
+      ),
+      radial-gradient(
+        56% 44% at 50% 104%,
+        color-mix(in oklab, var(--accent) calc(var(--wash) * 0.66), transparent),
+        transparent 100%
+      );
   }
 
   /* Container rails — the page's only frame. */
