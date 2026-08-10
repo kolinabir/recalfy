@@ -4,39 +4,12 @@ import { useRouter } from "next/navigation";
 import { Dialog } from "radix-ui";
 import { useCallback, useEffect, useState } from "react";
 
+import { CHANNEL_COPY, type Channel, type ChannelCopy } from "@/lib/channels";
+
 type Handshake = { url: string; qr: string; expiresAt: string };
 type View = "choose" | "here" | "scan" | "manual";
 
 const POLL_MS = 2500;
-
-export type Channel = "telegram" | "whatsapp";
-
-/**
- * Everything that differs between the two chats. The flow is identical —
- * three routes to one token — but the last step genuinely is not: Telegram
- * carries the payload in a deep link the user only has to accept, while
- * WhatsApp can merely pre-fill the box and needs them to press send.
- */
-export interface ChannelCopy {
-  /** Product name, as it appears in every label. */
-  name: string;
-  /** The bot's public address: "@recalfy_bot", or a phone number. */
-  address: string;
-  /** What the person does in the chat to finish. Sentence case, no full stop. */
-  action: string;
-  /** What they send to get a pairing code manually. */
-  codeCommand: string;
-}
-
-export const CHANNEL_COPY: Record<Channel, Omit<ChannelCopy, "address">> = {
-  telegram: { name: "Telegram", action: "press Start", codeCommand: "/code" },
-  whatsapp: {
-    name: "WhatsApp",
-    // The link only fills the message box; nothing is sent until they tap.
-    action: "press send",
-    codeCommand: "code",
-  },
-};
 
 /**
  * Three routes to the same link, because the browser and the chat account are
@@ -51,7 +24,7 @@ export function ConnectChat({
   channel: Channel;
   address: string;
 }) {
-  const copy = { ...CHANNEL_COPY[channel], address };
+  const copy = CHANNEL_COPY[channel];
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View>("choose");
@@ -162,7 +135,7 @@ export function ConnectChat({
             {view === "scan" && handshake ? (
               <ScanCode qr={handshake.qr} expiresAt={handshake.expiresAt} copy={copy} />
             ) : null}
-            {view === "manual" ? <Manual channel={channel} copy={copy} /> : null}
+            {view === "manual" ? <Manual channel={channel} copy={copy} address={address} /> : null}
           </div>
 
           {error ? (
@@ -342,7 +315,15 @@ function ScanCode({
  * a code heading towards an authenticated form is one an attacker must
  * persuade someone to reveal, rather than one they can persuade them to paste.
  */
-function Manual({ channel, copy }: { channel: Channel; copy: ChannelCopy }) {
+function Manual({
+  channel,
+  copy,
+  address,
+}: {
+  channel: Channel;
+  copy: ChannelCopy;
+  address: string;
+}) {
   const router = useRouter();
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
@@ -394,7 +375,7 @@ function Manual({ channel, copy }: { channel: Channel; copy: ChannelCopy }) {
               type="button"
               onClick={async () => {
                 try {
-                  await navigator.clipboard.writeText(copy.address);
+                  await navigator.clipboard.writeText(address);
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 } catch {
@@ -403,7 +384,7 @@ function Manual({ channel, copy }: { channel: Channel; copy: ChannelCopy }) {
               }}
               className="rounded border border-line bg-s2 px-1.5 py-0.5 font-mono text-[0.8125rem] text-fg transition-colors hover:border-fg-faint"
             >
-              {copy.address}
+              {address}
             </button>
             <span
               className={`font-mono text-[0.6875rem] ${copied ? "text-accent" : "text-fg-faint"}`}

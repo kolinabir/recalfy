@@ -1,4 +1,5 @@
-import { CHANNEL_COPY, ConnectChat } from "@/components/connect-chat";
+import { ConnectChat } from "@/components/connect-chat";
+import { CHANNEL_COPY } from "@/lib/channels";
 import { type Channel, channelConfig } from "@/lib/channel-config";
 import { getMemories, requireViewer } from "@/lib/dashboard-data";
 import { relativeDate } from "@/lib/format";
@@ -63,7 +64,7 @@ export async function ChannelPage({ channel }: { channel: Channel }) {
               <p className="mt-2 max-w-prose text-[0.875rem] leading-relaxed text-fg-subtle">
                 Send{" "}
                 <code className="rounded border border-line bg-s2 px-1.5 py-0.5 font-mono text-[0.8125rem] text-fg">
-                  {channel === "telegram" ? "/unlink" : "unlink"}
+                  {copy.unlinkCommand}
                 </code>{" "}
                 in the chat. Detaching happens where the account can prove
                 itself — the same reason connecting does.

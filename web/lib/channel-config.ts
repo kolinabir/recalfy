@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Channel } from "@/components/connect-chat";
+import type { Channel } from "@/lib/channels";
 
 export type { Channel };
 
