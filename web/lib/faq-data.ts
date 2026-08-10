@@ -1,0 +1,27 @@
+/** FAQ copy — shared by the FAQ section (UI) and the home page (FAQPage schema). */
+export const QUESTIONS = [
+  {
+    q: "Who can read my memories?",
+    a: "You, and the model that answers you. Nothing is used for training, nothing is shared, and there's no team dashboard looking over your shoulder. Ask for an export and you get plain markdown — the same thing the model reads, with no proprietary format between you and your own facts.",
+  },
+  {
+    q: "What happens if I stop paying?",
+    a: "Your memory stays put for 90 days and you can export all of it at any point in that window. Nothing is deleted the moment a card fails, and nothing is held hostage to make you resubscribe.",
+  },
+  {
+    q: "Do I need to install anything?",
+    a: "No. You add it inside the chat app you already have open, and that's the whole setup — no client, no notification settings to negotiate. Reminders arrive as messages, because that's what they are.",
+  },
+  {
+    q: "How is this different from writing myself notes?",
+    a: "A note is something you have to remember to go and read. Recalfy reads itself, reconciles things you said months apart, and speaks first when a time you mentioned once actually comes around.",
+  },
+  {
+    q: "Can it get things wrong?",
+    a: "It can. When it schedules something it reads the resolved time back before committing, so a misheard “at 5” is caught immediately. And because you can read your whole memory, a wrong answer is something you can see the cause of rather than guess at.",
+  },
+  {
+    q: "Is there a free trial?",
+    a: "Fourteen days on either plan, no card up front. If you'd rather not have an account at all, the codebase is yours to run — self-hosting is a real option here, not a footnote.",
+  },
+];

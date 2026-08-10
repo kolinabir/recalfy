@@ -357,6 +357,40 @@
 }
 
 @layer utilities {
+  /*
+    LoadingMark: the ring spins as one piece — knot and gap travel together,
+    so it reads as the knot chasing its own tail, not a generic spinner. The
+    knot breathes on the same period so the two motions feel like one gesture.
+  */
+  .mark-orbit {
+    transform-origin: 12px 12px;
+    animation: mark-orbit 1.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  }
+
+  @keyframes mark-orbit {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .mark-breathe {
+    transform-origin: 19.03px 8.94px;
+    animation: mark-breathe 1.4s ease-in-out infinite;
+  }
+
+  @keyframes mark-breathe {
+    50% {
+      transform: scale(0.82);
+    }
+  }
+
+  /* Splash fades in after a delay — fast loads never flash it. */
+  @keyframes splash-in {
+    to {
+      opacity: 1;
+    }
+  }
+
   .resolve {
     animation: resolve 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   }

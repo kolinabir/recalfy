@@ -1,9 +1,32 @@
+import type { Metadata } from "next";
+import { Suspense } from "react";
+
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { DashHeader } from "@/components/dashboard/dash-header";
+import { Splash } from "@/components/splash";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { requireViewer } from "@/lib/dashboard-data";
 
-export default async function DashboardLayout({
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
+/**
+ * The layout itself is sync so the splash can stream before the auth check
+ * resolves — landing here straight from Google, the first paint is the mark
+ * mid-spin, not a blank page waiting on requireViewer.
+ */
+export default function DashboardLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <Suspense fallback={<Splash />}>
+      <DashboardShell>{children}</DashboardShell>
+    </Suspense>
+  );
+}
+
+async function DashboardShell({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const viewer = await requireViewer();

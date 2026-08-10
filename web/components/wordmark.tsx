@@ -35,6 +35,35 @@ export function Mark({ className }: { className?: string }) {
   );
 }
 
+/**
+ * The mark, loading: the whole ring rotates so the knot chases its own tail —
+ * the string being tied. The knot breathes while it travels. Same geometry as
+ * Mark, so the two can swap without layout shift.
+ */
+export function LoadingMark({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      fill="none"
+      className={cn("shrink-0 text-fg", className)}
+    >
+      <g className="mark-orbit">
+        <circle
+          cx="12"
+          cy="12"
+          r="8"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeDasharray="41 9"
+        />
+        <circle cx="19.03" cy="8.94" r="2.3" className="fill-accent mark-breathe" />
+      </g>
+    </svg>
+  );
+}
+
 export function Wordmark({ className }: { className?: string }) {
   return (
     <Link

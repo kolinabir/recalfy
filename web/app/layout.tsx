@@ -32,6 +32,10 @@ export const metadata: Metadata = {
   },
   description:
     "Tell it once. Recalfy keeps every fact you give it, answers from memory, and speaks up at the right time — inside the chat app you already use.",
+  applicationName: "Recalfy",
+  category: "productivity",
+  // Resolves per page against metadataBase, so every route gets a canonical.
+  alternates: { canonical: "./" },
   openGraph: {
     title: "Recalfy — the memory that lives in your chats",
     description:
@@ -39,6 +43,12 @@ export const metadata: Metadata = {
     url: "https://recalfy.com",
     siteName: "Recalfy",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Recalfy — the memory that lives in your chats",
+    description:
+      "Tell it once. Recalfy keeps every fact you give it, answers from memory, and speaks up at the right time.",
   },
 };
 

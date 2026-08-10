@@ -7,6 +7,7 @@ import { PLANS, priceFor } from "@/lib/pricing";
 export const metadata: Metadata = {
   title: "Sign in",
   description: "Sign in to Recalfy with Google.",
+  robots: { index: false, follow: true },
 };
 
 type Search = { plan?: string; cycle?: string };
