@@ -12,7 +12,7 @@ export default function PrivacyPage() {
     <LegalPage
       eyebrow="Legal"
       title="Privacy Policy"
-      updated="9 August 2026"
+      updated="10 August 2026"
       intro="Recalfy's whole job is remembering what you tell it, so it necessarily stores personal information. This page explains what's collected, what it's used for, and how you stay in control of it."
       sections={[
         {
@@ -24,9 +24,12 @@ export default function PrivacyPage() {
                 from Google when you sign in.
               </li>
               <li>
-                <strong>Chat identity</strong> — your Telegram user ID and,
-                where relevant, the equivalent identifier on any other chat
-                app Recalfy supports.
+                <strong>Chat identity</strong> — your Telegram user ID, your
+                WhatsApp phone number, and the equivalent identifier on any
+                other chat app Recalfy supports. These are stored so the
+                assistant can tell who is writing to it and reply in the same
+                chat; connecting a second app links it to the same account, so
+                one memory is reachable from both.
               </li>
               <li>
                 <strong>The facts you tell it</strong> — the dates, names,
@@ -76,8 +79,11 @@ export default function PrivacyPage() {
                 <strong>Google</strong>, for sign-in authentication
               </li>
               <li>
-                <strong>Telegram</strong> (and future chat platforms), as
-                the messaging layer your conversation travels through
+                <strong>Telegram</strong> and <strong>WhatsApp</strong> (Meta
+                Platforms), as the messaging layer your conversation travels
+                through. Messages you send and receive pass through whichever
+                app you are using, and their own privacy policies govern that
+                leg of the journey
               </li>
               <li>
                 <strong>Our AI model provider</strong>, to generate replies,

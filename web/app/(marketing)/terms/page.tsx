@@ -12,7 +12,7 @@ export default function TermsPage() {
     <LegalPage
       eyebrow="Legal"
       title="Terms of Service"
-      updated="9 August 2026"
+      updated="10 August 2026"
       intro="Recalfy is a personal memory assistant that runs inside chat apps you already use. These terms cover how the service works, what you can expect from it, and what we expect from you."
       sections={[
         {
@@ -21,9 +21,10 @@ export default function TermsPage() {
             <p>
               Recalfy stores facts, reminders, and other information you send
               it, and uses that memory to answer questions and message you at
-              the right time. It is available on Telegram, with more chat
-              apps launching over time. Recalfy is operated by an individual
-              and is not a registered company.
+              the right time. It is available on Telegram and WhatsApp, with
+              more chat apps launching over time; connecting more than one
+              links them to a single account and a single memory. Recalfy is
+              operated by an individual and is not a registered company.
             </p>
           ),
         },
