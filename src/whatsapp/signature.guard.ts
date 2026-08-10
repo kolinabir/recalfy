@@ -35,9 +35,16 @@ export class SignatureGuard implements CanActivate {
       return false;
     }
 
-    const expected = createHmac('sha256', this.env.whatsappAppSecret)
-      .update(request.rawBody)
-      .digest('hex');
+    const secret = this.env.whatsappAppSecret;
+    if (!secret) {
+      // Also fail closed, and deliberately not by throwing: an exception here
+      // would answer 5xx, which Meta treats as our fault and retries for
+      // hours. A 403 says "not accepting this", which is the truth.
+      this.logger.error('WHATSAPP_APP_SECRET is not set — rejecting every webhook call');
+      return false;
+    }
+
+    const expected = createHmac('sha256', secret).update(request.rawBody).digest('hex');
 
     if (!matches(presented.slice('sha256='.length), expected)) {
       this.logger.warn('Rejected webhook call with a bad signature');

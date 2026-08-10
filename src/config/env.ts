@@ -43,17 +43,25 @@ export class Env {
     return this.required('WHATSAPP_ACCESS_TOKEN');
   }
 
-  /** Echoed back during Meta's GET handshake. Any long random string. */
-  get whatsappVerifyToken(): string {
-    return this.required('WHATSAPP_VERIFY_TOKEN');
+  /**
+   * Echoed back during Meta's GET handshake. Any long random string.
+   *
+   * Optional rather than required, like the app secret below and for the same
+   * reason: the webhook is reachable before WhatsApp is configured, and its
+   * callers must be able to turn "not set" into a refusal rather than a crash.
+   */
+  get whatsappVerifyToken(): string | undefined {
+    return this.config.get<string>('WHATSAPP_VERIFY_TOKEN');
   }
 
   /**
    * The app secret, used to check the X-Hub-Signature-256 HMAC on every
-   * webhook call. Without it any host that learns the URL can post messages.
+   * webhook call. Without it any host that learns the URL can post messages,
+   * so an absent secret has to mean "reject everything" — never "skip the
+   * check", and never a 500, which Meta would retry.
    */
-  get whatsappAppSecret(): string {
-    return this.required('WHATSAPP_APP_SECRET');
+  get whatsappAppSecret(): string | undefined {
+    return this.config.get<string>('WHATSAPP_APP_SECRET');
   }
 
   /**

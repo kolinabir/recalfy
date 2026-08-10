@@ -72,8 +72,14 @@ export class WhatsAppWebhookController {
   }
 
   private tokenMatches(presented: string): boolean {
+    const expected = this.env.whatsappVerifyToken;
+    if (!expected) {
+      this.logger.error('WHATSAPP_VERIFY_TOKEN is not set — refusing to verify');
+      return false;
+    }
+
     const left = Buffer.from(presented);
-    const right = Buffer.from(this.env.whatsappVerifyToken);
+    const right = Buffer.from(expected);
     return left.length === right.length && timingSafeEqual(left, right);
   }
 }
