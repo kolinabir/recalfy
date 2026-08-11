@@ -11,9 +11,17 @@ import { useEffect, useRef, useState } from "react";
  * prerendered snapshots), the page would ship blank. So the entry state also
  * resolves on a timer, whichever comes first.
  */
-export function useEnter(fallbackMs = 700) {
+export function useEnter(fallbackMs = 700, amount?: number | "some" | "all") {
   const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: true, margin: "0px 0px -80px 0px" });
+  // `amount` waits until that fraction of the element is on screen, for content
+  // that should not start playing before it can actually be watched. Without
+  // it, the usual nudge margin applies: fire just before the element lands.
+  const inView = useInView(
+    ref,
+    amount === undefined
+      ? { once: true, margin: "0px 0px -80px 0px" }
+      : { once: true, amount },
+  );
   const [elapsed, setElapsed] = useState(false);
 
   useEffect(() => {

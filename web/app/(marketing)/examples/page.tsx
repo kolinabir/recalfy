@@ -11,7 +11,7 @@ import { SITE } from "@/lib/sections";
 export const metadata: Metadata = {
   // Built from the data so the number can never drift from the page.
   title: `${EXAMPLE_COUNT} things you can text Recalfy`,
-  description: `${EXAMPLE_COUNT} worked examples: what you text Recalfy in passing, and exactly what comes back later. Dates, people, codes, spending, lists, habits, reminders and recall.`,
+  description: `${EXAMPLE_COUNT} worked examples — and anything else you'd say out loud. What you text Recalfy in passing, and what comes back months later.`,
   alternates: { canonical: "/examples" },
   openGraph: {
     title: `${EXAMPLE_COUNT} things you can text Recalfy`,
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
 };
 
-const IDS = EXAMPLE_GROUPS.map((group) => group.id);
+const TABS = EXAMPLE_GROUPS.map(({ id, title }) => ({ id, name: title }));
 
 /*
   The catalogue described as a list of named parts, each with its own anchor.
@@ -76,25 +76,28 @@ export default function ExamplesPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
       />
-      <SectionHash ids={IDS} />
+      <SectionHash sections={TABS} suffix="Examples · Recalfy" />
 
       <section className="relative isolate overflow-hidden pt-36 pb-12 sm:pt-44">
-        <div className="shell mx-auto max-w-2xl text-center">
+        <div className="shell mx-auto max-w-3xl text-center">
           <p className="resolve eyebrow">Examples</p>
           <h1
-            className="resolve display mt-5 text-[clamp(2.5rem,5.4vw,3.75rem)]"
+            className="resolve display mt-5 text-[clamp(2.25rem,4.6vw,3.25rem)] text-balance"
             style={{ animationDelay: "80ms" }}
           >
-            {EXAMPLE_COUNT} things you can{" "}
-            <span className="block text-fg-muted">say to it today.</span>
+            {EXAMPLE_COUNT} things you can say to it.{" "}
+            <span className="block text-fg-muted">
+              And anything else that comes to mind.
+            </span>
           </h1>
           <p
-            className="resolve mx-auto mt-6 max-w-lg leading-relaxed text-fg-muted"
+            className="resolve mx-auto mt-6 max-w-xl leading-relaxed text-fg-muted"
             style={{ animationDelay: "160ms" }}
           >
-            None of these need a command, a format, or a category. On the left is
-            what you&apos;d type in passing. On the right is what comes back —
-            sometimes seconds later, sometimes next winter.
+            On the left is what you&apos;d type in passing. On the right is what
+            comes back — sometimes seconds later, sometimes next winter. These{" "}
+            {EXAMPLE_COUNT} aren&apos;t supported phrasings, because there is no
+            such thing here. They&apos;re just the ones we wrote down.
           </p>
         </div>
       </section>
@@ -171,9 +174,9 @@ export default function ExamplesPage() {
         <div className="shell">
           <Reveal className="rounded-xl border border-line border-dashed p-8 text-center">
             <p className="mx-auto max-w-xl leading-relaxed text-fg-muted">
-              None of this is a fixed list. There are no supported phrasings and
-              no commands underneath — you say the thing however you&apos;d say
-              it, and it works out what you meant.
+              Your life doesn&apos;t look like this list — nobody&apos;s does.
+              It works from whatever you actually say, in the words you&apos;d
+              have used anyway, about the things only you are carrying.
             </p>
             <Link
               href="/pricing"

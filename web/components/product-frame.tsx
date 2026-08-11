@@ -512,7 +512,14 @@ function MemoryRow({
 }
 
 export function ProductFrame({ className }: { className?: string }) {
-  const { ref, entered } = useEnter(400);
+  /*
+    The conversation only begins once most of the frame is actually on screen —
+    it's a ~90 second performance, and starting it while the hero is still
+    filling the viewport means arriving mid-thread. The fallback is long
+    because it is purely a safety net for a missing IntersectionObserver, not a
+    timer anyone should reach.
+  */
+  const { ref, entered } = useEnter(10_000, 0.55);
   const reduced = useReducedMotion();
   const [cursor, setCursor] = useState(0);
   const scroller = useRef<HTMLDivElement>(null);
@@ -688,9 +695,7 @@ export function ProductFrame({ className }: { className?: string }) {
 
       {/* status strip */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-line px-4 py-2.5 font-mono text-[0.625rem] text-fg-faint">
-        <span>no embeddings</span>
-        <span>no vector index</span>
-        <span>whole memory in context</span>
+        
         <span className="ml-auto flex gap-5 tabular-nums">
           {listItems > 0 && (
             <span>

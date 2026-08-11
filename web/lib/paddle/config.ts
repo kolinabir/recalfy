@@ -20,6 +20,14 @@ export interface Tier {
   featured?: boolean;
   cta: string;
   priceId: Record<Cycle, string>;
+  /**
+   * Launch pricing. `now` is the USD amount Paddle actually charges; `list` is
+   * what the plan costs once the early-bird period ends. Only the ratio between
+   * them is used — the struck-through figure is derived by scaling whatever
+   * Paddle quotes the visitor, so a rupee price is never crossed out with a
+   * dollar one. Retire the early bird by deleting this field.
+   */
+  earlyBird?: { now: Record<Cycle, number>; list: Record<Cycle, number> };
 }
 
 /**
@@ -83,6 +91,10 @@ export function tiers(): Tier[] {
         month: priceId("PADDLE_PRICE_KEEP_MONTH"),
         year: priceId("PADDLE_PRICE_KEEP_YEAR"),
       },
+      earlyBird: {
+        now: { month: 6, year: 50 },
+        list: { month: 8, year: 67 },
+      },
     },
     {
       id: "archive",
@@ -106,6 +118,10 @@ export function tiers(): Tier[] {
       priceId: {
         month: priceId("PADDLE_PRICE_ARCHIVE_MONTH"),
         year: priceId("PADDLE_PRICE_ARCHIVE_YEAR"),
+      },
+      earlyBird: {
+        now: { month: 14, year: 120 },
+        list: { month: 18, year: 154 },
       },
     },
   ];

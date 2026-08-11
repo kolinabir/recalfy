@@ -425,6 +425,19 @@
     }
   }
 
+  /*
+    The wordmark's hover tell: the ring turns once, then stops. Scoped to the
+    hovered group so the mark in a footer or a button behaves the same without
+    any extra markup.
+  */
+  .mark-tie {
+    transform-origin: 12px 12px;
+  }
+
+  .group:hover .mark-tie {
+    animation: mark-orbit 1.1s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  }
+
   .mark-breathe {
     transform-origin: 19.03px 8.94px;
     animation: mark-breathe 1.4s ease-in-out infinite;

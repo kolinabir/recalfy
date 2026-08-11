@@ -83,3 +83,18 @@ export const SECTIONS: Section[] = [
 ];
 
 export const SECTION_IDS = SECTIONS.map((section) => section.id);
+
+/** What the tab reads while you're in a given section. Short, not the schema
+ * name — a tab strip has room for two words. */
+export const SECTION_TABS = SECTIONS.map(({ id, name }) => ({
+  id,
+  name:
+    {
+      examples: "Examples",
+      tracking: "Money and habits",
+      approach: "Why no search",
+      why: "Why it exists",
+      channels: "Channels",
+      start: "Start free",
+    }[id] ?? name,
+}));

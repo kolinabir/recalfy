@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Reveal } from "@/components/motion/reveal";
+import { PlanComparison } from "@/components/plan-comparison";
 import { PlanTable } from "@/components/plan-table";
 import { Closing } from "@/components/sections/closing";
 import { Faq } from "@/components/sections/faq";
@@ -69,6 +70,8 @@ export default async function PricingPage() {
           />
         </div>
       </section>
+
+      <PlanComparison />
 
       <section className="pb-24 lg:pb-32">
         <div className="shell grid gap-4 md:grid-cols-3">

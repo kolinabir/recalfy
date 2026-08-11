@@ -6,7 +6,7 @@ import { Closing } from "@/components/sections/closing";
 import { Faq } from "@/components/sections/faq";
 import { QUESTIONS } from "@/lib/faq-data";
 import { PLANS } from "@/lib/pricing";
-import { SECTIONS, SECTION_IDS, SITE } from "@/lib/sections";
+import { SECTIONS, SECTION_TABS, SITE } from "@/lib/sections";
 import { getViewer } from "@/lib/dashboard-data";
 import { tiers } from "@/lib/paddle/config";
 import { visitorCountry } from "@/lib/paddle/country";
@@ -93,7 +93,7 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
       />
-      <SectionHash ids={SECTION_IDS} />
+      <SectionHash sections={SECTION_TABS} suffix="Recalfy" />
       <Hero />
       <How />
       <Moments />

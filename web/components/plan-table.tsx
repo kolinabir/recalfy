@@ -11,6 +11,22 @@ import { cn } from "@/lib/utils";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 /**
+ * Minor units to a formatted price in the visitor's own currency.
+ *
+ * The exponent comes from Intl rather than a hardcoded 100 — JPY, KRW and CLP
+ * have no minor unit, so dividing those by 100 would quote a price a hundred
+ * times too small.
+ */
+function money(minor: number, currency: string) {
+  const format = new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency,
+  });
+  const digits = format.resolvedOptions().maximumFractionDigits ?? 2;
+  return format.format(minor / 10 ** digits);
+}
+
+/**
  * Read at module scope because Next inlines these at build time — they cannot
  * change between renders, so this is a constant, not state.
  *
@@ -37,6 +53,9 @@ export function PlanTable({ tiers, country, viewer }: Props) {
   const [paddle, setPaddle] = useState<Paddle | null>(null);
   /** priceId -> the string Paddle says to show. Never computed here. */
   const [totals, setTotals] = useState<Record<string, string>>({});
+  /** priceId -> the same amount in minor units, for deriving the list price. */
+  const [amounts, setAmounts] = useState<Record<string, number>>({});
+  const [currency, setCurrency] = useState<string>();
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -76,6 +95,17 @@ export function PlanTable({ tiers, country, viewer }: Props) {
             ]),
           ),
         );
+        // The same figure unformatted, so the struck-through list price can be
+        // derived in the visitor's currency instead of assuming dollars.
+        setAmounts(
+          Object.fromEntries(
+            preview.data.details.lineItems.map((line) => [
+              line.price.id,
+              Number(line.totals.total),
+            ]),
+          ),
+        );
+        setCurrency(preview.data.currencyCode);
       })
       .catch((error: unknown) => {
         console.error("[paddle] price preview failed", error);
@@ -154,6 +184,19 @@ export function PlanTable({ tiers, country, viewer }: Props) {
           const priceId = tier.priceId[cycle];
           const total = totals[priceId];
 
+          // The pre-launch price, in whatever currency Paddle just quoted.
+          // Scaling Paddle's own figure keeps the comparison honest across
+          // currencies and tax regimes — both numbers are the same kind.
+          const bird = tier.earlyBird;
+          const amount = amounts[priceId];
+          const listPrice =
+            bird && amount && currency
+              ? money(
+                  Math.round((amount * bird.list[cycle]) / bird.now[cycle]),
+                  currency,
+                )
+              : undefined;
+
           return (
             <section
               key={tier.id}
@@ -202,10 +245,25 @@ export function PlanTable({ tiers, country, viewer }: Props) {
                     </motion.span>
                   </AnimatePresence>
                 </span>
+                {listPrice ? (
+                  <span
+                    className="text-[1.25rem] text-fg-faint line-through decoration-fg-faint/50"
+                    aria-label={`Regular price ${listPrice}`}
+                  >
+                    {listPrice}
+                  </span>
+                ) : null}
                 <span className="font-mono text-[0.75rem] text-fg-subtle">
                   / {cycle === "month" ? "month" : "year"}
                 </span>
               </div>
+
+              {listPrice ? (
+                <p className="mt-3 inline-flex items-center gap-2 self-start rounded-full bg-accent/12 px-3 py-1 font-mono text-[0.6875rem] tracking-wide text-accent">
+                  <span aria-hidden className="size-1.5 rounded-full bg-accent" />
+                  Early bird — {listPrice} after launch
+                </p>
+              ) : null}
 
               <dl className="mt-8 grid grid-cols-3 gap-2">
                 {tier.limits.map((limit) => (
