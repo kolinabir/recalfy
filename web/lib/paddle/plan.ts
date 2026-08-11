@@ -62,13 +62,20 @@ export async function planForUser(userId: string): Promise<Plan> {
   let cycle: Cycle | null = null;
 
   for (const tier of tiers()) {
-    for (const key of ["month", "year"] as const) {
-      if (tier.priceId[key] === subscription.priceId) {
-        id = tier.id;
-        name = tier.name;
-        cycle = key;
-      }
-    }
+    // Recognition uses the wider list, so a subscription bought against a
+    // price this deploy does not sell — a retired one, or the other Paddle
+    // environment's — is still named rather than falling back to
+    // "Subscription".
+    if (!tier.knownPriceIds.includes(subscription.priceId)) continue;
+
+    id = tier.id;
+    name = tier.name;
+    cycle =
+      tier.priceId.month === subscription.priceId
+        ? "month"
+        : tier.priceId.year === subscription.priceId
+          ? "year"
+          : null;
   }
 
   return {

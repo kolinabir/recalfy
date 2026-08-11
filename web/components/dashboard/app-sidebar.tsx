@@ -3,6 +3,7 @@
 import {
   AlarmClock,
   CreditCard,
+  Gauge,
   Home,
   Library,
   LogOut,
@@ -44,6 +45,7 @@ const LIBRARY = [
   { href: "/dashboard", label: "Overview", icon: Home },
   { href: "/dashboard/memories", label: "Memories", icon: Library },
   { href: "/dashboard/reminders", label: "Reminders", icon: AlarmClock },
+  { href: "/dashboard/usage", label: "Usage", icon: Gauge },
 ];
 
 const ACCOUNT = [
@@ -194,7 +196,9 @@ function UserMenu({
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
+        {/* Non-modal: a modal menu locks body scroll, which hides the
+            scrollbar and shifts the layout on every open. */}
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton size="lg" tooltip={email}>
               {image ? (

@@ -35,6 +35,11 @@ const NAV = [
  * Deliberately the same shape as the sidebar's UserMenu — identity on top,
  * one destructive action under a rule — so the two never teach different
  * habits for the same gesture.
+ *
+ * `modal={false}` is load-bearing. A modal Radix menu locks body scroll while
+ * open, which removes the scrollbar and shifts this fixed header sideways the
+ * moment you click it — and an interrupted close can leave the page
+ * unscrollable altogether. Nothing here needs a focus trap; it is two items.
  */
 function AccountChip({
   name,
@@ -57,7 +62,7 @@ function AccountChip({
     .join("");
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"

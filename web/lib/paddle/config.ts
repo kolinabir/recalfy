@@ -21,6 +21,12 @@ export interface Tier {
   cta: string;
   priceId: Record<Cycle, string>;
   /**
+   * Every price id that means this tier, including ones we no longer sell and
+   * ones belonging to the other Paddle environment. Used for recognition only
+   * — `priceId` above is what a checkout receives.
+   */
+  knownPriceIds: string[];
+  /**
    * Launch pricing. `now` is the USD amount Paddle actually charges; `list` is
    * what the plan costs once the early-bird period ends. Only the ratio between
    * them is used — the struck-through figure is derived by scaling whatever
@@ -61,7 +67,32 @@ export function paddleClientToken(): string {
 function priceId(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is not set.`);
-  return value;
+  // The first is the one we sell. Any others are recognised but never offered
+  // — see `knownPriceIds`.
+  return value.split(",")[0].trim();
+}
+
+/**
+ * Every price id that should be *recognised* as this tier, which is not the
+ * same set as the one we sell.
+ *
+ * Each `PADDLE_PRICE_*` variable may list several ids, comma-separated. Only
+ * the first is ever put in a checkout; the rest exist so an environment can
+ * still name a tier it did not sell. That happens whenever the Paddle
+ * environment and the database disagree — a local sandbox build reading the
+ * production database being the ordinary case — and without it a real,
+ * paid-for subscription renders as the anonymous "Subscription" fallback.
+ *
+ * Retiring a price is the other use: keep it listed and existing customers
+ * keep their plan's name after the catalogue moves on.
+ */
+function priceIds(name: string): string[] {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is not set.`);
+  return value
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
 }
 
 /**
@@ -91,6 +122,10 @@ export function tiers(): Tier[] {
         month: priceId("PADDLE_PRICE_KEEP_MONTH"),
         year: priceId("PADDLE_PRICE_KEEP_YEAR"),
       },
+      knownPriceIds: [
+        ...priceIds("PADDLE_PRICE_KEEP_MONTH"),
+        ...priceIds("PADDLE_PRICE_KEEP_YEAR"),
+      ],
       earlyBird: {
         now: { month: 6, year: 50 },
         list: { month: 8, year: 67 },
@@ -117,6 +152,10 @@ export function tiers(): Tier[] {
         month: priceId("PADDLE_PRICE_ARCHIVE_MONTH"),
         year: priceId("PADDLE_PRICE_ARCHIVE_YEAR"),
       },
+      knownPriceIds: [
+        ...priceIds("PADDLE_PRICE_ARCHIVE_MONTH"),
+        ...priceIds("PADDLE_PRICE_ARCHIVE_YEAR"),
+      ],
       earlyBird: {
         now: { month: 14, year: 120 },
         list: { month: 18, year: 154 },
