@@ -47,9 +47,11 @@ export function ConnectChat({
         setError(
           body.error === "already-linked"
             ? "This account is already connected."
-            : body.error === "channel-not-configured"
-              ? "That chat isn't configured on the server."
-              : "Couldn't start the handshake. Try again in a moment.",
+            : body.error === "payment-required"
+              ? "Connecting a chat needs an active plan. Pick one on the pricing page."
+              : body.error === "channel-not-configured"
+                ? "That chat isn't configured on the server."
+                : "Couldn't start the handshake. Try again in a moment.",
         );
         return null;
       }
@@ -130,12 +132,22 @@ export function ConnectChat({
               <Chooser onPick={choose} pending={pending} copy={copy} />
             ) : null}
             {view === "here" && handshake ? (
-              <OpenHere url={handshake.url} expiresAt={handshake.expiresAt} copy={copy} />
+              <OpenHere
+                url={handshake.url}
+                expiresAt={handshake.expiresAt}
+                copy={copy}
+              />
             ) : null}
             {view === "scan" && handshake ? (
-              <ScanCode qr={handshake.qr} expiresAt={handshake.expiresAt} copy={copy} />
+              <ScanCode
+                qr={handshake.qr}
+                expiresAt={handshake.expiresAt}
+                copy={copy}
+              />
             ) : null}
-            {view === "manual" ? <Manual channel={channel} copy={copy} address={address} /> : null}
+            {view === "manual" ? (
+              <Manual channel={channel} copy={copy} address={address} />
+            ) : null}
           </div>
 
           {error ? (
@@ -167,7 +179,9 @@ export function ConnectChat({
   );
 }
 
-const options = (name: string): { view: View; label: string; hint: string }[] => [
+const options = (
+  name: string,
+): { view: View; label: string; hint: string }[] => [
   {
     view: "here",
     label: `${name} is on this device`,
@@ -294,7 +308,9 @@ function ScanCode({
       </div>
 
       <ol className="mt-6 space-y-2.5">
-        <Step n={1}>Open the camera on your phone and point it at the code.</Step>
+        <Step n={1}>
+          Open the camera on your phone and point it at the code.
+        </Step>
         <Step n={2}>
           {copy.name} opens on the bot —{" "}
           <strong className="font-medium text-fg-muted">{copy.action}</strong>.
@@ -351,9 +367,11 @@ function Manual({
       setError(
         body.error === "already-linked"
           ? "This account is already connected."
-          : body.error === "chat-taken"
-            ? `That ${copy.name} account belongs to a different account.`
-            : "That code isn't valid. Send /code again for a fresh one.",
+          : body.error === "payment-required"
+            ? "Connecting a chat needs an active plan."
+            : body.error === "chat-taken"
+              ? `That ${copy.name} account belongs to a different account.`
+              : "That code isn't valid. Send /code again for a fresh one.",
       );
     } catch {
       setError("Network error. Try again.");
@@ -407,7 +425,10 @@ function Manual({
         <Step n={5}>Type them here.</Step>
       </ol>
 
-      <form onSubmit={submit} className="mt-6 flex flex-wrap items-center gap-2.5">
+      <form
+        onSubmit={submit}
+        className="mt-6 flex flex-wrap items-center gap-2.5"
+      >
         <input
           value={code}
           onChange={(event) => setCode(event.target.value)}

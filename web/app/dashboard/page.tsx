@@ -16,6 +16,7 @@ import {
 } from "@/lib/dashboard-data";
 import { channelConfig } from "@/lib/channel-config";
 import { dueLabel, relativeDate, repeatLabel } from "@/lib/format";
+import { planForUser } from "@/lib/paddle/plan";
 
 export const metadata: Metadata = {
   title: "Overview",
@@ -27,13 +28,21 @@ export default async function OverviewPage() {
   const firstName = viewer.name?.trim().split(" ")[0];
 
   if (!isConnected(viewer)) {
-    return <NotConnected firstName={firstName} />;
+    // The connect widget is what a plan buys, so this branch has to know about
+    // billing too — it is the first screen a new account lands on.
+    return (
+      <NotConnected
+        firstName={firstName}
+        paid={(await planForUser(viewer.id)).active}
+      />
+    );
   }
 
-  const [memories, reminders, profile] = await Promise.all([
+  const [memories, reminders, profile, plan] = await Promise.all([
     getMemories(viewer.id),
     getReminders(viewer.id),
     getBotProfile(viewer.id),
+    planForUser(viewer.id),
   ]);
 
   const thisWeek = countThisWeek(memories);
@@ -59,6 +68,13 @@ export default async function OverviewPage() {
             {memories.length} {memories.length === 1 ? "memory" : "memories"}
             {thisWeek > 0 ? ` · ${thisWeek} this week` : ""}
           </p>
+          <Link
+            href="/dashboard/billing"
+            className="font-mono text-[0.6875rem] tracking-[0.06em] text-fg-faint uppercase transition-colors hover:text-fg-muted"
+          >
+            {plan.active ? plan.name : "No plan"}
+            {plan.endsAt ? " · ending" : ""}
+          </Link>
         </div>
       </header>
 
@@ -205,27 +221,38 @@ function FirstForward() {
 }
 
 /** The pre-connection page: the empty dashboard is the onboarding. */
-function NotConnected({ firstName }: { firstName?: string }) {
+function NotConnected({
+  firstName,
+  paid,
+}: {
+  firstName?: string;
+  paid: boolean;
+}) {
   const telegram = channelConfig("telegram");
 
   return (
     <div>
-      <p className="eyebrow">One link left</p>
+      <p className="eyebrow">{paid ? "One link left" : "One step left"}</p>
       <h1 className="display display-fill mt-4 text-[clamp(1.75rem,3.4vw,2.5rem)]">
         {firstName ? `Hello, ${firstName}.` : "Hello."}
       </h1>
       <p className="mt-5 max-w-xl text-[1.0625rem] leading-relaxed text-fg-muted">
-        Recalfy lives in your Telegram chat — this dashboard is where you look
-        things up later. Connect the two and everything you tell the bot
-        starts appearing here.
+        {paid
+          ? "Recalfy lives in your Telegram chat — this dashboard is where you look things up later. Connect the two and everything you tell the bot starts appearing here."
+          : "Recalfy lives in your Telegram chat — this dashboard is where you look things up later. Pick a plan and you can connect the two straight after."}
       </p>
 
       <ol className="mt-8 grid gap-3 sm:grid-cols-3">
         {[
-          [
-            "Connect",
-            "Press Start in the chat — that proves the account is yours.",
-          ],
+          paid
+            ? ([
+                "Connect",
+                "Press Start in the chat — that proves the account is yours.",
+              ] as const)
+            : ([
+                "Choose a plan",
+                "Monthly or yearly, cancel by saying so. Seven days free.",
+              ] as const),
           [
             "Forward anything",
             "Messages, notes, addresses, codes. One fact, one row.",
@@ -248,7 +275,24 @@ function NotConnected({ firstName }: { firstName?: string }) {
       </ol>
 
       <div className="mt-8">
-        <ConnectChat channel="telegram" address={telegram.address} />
+        {paid ? (
+          <ConnectChat channel="telegram" address={telegram.address} />
+        ) : (
+          <div className="max-w-xl rounded-xl border border-line bg-s1 p-6">
+            <p className="text-[0.9375rem] font-medium">A plan comes first.</p>
+            <p className="mt-2 text-[0.875rem] leading-relaxed text-fg-muted">
+              Connecting a chat is what a subscription buys. Nothing is charged
+              for seven days, and everything you have already told the bot stays
+              exactly where it is.
+            </p>
+            <Link
+              href="/pricing"
+              className="mt-5 inline-flex h-10 items-center justify-center rounded-xl bg-accent px-4 text-[0.875rem] font-medium text-accent-ink"
+            >
+              See plans
+            </Link>
+          </div>
+        )}
       </div>
 
       <div className="mt-12">

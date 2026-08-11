@@ -292,4 +292,12 @@ export const COLLECTIONS = {
   pairingCodes: 'pairingCodes',
   /** Better Auth's collection. Singular — that is its default, not a typo. */
   webUsers: 'user',
+  /**
+   * Billing state mirrored from Paddle webhooks. Note the direction is the
+   * reverse of everything above: the web app writes these two and the bot
+   * reads them, because the webhook endpoint lives in the dashboard. Their
+   * shapes are declared in web/lib/paddle/mirror.ts.
+   */
+  paddleCustomers: 'paddleCustomers',
+  paddleSubscriptions: 'paddleSubscriptions',
 } as const;

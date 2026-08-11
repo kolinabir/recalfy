@@ -1,8 +1,11 @@
+import Link from "next/link";
+
 import { ConnectChat } from "@/components/connect-chat";
 import { CHANNEL_COPY } from "@/lib/channels";
 import { type Channel, channelConfig } from "@/lib/channel-config";
 import { getMemories, requireViewer } from "@/lib/dashboard-data";
 import { relativeDate } from "@/lib/format";
+import { planForUser } from "@/lib/paddle/plan";
 
 /**
  * One page, both chats. The only real difference is the last step of the
@@ -16,6 +19,9 @@ export async function ChannelPage({ channel }: { channel: Channel }) {
   const copy = CHANNEL_COPY[channel];
 
   const memories = linked ? await getMemories(viewer.id) : [];
+  // Connecting is what a plan buys. The API enforces this independently — this
+  // only saves the person a click into a 402.
+  const plan = await planForUser(viewer.id);
 
   return (
     <div>
@@ -80,7 +86,24 @@ export async function ChannelPage({ channel }: { channel: Channel }) {
               typing one.
             </p>
             <div className="mt-6">
-              {configured ? (
+              {!plan.active ? (
+                <div className="rounded-xl border border-line bg-s2 p-5">
+                  <p className="text-[0.9375rem] font-medium">
+                    A plan comes first.
+                  </p>
+                  <p className="mt-2 max-w-prose text-[0.875rem] leading-relaxed text-fg-muted">
+                    Connecting a chat is what a subscription buys. Pick a plan
+                    and this page will be waiting — your memory and any
+                    reminders stay exactly where they are meanwhile.
+                  </p>
+                  <Link
+                    href="/pricing"
+                    className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-accent px-4 text-[0.875rem] font-medium text-accent-ink"
+                  >
+                    See plans
+                  </Link>
+                </div>
+              ) : configured ? (
                 <ConnectChat channel={channel} address={address} />
               ) : (
                 <p className="text-[0.875rem] text-fg-subtle">

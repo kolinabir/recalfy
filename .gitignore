@@ -9,3 +9,7 @@ dist/
 backups/
 *.log
 .DS_Store
+
+.agents
+.claude
+video

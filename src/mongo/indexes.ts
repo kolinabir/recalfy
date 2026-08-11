@@ -38,6 +38,24 @@ export const INDEXES: Record<string, IndexDescription[]> = {
     { key: { expiresAt: 1 }, name: 'ttl', expireAfterSeconds: 0 },
     { key: { channel: 1, handle: 1 }, name: 'by_chat_account' },
   ],
+  // Both are keyed by their Paddle id, so `_id` already serves the webhook's
+  // upsert. These serve the other direction: "what is this account entitled
+  // to", which every gated read asks.
+  [COLLECTIONS.paddleCustomers]: [
+    {
+      key: { userId: 1 },
+      name: 'by_account',
+      partialFilterExpression: { userId: { $type: 'string' } },
+    },
+  ],
+  [COLLECTIONS.paddleSubscriptions]: [
+    {
+      key: { userId: 1, status: 1 },
+      name: 'by_account',
+      partialFilterExpression: { userId: { $type: 'string' } },
+    },
+    { key: { customerId: 1 }, name: 'by_customer' },
+  ],
   // One chat account maps to at most one web account, per channel. Partial
   // rather than sparse so each constraint ignores the accounts that have not
   // connected that channel — which, for any given channel, is most of them.

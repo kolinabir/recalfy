@@ -4,6 +4,9 @@ import { Reveal } from "@/components/motion/reveal";
 import { PlanTable } from "@/components/plan-table";
 import { Closing } from "@/components/sections/closing";
 import { Faq } from "@/components/sections/faq";
+import { getViewer } from "@/lib/dashboard-data";
+import { tiers } from "@/lib/paddle/config";
+import { visitorCountry } from "@/lib/paddle/country";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -26,7 +29,12 @@ const ASSURANCES = [
   },
 ];
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  // Both are read here, on the server, and handed down: the country because
+  // only the edge knows it, the viewer so checkout can prefill an email the
+  // client is never asked to supply.
+  const [country, viewer] = await Promise.all([visitorCountry(), getViewer()]);
+
   return (
     <>
       <section className="rails relative isolate overflow-hidden pt-36 pb-14 sm:pt-44">
@@ -52,7 +60,13 @@ export default function PricingPage() {
 
       <section className="rails pb-24 lg:pb-28">
         <div className="shell">
-          <PlanTable />
+          <PlanTable
+            tiers={tiers()}
+            country={country}
+            viewer={
+              viewer ? { id: viewer.id, email: viewer.email } : undefined
+            }
+          />
         </div>
       </section>
 

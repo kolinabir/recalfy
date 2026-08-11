@@ -1,18 +1,115 @@
 "use client";
 
-import Link from "next/link";
+import { initializePaddle, type Paddle } from "@paddle/paddle-js";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-import { PLANS, SELF_HOST, priceFor } from "@/lib/pricing";
+import type { Cycle, Tier } from "@/lib/paddle/config";
+import { SELF_HOST } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
-
-type Cycle = "monthly" | "yearly";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-export function PlanTable() {
-  const [cycle, setCycle] = useState<Cycle>("monthly");
+/**
+ * Read at module scope because Next inlines these at build time — they cannot
+ * change between renders, so this is a constant, not state.
+ *
+ * The environment is never defaulted. If the var is missing the table renders
+ * its copy with no prices and no buttons, which is loud; quietly falling back
+ * to sandbox is how test prices get shown to real customers.
+ */
+const PADDLE_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
+const PADDLE_ENV = process.env.NEXT_PUBLIC_PADDLE_ENV;
+const CONFIGURED =
+  Boolean(PADDLE_TOKEN) &&
+  (PADDLE_ENV === "sandbox" || PADDLE_ENV === "production");
+
+interface Props {
+  tiers: Tier[];
+  /** From the edge, or absent — in which case Paddle geolocates by IP. */
+  country?: string;
+  viewer?: { id: string; email: string };
+}
+
+export function PlanTable({ tiers, country, viewer }: Props) {
+  const router = useRouter();
+  const [cycle, setCycle] = useState<Cycle>("month");
+  const [paddle, setPaddle] = useState<Paddle | null>(null);
+  /** priceId -> the string Paddle says to show. Never computed here. */
+  const [totals, setTotals] = useState<Record<string, string>>({});
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!CONFIGURED) {
+      console.error("[paddle] NEXT_PUBLIC_PADDLE_ENV / _CLIENT_TOKEN missing");
+      return;
+    }
+
+    let cancelled = false;
+
+    initializePaddle({
+      token: PADDLE_TOKEN as string,
+      environment: PADDLE_ENV as "sandbox" | "production",
+    })
+      .then(async (instance) => {
+        if (!instance || cancelled) return;
+        setPaddle(instance);
+
+        const preview = await instance.PricePreview({
+          items: tiers.flatMap((tier) => [
+            { priceId: tier.priceId.month, quantity: 1 },
+            { priceId: tier.priceId.year, quantity: 1 },
+          ]),
+          // Omitted entirely when unknown; Paddle then uses the caller's IP.
+          ...(country ? { address: { countryCode: country } } : {}),
+        });
+
+        if (cancelled) return;
+        setTotals(
+          Object.fromEntries(
+            preview.data.details.lineItems.map((line) => [
+              line.price.id,
+              // `total`, not `subtotal`: subtotal is net of tax, so in a
+              // 15%-VAT country a $6.00 price renders as $5.22 and every
+              // visitor is quoted less than they will be charged.
+              line.formattedTotals.total,
+            ]),
+          ),
+        );
+      })
+      .catch((error: unknown) => {
+        console.error("[paddle] price preview failed", error);
+        if (!cancelled) setFailed(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tiers, country]);
+
+  function subscribe(tier: Tier) {
+    // Checkout is for signed-in people only. Without an account there is
+    // nothing to attach the subscription to — `customData.userId` is what the
+    // webhook joins on, and a purchase without it fulfils to nobody.
+    if (!viewer) {
+      router.push(`/login?plan=${tier.id}&cycle=${cycle}`);
+      return;
+    }
+
+    paddle?.Checkout.open({
+      items: [{ priceId: tier.priceId[cycle], quantity: 1 }],
+      ...(viewer ? { customer: { email: viewer.email } } : {}),
+      // The join the webhook depends on. Everything else about a customer can
+      // change; the account id cannot.
+      ...(viewer ? { customData: { userId: viewer.id } } : {}),
+      settings: {
+        displayMode: "overlay",
+        variant: "one-page",
+        successUrl: `${window.location.origin}/welcome`,
+      },
+    });
+  }
 
   return (
     <div>
@@ -24,8 +121,8 @@ export function PlanTable() {
         >
           {(
             [
-              { value: "monthly", label: "Monthly" },
-              { value: "yearly", label: "Yearly · 2 months free" },
+              { value: "month", label: "Monthly" },
+              { value: "year", label: "Yearly" },
             ] as const
           ).map((option) => (
             <button
@@ -54,27 +151,28 @@ export function PlanTable() {
       </div>
 
       <div className="mt-10 grid items-start gap-4 lg:grid-cols-2">
-        {PLANS.map((plan) => {
-          const price = priceFor(plan, cycle);
+        {tiers.map((tier) => {
+          const priceId = tier.priceId[cycle];
+          const total = totals[priceId];
+
           return (
             <section
-              key={plan.id}
+              key={tier.id}
               className={cn(
                 "relative overflow-hidden rounded-xl border p-8 transition-colors duration-500 sm:p-10",
-                plan.featured
+                tier.featured
                   ? "border-accent/30 bg-s1 "
                   : "border-line hover:border-line",
               )}
             >
-
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="display text-[1.5rem]">{plan.name}</h3>
+                  <h3 className="display text-[1.5rem]">{tier.name}</h3>
                   <p className="mt-2 text-[0.9375rem] text-fg-muted">
-                    {plan.tagline}
+                    {tier.description}
                   </p>
                 </div>
-                {plan.featured ? (
+                {tier.featured ? (
                   <span className="rounded-full bg-accent/15 px-3 py-1 font-mono text-[0.6875rem] tracking-wide text-accent">
                     Most kept
                   </span>
@@ -85,24 +183,31 @@ export function PlanTable() {
                 <span className="display overflow-hidden text-[2.75rem] leading-none tabular-nums">
                   <AnimatePresence mode="popLayout" initial={false}>
                     <motion.span
-                      key={price.amount}
+                      key={total ?? `pending-${priceId}`}
                       initial={{ y: "0.6em", opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       exit={{ y: "-0.6em", opacity: 0 }}
                       transition={{ duration: 0.35, ease: EASE }}
                       className="inline-block"
                     >
-                      ${price.amount}
+                      {/* Paddle's string, rendered as-is — localized, and
+                          tax-inclusive where the country requires it. */}
+                      {total ?? (
+                        <span
+                          aria-hidden
+                          className="inline-block h-[0.8em] w-[2.6em] rounded bg-s2"
+                        />
+                      )}
                     </motion.span>
                   </AnimatePresence>
                 </span>
                 <span className="font-mono text-[0.75rem] text-fg-subtle">
-                  / {price.per}
+                  / {cycle === "month" ? "month" : "year"}
                 </span>
               </div>
 
               <dl className="mt-8 grid grid-cols-3 gap-2">
-                {plan.limits.map((limit) => (
+                {tier.limits.map((limit) => (
                   <div
                     key={limit.label}
                     className="rounded-xl border border-line px-3.5 py-3"
@@ -118,7 +223,7 @@ export function PlanTable() {
               </dl>
 
               <ul className="mt-8 space-y-3.5">
-                {plan.includes.map((item) => (
+                {tier.features.map((item) => (
                   <li
                     key={item}
                     className="flex gap-3.5 text-[0.9375rem] leading-relaxed text-fg-muted"
@@ -127,7 +232,7 @@ export function PlanTable() {
                       aria-hidden
                       className={cn(
                         "mt-[0.68em] size-1.5 shrink-0 rounded-full",
-                        plan.featured ? "bg-accent" : "bg-fg-faint/40",
+                        tier.featured ? "bg-accent" : "bg-fg-faint/40",
                       )}
                     />
                     <span>{item}</span>
@@ -135,17 +240,19 @@ export function PlanTable() {
                 ))}
               </ul>
 
-              <Link
-                href={`/login?plan=${plan.id}&cycle=${cycle}`}
+              <button
+                type="button"
+                onClick={() => subscribe(tier)}
+                disabled={Boolean(viewer) && (!paddle || failed || !CONFIGURED)}
                 className={cn(
-                  "mt-9 inline-flex h-11 w-full items-center justify-center rounded-xl text-[0.9375rem] font-medium transition-transform duration-300 hover:scale-[1.01] active:scale-[0.99]",
-                  plan.featured
+                  "mt-9 inline-flex h-11 w-full items-center justify-center rounded-xl text-[0.9375rem] font-medium transition-transform duration-300 hover:scale-[1.01] active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50",
+                  tier.featured
                     ? "bg-accent text-accent-ink"
                     : "border border-line text-fg hover:border-fg-faint",
                 )}
               >
-                {plan.cta}
-              </Link>
+                {viewer ? tier.cta : `Sign in to ${tier.cta.toLowerCase()}`}
+              </button>
             </section>
           );
         })}
