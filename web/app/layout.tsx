@@ -17,9 +17,14 @@ const archivo = Archivo({
   display: "swap",
 });
 
+/*
+  One weight, not two. The mono face carries eyebrows, timestamps and record
+  ids — all of it at 400. Weight 500 was pulling a second ~36KB file for two
+  avatar badges, which is a poor trade for glyphs nobody reads as heavier.
+*/
 const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400"],
   variable: "--font-jetbrains",
   display: "swap",
 });

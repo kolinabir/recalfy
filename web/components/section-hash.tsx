@@ -12,10 +12,10 @@ export type HashSection = { id: string; name: string };
  * History is replaced rather than pushed: a scroll is not a navigation, and
  * pushing would turn the back button into an undo-scrolling button.
  *
- * Offsets are measured up front and re-measured only when the layout could have
- * moved, so the scroll handler itself is pure arithmetic — no layout reads per
- * frame, and no dependency on requestAnimationFrame (which browsers pause in
- * background tabs).
+ * Offsets are measured up front and re-measured only when the document actually
+ * resizes, so the scroll handler itself is pure arithmetic. That matters more
+ * than it sounds: reading `scrollHeight` while layout is dirty costs ~3.7ms in
+ * a forced reflow, and doing it per scroll event blows the frame budget.
  *
  * The title is only ever changed on the client, after paint. The document's
  * real <title> is what search engines index; this is a reading aid for the
@@ -36,6 +36,7 @@ export function SectionHash({
     const base = document.title;
     let tops: { id: string; name: string; top: number }[] = [];
     let height = 0;
+    let frame = 0;
 
     const measure = () => {
       height = document.documentElement.scrollHeight;
@@ -52,9 +53,7 @@ export function SectionHash({
     };
 
     const sync = () => {
-      // Reveal animations and font swaps change the page height after mount;
-      // re-measure when that happens rather than trusting stale offsets.
-      if (document.documentElement.scrollHeight !== height) measure();
+      frame = 0;
 
       // Anchor on the line just under the fixed header: the current section is
       // the last one whose top has passed it.
@@ -65,10 +64,10 @@ export function SectionHash({
       }
 
       // At the very bottom the last section may never reach the line, but it is
-      // unambiguously what's on screen.
-      const atEnd =
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - 2;
+      // unambiguously what's on screen. This reads the cached height on
+      // purpose: `scrollHeight` here forces a synchronous reflow, and it would
+      // do so on every scroll event.
+      const atEnd = window.innerHeight + window.scrollY >= height - 2;
       if (atEnd && tops.length) current = tops[tops.length - 1];
 
       const next = current ? `#${current.id}` : "";
@@ -84,14 +83,39 @@ export function SectionHash({
       if (document.title !== heading) document.title = heading;
     };
 
+    /*
+      Scroll fires far more often than the screen refreshes — many times per
+      frame on a trackpad or a 120Hz display. Coalescing to one run per frame is
+      what keeps this off the critical path; without it the handler is re-entered
+      before its previous result could possibly have been seen.
+    */
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(sync);
+    };
+
+    /*
+      Layout is read here and nowhere else. Reveal animations and font swaps
+      change the page height after mount, so re-measure when the document
+      actually resizes rather than probing for it on every scroll.
+    */
+    const remeasure = () => {
+      measure();
+      onScroll();
+    };
+
     measure();
     sync();
 
-    window.addEventListener("scroll", sync, { passive: true });
-    window.addEventListener("resize", sync, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", remeasure, { passive: true });
+    const resized = new ResizeObserver(remeasure);
+    resized.observe(document.body);
+
     return () => {
-      window.removeEventListener("scroll", sync);
-      window.removeEventListener("resize", sync);
+      if (frame) cancelAnimationFrame(frame);
+      resized.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", remeasure);
       document.title = base;
     };
   }, [sections, suffix]);

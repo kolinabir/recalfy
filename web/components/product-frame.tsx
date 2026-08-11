@@ -1,7 +1,12 @@
 "use client";
 
 import { ChevronLeft, Mic, Paperclip, Smile } from "lucide-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import {
+  AnimatePresence,
+  motion,
+  useInView,
+  useReducedMotion,
+} from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 import { useEnter } from "@/components/motion/use-enter";
@@ -520,19 +525,27 @@ export function ProductFrame({ className }: { className?: string }) {
     timer anyone should reach.
   */
   const { ref, entered } = useEnter(10_000, 0.55);
+  /*
+    Live visibility, where `entered` is one-shot. The loop re-renders this whole
+    component on every beat and never ends, so without this it keeps running
+    while scrolled thousands of pixels away — animating for an audience that
+    cannot see it. Pausing holds the conversation mid-thread and resumes it when
+    you come back, which is also the friendlier behaviour.
+  */
+  const onScreen = useInView(ref as React.RefObject<Element>, { amount: 0.2 });
   const reduced = useReducedMotion();
   const [cursor, setCursor] = useState(0);
   const scroller = useRef<HTMLDivElement>(null);
 
   // The loop: each beat schedules the next, and the last one wraps to the top.
   useEffect(() => {
-    if (!entered || reduced) return;
+    if (!entered || reduced || !onScreen) return;
     const id = setTimeout(
       () => setCursor((c) => (c + 1) % (SCRIPT.length + 1)),
       SCRIPT[cursor]?.hold ?? 700,
     );
     return () => clearTimeout(id);
-  }, [entered, reduced, cursor]);
+  }, [entered, reduced, onScreen, cursor]);
 
   // Reduced motion gets the finished conversation, held still.
   const shown = reduced ? SCRIPT.length : cursor;

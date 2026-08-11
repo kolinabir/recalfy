@@ -1,9 +1,9 @@
 "use client";
 
 import { initializePaddle, type Paddle } from "@paddle/paddle-js";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useInView } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { Cycle, Tier } from "@/lib/paddle/config";
 import { cn } from "@/lib/utils";
@@ -45,10 +45,40 @@ interface Props {
   /** From the edge, or absent — in which case Paddle geolocates by IP. */
   country?: string;
   viewer?: { id: string; email: string };
+  /**
+   * Hold Paddle back until the table is nearly in view. Set on the home page,
+   * where this sits far below the fold; left off on /pricing, where prices are
+   * the reason for the visit and must not wait on anything.
+   */
+  defer?: boolean;
 }
 
-export function PlanTable({ tiers, country, viewer }: Props) {
+export function PlanTable({ tiers, country, viewer, defer }: Props) {
   const router = useRouter();
+  /*
+    Paddle is three third-party requests — its script, its stylesheet, and a
+    price-preview call. On the home page this table sits far below the fold, so
+    loading it eagerly puts a vendor CDN on the critical path of a page most
+    visitors never scroll to the bottom of. `margin` starts the work a screen
+    early, so prices have resolved by the time the table is reached.
+  */
+  const shell = useRef<HTMLDivElement>(null);
+  const near = useInView(shell as React.RefObject<Element>, {
+    once: true,
+    margin: "100% 0px",
+  });
+  /*
+    A table with no prices is worse than a slow one, so the wait is never
+    open-ended: if IntersectionObserver is unavailable or never reports, this
+    releases it anyway. Deferring is an optimisation, not a precondition.
+  */
+  const [waited, setWaited] = useState(!defer);
+  useEffect(() => {
+    if (!defer) return;
+    const id = setTimeout(() => setWaited(true), 8000);
+    return () => clearTimeout(id);
+  }, [defer]);
+  const ready = !defer || near || waited;
   const [cycle, setCycle] = useState<Cycle>("month");
   const [paddle, setPaddle] = useState<Paddle | null>(null);
   /** priceId -> the string Paddle says to show. Never computed here. */
@@ -59,6 +89,7 @@ export function PlanTable({ tiers, country, viewer }: Props) {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (!ready) return;
     if (!CONFIGURED) {
       console.error("[paddle] NEXT_PUBLIC_PADDLE_ENV / _CLIENT_TOKEN missing");
       return;
@@ -115,7 +146,7 @@ export function PlanTable({ tiers, country, viewer }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [tiers, country]);
+  }, [ready, tiers, country]);
 
   function subscribe(tier: Tier) {
     // Checkout is for signed-in people only. Without an account there is
@@ -141,7 +172,7 @@ export function PlanTable({ tiers, country, viewer }: Props) {
   }
 
   return (
-    <div>
+    <div ref={shell}>
       <div className="flex justify-center">
         <div
           role="group"

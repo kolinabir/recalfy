@@ -119,6 +119,8 @@ export default async function HomePage() {
               viewer={
                 viewer ? { id: viewer.id, email: viewer.email } : undefined
               }
+              // Bottom of a long page — Paddle can wait until it's approached.
+              defer
             />
           </div>
         </div>

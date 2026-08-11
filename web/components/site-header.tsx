@@ -50,7 +50,7 @@ function AccountChip({
           className="size-7 rounded-lg object-cover ring-1 ring-line"
         />
       ) : (
-        <span className="grid size-7 place-items-center rounded-lg bg-accent font-mono text-[0.625rem] font-medium text-[var(--accent-ink)]">
+        <span className="grid size-7 place-items-center rounded-lg bg-accent font-mono text-[0.625rem] text-[var(--accent-ink)]">
           {initials}
         </span>
       )}
