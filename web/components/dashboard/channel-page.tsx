@@ -5,7 +5,7 @@ import { CHANNEL_COPY } from "@/lib/channels";
 import { type Channel, channelConfig } from "@/lib/channel-config";
 import { getMemories, requireViewer } from "@/lib/dashboard-data";
 import { relativeDate } from "@/lib/format";
-import { planForUser } from "@/lib/paddle/plan";
+import { channelVerdict, planForUser } from "@/lib/paddle/plan";
 
 /**
  * One page, both chats. The only real difference is the last step of the
@@ -19,9 +19,13 @@ export async function ChannelPage({ channel }: { channel: Channel }) {
   const copy = CHANNEL_COPY[channel];
 
   const memories = linked ? await getMemories(viewer.id) : [];
-  // Connecting is what a plan buys. The API enforces this independently — this
-  // only saves the person a click into a 402.
-  const plan = await planForUser(viewer.id);
+  // Connecting is what a plan buys, and which chat depends on the tier. The
+  // API enforces both independently — this only saves the person a click into
+  // a 402 or a 403.
+  const [plan, verdict] = await Promise.all([
+    planForUser(viewer.id),
+    channelVerdict(viewer.id, channel),
+  ]);
 
   return (
     <div>
@@ -101,6 +105,23 @@ export async function ChannelPage({ channel }: { channel: Channel }) {
                     className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-accent px-4 text-[0.875rem] font-medium text-accent-ink"
                   >
                     See plans
+                  </Link>
+                </div>
+              ) : verdict === "not-on-plan" ? (
+                <div className="rounded-xl border border-line bg-s2 p-5">
+                  <p className="text-[0.9375rem] font-medium">
+                    {copy.name} comes with Archive.
+                  </p>
+                  <p className="mt-2 max-w-prose text-[0.875rem] leading-relaxed text-fg-muted">
+                    Your plan covers Telegram. Archive adds {copy.name}{" "}
+                    alongside it, sharing one memory — the same facts and the
+                    same reminders, reachable from either chat.
+                  </p>
+                  <Link
+                    href="/dashboard/billing"
+                    className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-accent px-4 text-[0.875rem] font-medium text-accent-ink"
+                  >
+                    Move to Archive
                   </Link>
                 </div>
               ) : configured ? (

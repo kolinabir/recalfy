@@ -100,6 +100,27 @@ export class Env {
     return this.config.get<string>('GLM_MODEL') ?? 'glm-5.2';
   }
 
+  /**
+   * The price ids that tell Keep and Archive apart, shared verbatim with the
+   * web app's `PADDLE_PRICE_*` variables.
+   *
+   * Optional, and unset means **everyone is treated as Archive**. That is the
+   * safe direction: a variable missed on the VPS then costs us a few unenforced
+   * limits, where the opposite default would cap paying customers' memories and
+   * silently withdraw features they are being charged for. A limit that fails
+   * to apply is a support ticket; a limit that wrongly applies is a refund.
+   */
+  get tierPrices(): { keep: string[]; archive: string[] } {
+    const read = (key: string): string[] => {
+      const value = this.config.get<string>(key);
+      return value ? [value] : [];
+    };
+    return {
+      keep: [...read('PADDLE_PRICE_KEEP_MONTH'), ...read('PADDLE_PRICE_KEEP_YEAR')],
+      archive: [...read('PADDLE_PRICE_ARCHIVE_MONTH'), ...read('PADDLE_PRICE_ARCHIVE_YEAR')],
+    };
+  }
+
   get mongoUri(): string {
     return this.required('MONGODB_URI');
   }

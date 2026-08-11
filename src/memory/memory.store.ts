@@ -11,6 +11,25 @@ import { SidMinter } from './sid-minter';
 
 const FALLBACK_TIMEZONE = 'UTC';
 
+/**
+ * Raised when storing would take the account past its plan's ceiling.
+ *
+ * A thrown error rather than a silent truncation: the caller has to decide what
+ * the user hears, and the one unacceptable outcome is the model reporting
+ * "saved" over facts that were dropped. That exact failure — a confident
+ * confirmation with no write behind it — is why the storage rule lives at the
+ * end of the system prompt, and it must not come back through the ceiling.
+ */
+export class MemoryFull extends Error {
+  constructor(
+    readonly held: number,
+    readonly cap: number,
+  ) {
+    super(`Memory is full: ${held} of ${cap} facts.`);
+    this.name = 'MemoryFull';
+  }
+}
+
 /** A fact traced back to the message that taught it. */
 export interface Provenance {
   sid: string;
@@ -38,17 +57,39 @@ export class MemoryStore {
   /**
    * Writes new facts. A fact carrying `supersedes` replaces those facts: the
    * old rows stay for audit but leave the rendered memory.
+   *
+   * `cap` is the plan's ceiling on live facts, or null for no ceiling. It is a
+   * parameter rather than something this store looks up, so the store never
+   * learns that billing exists and stays testable without it.
    */
-  async remember(userId: UserId, facts: Fact[], sourceMessageId?: ObjectId): Promise<Memory[]> {
+  async remember(
+    userId: UserId,
+    facts: Fact[],
+    sourceMessageId?: ObjectId,
+    cap: number | null = null,
+  ): Promise<Memory[]> {
     if (facts.length === 0) return [];
 
-    const { fresh, duplicates } = removeDuplicates(facts, await this.liveMemoriesOf(userId));
+    const live = await this.liveMemoriesOf(userId);
+    const { fresh, duplicates } = removeDuplicates(facts, live);
     if (duplicates.length > 0) {
       this.logger.log(`skipped ${duplicates.length} duplicate fact(s) for ${userId}`);
     }
     if (fresh.length === 0) return [];
 
     const replaced = await this.sids.resolve(userId, citedSids(fresh));
+
+    // Checked after dedup and after supersession, because neither grows the
+    // live set: correcting "rent is due on the 5th" to "the 3rd" must keep
+    // working at the ceiling, or a full memory becomes a memory you cannot fix.
+    //
+    // `count()` rather than `live.length` — liveMemoriesOf still carries
+    // superseded and expired rows, which the renderer drops. Counting those
+    // would bill someone for facts they can no longer see.
+    if (cap !== null) {
+      const held = await this.count(userId);
+      if (held + fresh.length - replaced.size > cap) throw new MemoryFull(held, cap);
+    }
     const minted = await this.sids.mint(userId, fresh.length);
     const documents = fresh.map((fact, index) =>
       buildMemory({ userId, fact, sid: minted[index], replaced, sourceMessageId }),

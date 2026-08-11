@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
 
-import { MemoryStore } from '../../memory/memory.store';
+import { MemoryFull, MemoryStore } from '../../memory/memory.store';
 import { Fact } from '../../memory/memory.types';
 import { JsonSchema } from '../../llm/llm.types';
 import {
@@ -63,7 +63,29 @@ export class RememberTool extends Tool {
 
   async execute(context: ToolContext, args: unknown): Promise<string> {
     const facts = requireObjectArray(asObject(args), 'facts').map((raw) => toFact(raw, context));
-    const stored = await this.memories.remember(context.userId, facts, context.sourceMessageId);
+
+    let stored;
+    try {
+      stored = await this.memories.remember(
+        context.userId,
+        facts,
+        context.sourceMessageId,
+        context.limits.memories,
+      );
+    } catch (error) {
+      // Spelled out for the model rather than thrown on, because the one thing
+      // it must not do here is claim the facts were saved. It is told what
+      // happened and what the two ways out are.
+      if (error instanceof MemoryFull) {
+        return (
+          `NOT STORED — memory is full at ${error.cap} facts on their plan (holding ${error.held}). ` +
+          'Tell them plainly that nothing was saved, and that they can either ask you to ' +
+          'forget things they no longer need, or move to Archive for unlimited memory at ' +
+          'recalfy.com/dashboard/billing. Do not say it was saved.'
+        );
+      }
+      throw error;
+    }
 
     if (stored.length === 0) {
       return 'Already knew all of that — nothing new stored. Just reply naturally.';

@@ -19,6 +19,7 @@ import { RemindTool } from './tools/remind.tool';
 import { ReportTool } from './tools/report.tool';
 import { SetDailyBriefTool } from './tools/set-daily-brief.tool';
 import { SetEveningReflectionTool } from './tools/set-evening-reflection.tool';
+import { SetQuietHoursTool } from './tools/set-quiet-hours.tool';
 import { SetTimezoneTool } from './tools/set-timezone.tool';
 import { TrackTool } from './tools/track.tool';
 import { UpdateEntryTool } from './tools/update-entry.tool';
@@ -35,6 +36,7 @@ const TOOL_CLASSES = [
   CancelReminderTool,
   SetDailyBriefTool,
   SetEveningReflectionTool,
+  SetQuietHoursTool,
   SearchHistoryTool,
   RecallSourceTool,
   ExportMemoryTool,

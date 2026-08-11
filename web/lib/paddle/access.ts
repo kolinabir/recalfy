@@ -6,6 +6,25 @@
  * request. ./mirror.ts does the I/O and re-exports these.
  */
 
+/**
+ * Which chat networks each tier may connect. Keep is Telegram-only — not "one
+ * channel of your choice", which would need state to track which one was spent
+ * and would let someone burn their single link on the channel that costs us
+ * per message.
+ *
+ * It lives here, beside the access policy and away from anything `server-only`,
+ * so both the dashboard and the test suite can read it. The bot keeps its own
+ * copy in `src/billing/entitlements.ts` — separate build, cannot import this —
+ * and `test/limits.test.ts` asserts the two lists agree.
+ *
+ * The channel names are written out rather than imported so this module keeps
+ * having no dependencies at all.
+ */
+export const TIER_CHANNELS: Record<"keep" | "archive", readonly ("telegram" | "whatsapp")[]> = {
+  keep: ["telegram"],
+  archive: ["telegram", "whatsapp"],
+};
+
 export type SubscriptionStatus =
   | "active"
   | "trialing"

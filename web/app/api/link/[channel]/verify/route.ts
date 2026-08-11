@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { Channel, isChannel } from "@/lib/linking";
 import { db } from "@/lib/mongo";
-import { requirePaidAccess } from "@/lib/paddle/plan";
+import { channelVerdict } from "@/lib/paddle/plan";
 import { normalisePairingCode } from "@/lib/pairing-code";
 
 export const runtime = "nodejs";
@@ -30,10 +30,13 @@ export async function POST(request: Request, params: { params: Promise<{ channel
 
   // The other half of the paywall. This route writes the channel link itself
   // rather than going through mintLink, so gating that one alone would leave
-  // the pairing code as a way in. Checked before the code is claimed, so a
-  // paywalled attempt never burns a valid code.
-  if (!(await requirePaidAccess(session.user.id))) {
-    return NextResponse.json({ error: "payment-required" }, { status: 402 });
+  // the pairing code as a way in — including as a way past the Telegram-only
+  // rule on Keep. Checked before the code is claimed, so a refused attempt
+  // never burns a valid code.
+  const verdict = await channelVerdict(session.user.id, channel);
+  if (verdict !== "ok") {
+    const status = verdict === "payment-required" ? 402 : 403;
+    return NextResponse.json({ error: verdict }, { status });
   }
 
   const body = await request.json().catch(() => null);

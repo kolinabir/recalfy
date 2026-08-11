@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ObjectId } from 'mongodb';
 
+import { LIMITS, Limits } from '../billing/entitlements';
 import { GlmClient } from '../llm/glm.client';
 import { Turn } from '../llm/llm.types';
 import { MemoryStore } from '../memory/memory.store';
@@ -39,9 +40,15 @@ export class BrainService {
     private readonly tools: ToolExecutor,
   ) {}
 
-  async handle(userId: UserId, text: string, now: Date, sourceMessageId: ObjectId): Promise<string> {
+  async handle(
+    userId: UserId,
+    text: string,
+    now: Date,
+    sourceMessageId: ObjectId,
+    limits: Limits = LIMITS.archive,
+  ): Promise<string> {
     try {
-      return await this.converse(userId, text, now, sourceMessageId);
+      return await this.converse(userId, text, now, sourceMessageId, limits);
     } catch (error) {
       this.logger.error(
         `Brain failed for ${userId}: ${error instanceof Error ? error.message : String(error)}`,
@@ -55,8 +62,9 @@ export class BrainService {
     text: string,
     now: Date,
     sourceMessageId: ObjectId,
+    limits: Limits,
   ): Promise<string> {
-    let context = await this.contextFor(userId, now, sourceMessageId);
+    let context = await this.contextFor(userId, now, sourceMessageId, limits);
     const turns: Turn[] = [
       { role: 'system', content: await this.systemPrompt(context) },
       // The window already ends with this message — BotService logs it first.
@@ -99,7 +107,7 @@ export class BrainService {
       // A tool may have changed the memory or the timezone — "I'm from
       // Bangladesh, remind me at 5" sets the zone and then depends on it in
       // the same turn, so both are re-read before the next round.
-      context = await this.contextFor(userId, now, sourceMessageId);
+      context = await this.contextFor(userId, now, sourceMessageId, limits);
       turns[0] = { role: 'system', content: await this.systemPrompt(context) };
     }
 
@@ -111,12 +119,14 @@ export class BrainService {
     userId: UserId,
     now: Date,
     sourceMessageId: ObjectId,
+    limits: Limits,
   ): Promise<ToolContext> {
     const user = await this.users.ensure(userId);
     return {
       userId,
       timezone: user.tz,
       onboarded: user.onboardedAt !== undefined,
+      limits,
       now,
       sourceMessageId,
     };
@@ -133,6 +143,7 @@ export class BrainService {
       timezone: context.timezone,
       now: context.now,
       onboarded: context.onboarded,
+      limits: context.limits,
     });
   }
 }

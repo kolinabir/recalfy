@@ -1,14 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 
+import { Limits } from '../billing/entitlements';
+import { Paywall } from '../billing/paywall';
+import { UserStore } from '../memory/user.store';
 import { ReminderDoc } from '../mongo/collections';
+import { deferredUntil } from './quiet-hours';
 import { ReminderStore } from './reminder.store';
 
 const TICK_MS = 30_000;
 /** Guards against one slow tick monopolising the process. */
 const MAX_PER_TICK = 20;
 
-export type DueHandler = (reminder: ReminderDoc) => Promise<void>;
+export type DueHandler = (reminder: ReminderDoc, limits: Limits) => Promise<void>;
 
 /**
  * The clock. Claims due reminders and hands them to whoever registered for
@@ -24,7 +28,11 @@ export class ReminderScheduler {
   private readonly handlers: DueHandler[] = [];
   private ticking = false;
 
-  constructor(private readonly reminders: ReminderStore) {}
+  constructor(
+    private readonly reminders: ReminderStore,
+    private readonly paywall: Paywall,
+    private readonly users: UserStore,
+  ) {}
 
   onDue(handler: DueHandler): void {
     this.handlers.push(handler);
@@ -56,13 +64,37 @@ export class ReminderScheduler {
   /**
    * A failed delivery is deliberately left in `claimed`: releaseStaleClaims
    * puts it back after five minutes rather than hot-looping on a broken send.
+   *
+   * Whether a reminder may go out at all is decided here rather than in a
+   * handler, because both answers change what happens to the row — a handler
+   * that quietly declined would still be followed by `complete`, which is how
+   * a deferred reminder would get marked sent and lost.
    */
   private async deliver(reminder: ReminderDoc): Promise<void> {
     try {
-      for (const handler of this.handlers) {
-        await handler(reminder);
+      const now = new Date();
+      const limits = await this.paywall.permits(reminder.userId);
+
+      // No plan: consume the row rather than leave it pending, or the tick
+      // re-claims it every 30 seconds for as long as the account stays lapsed.
+      // A recurring series keeps rolling forward and resumes when they pay.
+      if (!limits) {
+        this.logger.log(`Suppressed ${reminder._id.toHexString()}: no active plan`);
+        await this.reminders.complete(reminder, now);
+        return;
       }
-      await this.reminders.complete(reminder, new Date());
+
+      const user = limits.quietHours ? await this.users.ensure(reminder.userId) : null;
+      const until = user ? deferredUntil(now, user.quiet, user.tz) : null;
+      if (until) {
+        await this.reminders.defer(reminder, until);
+        return;
+      }
+
+      for (const handler of this.handlers) {
+        await handler(reminder, limits);
+      }
+      await this.reminders.complete(reminder, now);
     } catch (error) {
       this.logger.error(`Delivery failed for ${reminder._id.toHexString()}: ${message(error)}`);
     }

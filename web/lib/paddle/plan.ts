@@ -1,8 +1,12 @@
 import "server-only";
 
-import { accessState, grantsAccess } from "./access";
+import type { Channel } from "@/lib/channels";
+import { TIER_CHANNELS, accessState, grantsAccess } from "./access";
 import { type Cycle, tiers } from "./config";
 import { subscriptionForUser } from "./mirror";
+
+// Re-exported so callers keep importing one module, as with `grantsAccess`.
+export { TIER_CHANNELS } from "./access";
 
 /**
  * "What has this account bought, and what does that let them do?" — the one
@@ -77,4 +81,25 @@ export async function planForUser(userId: string): Promise<Plan> {
  */
 export async function requirePaidAccess(userId: string): Promise<boolean> {
   return (await planForUser(userId)).active;
+}
+
+export type ChannelVerdict = "ok" | "payment-required" | "not-on-plan";
+
+/**
+ * May this account connect this chat right now?
+ *
+ * An active plan on an unrecognised price (`id === null`) gets the most
+ * generous answer, for the same reason `planForUser` refuses to name a tier
+ * for one: the catalogue moved under a live subscription, and refusing them a
+ * channel they are paying for is worse than allowing one they are not.
+ */
+export async function channelVerdict(
+  userId: string,
+  channel: Channel,
+): Promise<ChannelVerdict> {
+  const plan = await planForUser(userId);
+  if (!plan.active) return "payment-required";
+
+  const allowed = plan.id ? TIER_CHANNELS[plan.id] : TIER_CHANNELS.archive;
+  return allowed.includes(channel) ? "ok" : "not-on-plan";
 }

@@ -30,7 +30,7 @@ export const PLANS: Plan[] = [
     limits: [
       { label: "Memories", value: "2,000" },
       { label: "Reminders", value: "Unlimited" },
-      { label: "Channels", value: "One" },
+      { label: "Channels", value: "Telegram" },
     ],
     includes: [
       "Every fact stored as its own record, with corrections that replace instead of pile up",
@@ -55,9 +55,7 @@ export const PLANS: Plan[] = [
     includes: [
       "Everything in Keep",
       "Telegram and WhatsApp at once, one memory across both — and every new channel the day it ships",
-      "Nightly encrypted backups you can download",
-      "Recurring reminders and quiet hours",
-      "Priority on the faster model, so replies land in under a second",
+      "Recurring reminders, and quiet hours so nothing wakes you",
       "Answers from a human, usually the one who wrote it",
     ],
   },

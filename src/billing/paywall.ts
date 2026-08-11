@@ -1,14 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { Outbox } from '../channels/outbox';
-import { UserId } from '../mongo/collections';
+import { Channel, UserId } from '../mongo/collections';
+import { Limits } from './entitlements';
 import { Subscriptions } from './subscriptions';
 
 /**
- * How often a lapsed account is told why nothing is happening. Once a day:
- * often enough that the answer is never more than a message away, rare enough
- * that someone typing into a dead bot is not answered by a wall of the same
- * paragraph.
+ * How often a turned-away account is told why nothing is happening. Once a
+ * day: often enough that the answer is never more than a message away, rare
+ * enough that someone typing into a dead bot is not answered by a wall of the
+ * same paragraph.
  *
  * Held in memory, so a restart re-arms it. That is the harmless direction —
  * one extra explanation — and it saves a collection whose only job would be
@@ -22,6 +23,12 @@ const LAPSED_NOTICE =
   'where you left it, and it stays that way.\n\n' +
   'Start a plan at recalfy.com/dashboard/billing and I carry on mid-sentence.';
 
+const WRONG_CHANNEL_NOTICE =
+  "Your plan covers Telegram, so that's where I'm listening.\n\n" +
+  'Everything you told me is still there — talk to me on Telegram and nothing ' +
+  'is lost. Archive adds WhatsApp alongside it, sharing one memory: ' +
+  'recalfy.com/dashboard/billing';
+
 /**
  * The gate between a linked account and everything that costs money — the
  * model call, the storage write, the WhatsApp template.
@@ -30,11 +37,15 @@ const LAPSED_NOTICE =
  * check happens once, at the door. Without this one, cancelling changed
  * nothing: the bot kept answering, kept firing reminders, and kept sending the
  * daily brief, indefinitely and at our expense.
+ *
+ * Both methods return the account's `Limits` rather than a boolean, so the
+ * caller that asks "may I serve this?" gets "and here is what they may do" in
+ * the same round trip — which is why no tool needs a billing dependency.
  */
 @Injectable()
 export class Paywall {
   private readonly logger = new Logger(Paywall.name);
-  /** userId → instant the next lapsed notice may be sent. */
+  /** userId → instant the next notice may be sent. */
   private readonly noticed = new Map<UserId, number>();
 
   constructor(
@@ -48,30 +59,51 @@ export class Paywall {
    * they stopped paying for, and a template send to a lapsed WhatsApp account
    * would be billed to us.
    */
-  async permits(userId: UserId): Promise<boolean> {
-    return this.subscriptions.hasAccess(userId);
+  async permits(userId: UserId): Promise<Limits | null> {
+    return this.subscriptions.limitsFor(userId);
   }
 
   /**
-   * For a message the user just sent. Same question, plus the explanation —
-   * silence here would read as a broken bot rather than an expired plan, and
-   * the fix is one link away.
+   * For a message the user just sent, on the channel they sent it from.
+   * Returns their limits, or `null` when the message must be dropped.
    *
-   * Returns false *before* the message is logged or the model is called, which
-   * is the point: a lapsed account costs one indexed read and, at most, one
+   * The channel matters because Keep is Telegram-only. The web app refuses to
+   * mint a WhatsApp link for a Keep account, but that cannot cover the account
+   * which linked WhatsApp on Archive and later moved down — their link is
+   * still live, and this is the only thing standing in front of it.
+   *
+   * Runs *before* the message is logged or the model is called, which is the
+   * point: a turned-away account costs one indexed read and, at most, one
    * message a day.
    */
-  async admits(userId: UserId): Promise<boolean> {
-    if (await this.subscriptions.hasAccess(userId)) return true;
+  async admit(userId: UserId, channel: Channel): Promise<Limits | null> {
+    const limits = await this.subscriptions.limitsFor(userId);
 
-    const now = Date.now();
-    const nextNotice = this.noticed.get(userId);
-    if (nextNotice === undefined || nextNotice <= now) {
-      this.noticed.set(userId, now + NOTICE_COOLDOWN_MS);
-      this.logger.log(`Turned away ${userId}: no active plan`);
-      await this.outbox.reply(userId, LAPSED_NOTICE);
+    if (!limits) {
+      await this.notice(userId, LAPSED_NOTICE, 'no active plan');
+      return null;
     }
 
-    return false;
+    if (!limits.channels.includes(channel)) {
+      await this.notice(userId, WRONG_CHANNEL_NOTICE, `${channel} not on their plan`);
+      return null;
+    }
+
+    return limits;
+  }
+
+  /**
+   * One explanation per day, whatever the reason. Sent through `reply`, which
+   * routes to a handle this account owns — never back to the raw inbound
+   * address, so a message from an unlinked stranger can never be answered here.
+   */
+  private async notice(userId: UserId, text: string, why: string): Promise<void> {
+    const now = Date.now();
+    const next = this.noticed.get(userId);
+    if (next !== undefined && next > now) return;
+
+    this.noticed.set(userId, now + NOTICE_COOLDOWN_MS);
+    this.logger.log(`Turned away ${userId}: ${why}`);
+    await this.outbox.reply(userId, text);
   }
 }

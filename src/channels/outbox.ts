@@ -52,9 +52,16 @@ export class Outbox {
    * brief. On Telegram this is an ordinary send. On WhatsApp it is free-form
    * if they happen to have messaged within the last 24 hours, and a billed
    * template otherwise.
+   *
+   * `allowed` narrows where it may land, which matters only here and not on
+   * `reply`: an inbound message on a channel the plan does not cover is
+   * already refused at the gate, but an *unprompted* send has no such gate in
+   * front of it. Without this, an account that connected WhatsApp on Archive
+   * and then moved to Keep would keep receiving billed templates there
+   * forever — us paying Meta to message someone who stopped paying for it.
    */
-  async notify(userId: UserId, text: string): Promise<void> {
-    const target = await this.route(userId);
+  async notify(userId: UserId, text: string, allowed?: readonly Channel[]): Promise<void> {
+    const target = await this.route(userId, allowed);
     if (!target) return;
 
     const { adapter, handle, windowOpen } = target;
@@ -85,10 +92,13 @@ export class Outbox {
    */
   private async route(
     userId: UserId,
+    allowed?: readonly Channel[],
   ): Promise<{ adapter: ChannelAdapter; handle: Handle; windowOpen: boolean } | null> {
     const routing = await this.users.routing(userId);
 
     for (const channel of this.preference(routing?.lastChannel)) {
+      if (allowed && !allowed.includes(channel)) continue;
+
       const adapter = this.byChannel.get(channel);
       if (!adapter) continue;
 

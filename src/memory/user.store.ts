@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
 
 import { ENV, Env } from '../config/env';
-import { BriefConfig, Channel, UserDoc, UserId } from '../mongo/collections';
+import { BriefConfig, Channel, QuietHours, UserDoc, UserId } from '../mongo/collections';
 import { MongoService } from '../mongo/mongo.service';
 import { currencyForZone } from '../tracker/currency';
 
@@ -85,6 +85,14 @@ export class UserStore {
 
   async setBrief(userId: UserId, brief: BriefConfig): Promise<void> {
     await this.mongo.users.updateOne({ _id: userId }, { $set: { brief } });
+  }
+
+  /** Undefined clears the window rather than storing an empty one. */
+  async setQuietHours(userId: UserId, quiet: QuietHours | undefined): Promise<void> {
+    await this.mongo.users.updateOne(
+      { _id: userId },
+      quiet ? { $set: { quiet } } : { $unset: { quiet: '' } },
+    );
   }
 
   async setReflection(userId: UserId, reflection: BriefConfig): Promise<void> {

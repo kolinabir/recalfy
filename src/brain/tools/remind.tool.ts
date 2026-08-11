@@ -70,7 +70,14 @@ export class RemindTool extends Tool {
     const when = optionalString(parsed, 'when');
     const eventAt = optionalString(parsed, 'event_at');
     const leadDays = optionalPositiveInteger(parsed, 'lead_days');
-    const repeat = readRepeat(parsed);
+    const asked = readRepeat(parsed);
+
+    // Recurring is an Archive feature. The first occurrence is still scheduled
+    // rather than refused outright — someone who said "remind me every Monday"
+    // wants next Monday more than they want a sales pitch, and dropping it
+    // entirely would lose the thing they actually asked for.
+    const denied = asked !== undefined && !context.limits.recurringReminders;
+    const repeat = denied ? undefined : asked;
 
     if (when === undefined && (eventAt === undefined || leadDays === undefined)) {
       throw new BadArguments('Pass either "when", or both "event_at" and "lead_days".');
@@ -80,7 +87,7 @@ export class RemindTool extends Tool {
     // Relative offsets are safe because they resolve to the same instant
     // whatever the zone is labelled — but a recurring series or a lead-time
     // computation is wall-clock by nature, so those always need the real zone.
-    if (!context.onboarded && (repeat || !when || !isSoon(when, context.now))) {
+    if (!context.onboarded && (asked || !when || !isSoon(when, context.now))) {
       return 'Cannot schedule that yet — you do not know where the user is. Ask which city or country they are in first, then try again.';
     }
 
@@ -101,9 +108,16 @@ export class RemindTool extends Tool {
       repeat && { repeat, tz: context.timezone },
     );
     const cadence = repeat ? `, repeating ${describeRepeat(repeat)}` : '';
-    return (
+    const scheduled =
       `Scheduled "${text}" for ${resolved.spoken}${cadence} ` +
-      `[${reminder._id.toHexString()}]. Confirm that exact time back to the user.`
+      `[${reminder._id.toHexString()}]. Confirm that exact time back to the user.`;
+
+    if (!denied) return scheduled;
+    return (
+      `${scheduled} IMPORTANT: they asked for a repeating reminder, and repeating ` +
+      'reminders are an Archive feature — this one is a ONE-OFF. Say so plainly: ' +
+      'this one is set, but it will not repeat, and Archive at ' +
+      'recalfy.com/dashboard/billing makes it recurring. Do not imply it repeats.'
     );
   }
 }

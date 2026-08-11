@@ -1,5 +1,7 @@
 import { DateTime } from 'luxon';
 
+import { LIMITS, Limits } from '../billing/entitlements';
+
 export interface PromptInput {
   /** The rendered memory document from MemoryStore. */
   memory: string;
@@ -9,6 +11,8 @@ export interface PromptInput {
   now: Date;
   /** False until we've learned where they actually are. */
   onboarded: boolean;
+  /** What the plan permits. Defaults to the most generous, for tests and CLI. */
+  limits?: Limits;
 }
 
 const PERSONA = `You are the user's memory, living in their chat app. You are talking to one
@@ -39,10 +43,6 @@ const RULES = `How to behave:
 - A fact that is only true for a while ("visiting parents next week", "car is
   in the shop") gets an \`expires\` date when you store it; it will quietly
   drop out once it has passed. Durable facts never get one.
-- When you store a birthday, anniversary, or any date that recurs yearly,
-  offer in the same reply to set a yearly reminder a few days ahead — and if
-  they say yes, call \`remind\` with \`repeat\` year, a few days before the
-  next occurrence.
 - If they ask when they told you something, or doubt that a fact is right,
   call \`recall_source\` with the ids of the facts in question and answer
   with the date and their original words.
@@ -51,9 +51,6 @@ const RULES = `How to behave:
 - For reminders, work out the absolute instant yourself from the current time
   given below, call \`remind\`, then confirm the resolved time in plain words
   ("tomorrow at 6pm"). If the tool rejects your time, ask what they meant.
-- Habits and standing dates are recurring reminders: "every Monday", "rent on
-  the 3rd", "meds at 9" mean \`remind\` with \`repeat\`, passing the first
-  occurrence as the time. Confirm the cadence too ("every Monday at 9am").
 - "Remind me N days before X" means \`remind\` with \`event_at\` (the instant
   of X) and \`lead_days\` — the subtraction is done for you. Never compute
   the earlier date yourself.
@@ -152,6 +149,35 @@ You MUST make that call in this turn. Saying "got it" or "done" without it
 loses the change and is a lie to the user.`;
 
 /**
+ * What the plan permits, taught only to the plans that have it.
+ *
+ * Kept out of RULES rather than described-then-forbidden, because a model told
+ * about a capability will offer it. Leaving the recurring lines in for an
+ * account that cannot have them produces the worst outcome available: an
+ * enthusiastic "I'll remind you every Monday" against a one-off reminder.
+ */
+const RECURRING = `- Habits and standing dates are recurring reminders: "every Monday", "rent on
+  the 3rd", "meds at 9" mean \`remind\` with \`repeat\`, passing the first
+  occurrence as the time. Confirm the cadence too ("every Monday at 9am").
+- When you store a birthday, anniversary, or any date that recurs yearly,
+  offer in the same reply to set a yearly reminder a few days ahead — and if
+  they say yes, call \`remind\` with \`repeat\` year, a few days before the
+  next occurrence.`;
+
+const NO_RECURRING = `- Their plan does not include recurring reminders. If they ask for something
+  repeating ("every Monday", "rent on the 3rd"), still call \`remind\` for the
+  next single occurrence — the tool will tell you it was stored as a one-off,
+  and you must say so rather than implying it repeats. Never promise a
+  cadence, and never offer to set a yearly birthday reminder.`;
+
+const QUIET_HOURS = `- If they ask not to be disturbed at certain hours ("nothing after 10pm",
+  "no reminders before 8"), call \`set_quiet_hours\`. Reminders that come due
+  inside that window wait until it ends; the daily brief keeps its own time.`;
+
+const NO_QUIET_HOURS = `- Quiet hours are not on their plan. If they ask for them, say so plainly —
+  it is an Archive feature — and do not pretend to have set anything.`;
+
+/**
  * Builds the system prompt.
  *
  * Pure — data in, a string out — so what the model sees can be asserted in a
@@ -168,6 +194,7 @@ export function buildSystemPrompt({
   timezone,
   now,
   onboarded,
+  limits = LIMITS.archive,
 }: PromptInput): string {
   const local = DateTime.fromJSDate(now, { zone: timezone });
 
@@ -175,8 +202,13 @@ export function buildSystemPrompt({
     // Stable prefix first, so the provider's prompt cache matches as much of
     // it as possible. Moving the memory document after the clock was measured
     // and made no difference to tool-calling, so the cheaper layout wins.
+    //
+    // The plan block sits inside that stable prefix: it changes only when
+    // someone upgrades, so the cache splits per tier rather than per turn.
     PERSONA,
     RULES,
+    limits.recurringReminders ? RECURRING : NO_RECURRING,
+    limits.quietHours ? QUIET_HOURS : NO_QUIET_HOURS,
     TRACKING,
     '---',
     memory,

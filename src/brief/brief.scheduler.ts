@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 
+import { Limits } from '../billing/entitlements';
 import { Paywall } from '../billing/paywall';
 import { ConversationLog } from '../bot/conversation-log';
 import { UserStore } from '../memory/user.store';
@@ -45,10 +46,11 @@ export class BriefScheduler {
         // Ahead of the day-claim, not after it. Claiming and then suppressing
         // would spend the day's at-most-once token on a message nobody got,
         // so someone who subscribes at 9am would silently miss that morning.
-        if (!(await this.paywall.permits(user._id))) continue;
+        const limits = await this.paywall.permits(user._id);
+        if (!limits) continue;
 
-        await this.maybeSendBrief(user, now);
-        await this.maybeSendReflection(user, now);
+        await this.maybeSendBrief(user, now, limits);
+        await this.maybeSendReflection(user, now, limits);
       }
     } catch (error) {
       this.logger.error(`Brief tick failed: ${message(error)}`);
@@ -57,20 +59,22 @@ export class BriefScheduler {
     }
   }
 
-  private async maybeSendBrief(user: UserDoc, now: Date): Promise<void> {
+  private async maybeSendBrief(user: UserDoc, now: Date, limits: Limits): Promise<void> {
     const day = briefDueDay(user, now);
     if (day === null) return;
     if (!(await this.users.claimBrief(user._id, day))) return;
 
-    await this.deliver('Brief', user, day, () => this.composer.compose(user._id, user.tz, now));
+    await this.deliver('Brief', user, day, limits, () =>
+      this.composer.compose(user._id, user.tz, now),
+    );
   }
 
-  private async maybeSendReflection(user: UserDoc, now: Date): Promise<void> {
+  private async maybeSendReflection(user: UserDoc, now: Date, limits: Limits): Promise<void> {
     const day = reflectionDueDay(user, now);
     if (day === null) return;
     if (!(await this.users.claimReflection(user._id, day))) return;
 
-    await this.deliver('Reflection', user, day, () =>
+    await this.deliver('Reflection', user, day, limits, () =>
       this.composer.composeReflection(user._id, user.tz, now),
     );
   }
@@ -79,6 +83,7 @@ export class BriefScheduler {
     kind: string,
     user: UserDoc,
     day: string,
+    limits: Limits,
     compose: () => Promise<string | null>,
   ): Promise<void> {
     try {
@@ -88,7 +93,7 @@ export class BriefScheduler {
         return;
       }
 
-      await this.outbox.notify(user._id, text);
+      await this.outbox.notify(user._id, text, limits.channels);
       // Into the transcript, so "yes, it got fixed" resolves against the
       // question that was asked.
       await this.log.record(user._id, 'assistant', text);

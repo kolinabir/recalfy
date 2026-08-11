@@ -101,6 +101,24 @@ export class ReminderStore {
     return next;
   }
 
+  /**
+   * Pushes a claimed reminder back to pending at a later instant — quiet hours.
+   *
+   * Only `dueAt` moves. A recurring series computes every occurrence from
+   * `anchorAt`, so holding one of them back until morning cannot drag the rest
+   * of the series with it: "every day at 9am", deferred once, is still 9am
+   * tomorrow.
+   */
+  async defer(reminder: ReminderDoc, until: Date): Promise<void> {
+    await this.mongo.reminders.updateOne(
+      { _id: reminder._id },
+      { $set: { status: 'pending', dueAt: until }, $unset: { claimedAt: '' } },
+    );
+    this.logger.log(
+      `deferred ${reminder._id.toHexString()} to ${until.toISOString()} — quiet hours`,
+    );
+  }
+
   /** Crash recovery: anything claimed but never sent goes back in the queue. */
   async releaseStaleClaims(now: Date): Promise<number> {
     const { modifiedCount } = await this.mongo.reminders.updateMany(

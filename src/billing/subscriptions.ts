@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 
+import { ENV, Env } from '../config/env';
 import { UserId } from '../mongo/collections';
+import { ACCESS_STATUSES, Limits, limitsForPrice } from './entitlements';
 import { MongoService } from '../mongo/mongo.service';
-import { ACCESS_STATUSES } from './entitlements';
 
 /**
  * How long a *yes* is trusted without asking Mongo again. Sixty seconds is
@@ -16,51 +17,69 @@ import { ACCESS_STATUSES } from './entitlements';
  */
 const YES_TTL_MS = 60_000;
 
+interface Cached {
+  limits: Limits;
+  until: number;
+}
+
 /**
- * "Has this account paid?" — the question the bot could not previously ask.
+ * "What has this account paid for?" — one method, and the only place in the
+ * bot that reads a subscription row.
  *
- * The billing tables are mirrored from Paddle by the web app's webhook, so
- * this is a plain indexed read: no Paddle call, no dependency on Paddle being
- * reachable, and nothing here ever writes.
+ * It answers in capabilities rather than plan names (see `Limits`), so no
+ * caller ever learns that tiers exist. The billing tables are mirrored from
+ * Paddle by the web app's webhook, so this is a plain indexed read: no Paddle
+ * call, no dependency on Paddle being reachable, and nothing here ever writes.
  */
 @Injectable()
 export class Subscriptions {
   private readonly logger = new Logger(Subscriptions.name);
-  /** userId → instant the cached "yes" stops being trusted. */
-  private readonly granted = new Map<UserId, number>();
+  private readonly granted = new Map<UserId, Cached>();
 
-  constructor(private readonly mongo: MongoService) {}
+  constructor(
+    private readonly mongo: MongoService,
+    @Inject(ENV) private readonly env: Env,
+  ) {}
 
-  async hasAccess(userId: UserId): Promise<boolean> {
-    const until = this.granted.get(userId);
-    if (until !== undefined && until > Date.now()) return true;
+  /** What this account may do, or `null` when it has no live plan at all. */
+  async limitsFor(userId: UserId): Promise<Limits | null> {
+    const hit = this.granted.get(userId);
+    if (hit && hit.until > Date.now()) return hit.limits;
 
-    // The filter *is* the policy: `by_account` is { userId, status }, so this
-    // is one index hit, and a status outside ACCESS_STATUSES simply matches
-    // nothing. A pending cancel leaves status `active` and so still matches —
-    // which is correct, the period was paid for.
-    const row = await this.mongo.paddleSubscriptions.findOne(
-      { userId, status: { $in: [...ACCESS_STATUSES] } },
-      { projection: { _id: 1 } },
-    );
+    // The filter *is* the access policy: `by_account` is { userId, status },
+    // so a status outside ACCESS_STATUSES simply matches nothing. A pending
+    // cancel leaves status `active` and so still matches — correct, because
+    // the period was paid for.
+    //
+    // Newest first, matching `subscriptionForUser` in web/lib/paddle/mirror.ts.
+    // An account can hold two rows in an access status — cancel, then
+    // resubscribe on a different tier — and an unsorted findOne picks
+    // arbitrarily. The half that guesses the older row would enforce the
+    // cheaper plan against a customer the dashboard shows on the dearer one.
+    const [row] = await this.mongo.paddleSubscriptions
+      .find({ userId, status: { $in: [...ACCESS_STATUSES] } }, { projection: { priceId: 1, createdAt: 1 } })
+      .sort({ createdAt: -1 })
+      .limit(1)
+      .toArray();
 
     if (!row) {
       this.granted.delete(userId);
-      return false;
+      return null;
     }
 
-    this.granted.set(userId, Date.now() + YES_TTL_MS);
-    return true;
+    const limits = limitsForPrice(row.priceId, this.env.tierPrices);
+    this.granted.set(userId, { limits, until: Date.now() + YES_TTL_MS });
+    return limits;
   }
 
   /**
-   * Drops a cached "yes". Nothing calls this yet — billing changes reach this
+   * Drops a cached plan. Nothing calls this yet — billing changes reach this
    * process only through Mongo — but it is the seam an admin command or a
    * future ping from the web app would use, and it keeps the cache from being
    * a thing you can only wait out.
    */
   forget(userId: UserId): void {
     this.granted.delete(userId);
-    this.logger.debug(`Dropped cached access for ${userId}`);
+    this.logger.debug(`Dropped cached plan for ${userId}`);
   }
 }

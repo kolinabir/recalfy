@@ -37,6 +37,20 @@ export interface BriefConfig {
   minute: number;
 }
 
+/**
+ * Hours nothing unprompted may arrive, as local wall-clock hours in the user's
+ * own zone. `from: 22, to: 8` is 22:00 until 08:00 the next morning — the
+ * window wraps midnight far more often than it doesn't, so wrapping is the
+ * normal case rather than the edge one.
+ *
+ * Hour granularity on purpose: "no reminders after ten" is how people say it,
+ * and minutes would imply a precision nobody asked for.
+ */
+export interface QuietHours {
+  from: number;
+  to: number;
+}
+
 export interface UserDoc {
   _id: UserId;
   /** IANA zone, e.g. "Asia/Kolkata". Every reminder resolution depends on it. */
@@ -59,6 +73,13 @@ export interface UserDoc {
    * sending — the claim that makes the brief at-most-once per day.
    */
   lastBriefDay?: string;
+  /**
+   * Absent means no quiet window. Only reminders respect it — the daily brief
+   * carries a time the user named themselves, and silently swallowing it
+   * because it sits inside their own quiet hours would be a bug they could
+   * never diagnose.
+   */
+  quiet?: QuietHours;
   /** The evening mirror of the brief. Absent means off — it is opt-in. */
   reflection?: BriefConfig;
   lastReflectionDay?: string;

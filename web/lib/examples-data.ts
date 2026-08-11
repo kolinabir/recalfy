@@ -475,11 +475,6 @@ export const EXAMPLE_GROUPS: ExampleGroup[] = [
         when: "instantly",
         back: "48 things. Here they are, grouped — read it, edit it, or export the lot.",
       },
-      {
-        said: "delete everything",
-        when: "instantly",
-        back: "All of it, permanently? Say yes and it's gone — there's no copy.",
-      },
     ],
   },
   {

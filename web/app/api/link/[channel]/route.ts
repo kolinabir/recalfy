@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { isChannel, linkStatus, mintLink } from "@/lib/linking";
-import { requirePaidAccess } from "@/lib/paddle/plan";
+import { channelVerdict } from "@/lib/paddle/plan";
 
 export const runtime = "nodejs";
 
@@ -37,8 +37,14 @@ export async function POST(_request: Request, params: Params) {
   // A link token is the only way to attach a chat to an account, so this is
   // the chokepoint for "you need a plan to use Recalfy" — enforced here rather
   // than in the page, because the page is just a caller and anyone can POST.
-  if (!(await requirePaidAccess(resolved.user.id))) {
-    return NextResponse.json({ error: "payment-required" }, { status: 402 });
+  // It answers the tier question too: Keep is Telegram-only.
+  const verdict = await channelVerdict(resolved.user.id, resolved.channel);
+  if (verdict !== "ok") {
+    // 403, not 402: paying more would fix it, but they have already paid, and
+    // a payment-required here would send the dashboard to a checkout for a
+    // plan they hold.
+    const status = verdict === "payment-required" ? 402 : 403;
+    return NextResponse.json({ error: verdict }, { status });
   }
 
   const result = await mintLink(resolved.channel, resolved.user);

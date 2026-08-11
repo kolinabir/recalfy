@@ -36,8 +36,11 @@ export class BotService implements OnModuleInit {
 
   private async handle({ userId, address, text, receivedAt }: InboundMessage): Promise<void> {
     // Before persistence and before the model, for the same reason the link
-    // check runs before both: everything below this line costs money.
-    if (!(await this.paywall.admits(userId))) return;
+    // check runs before both: everything below this line costs money. The
+    // limits come back from the same call, so nothing downstream has to ask
+    // billing anything a second time.
+    const limits = await this.paywall.admit(userId, address.channel);
+    if (!limits) return;
 
     await this.users.ensure(userId);
 
@@ -48,7 +51,7 @@ export class BotService implements OnModuleInit {
     await this.outbox.typing(userId);
 
     const sourceMessageId = await this.log.record(userId, 'user', text);
-    const reply = await this.brain.handle(userId, text, receivedAt, sourceMessageId);
+    const reply = await this.brain.handle(userId, text, receivedAt, sourceMessageId, limits);
 
     await this.responder.reply(userId, reply);
   }
