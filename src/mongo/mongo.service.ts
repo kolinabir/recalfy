@@ -8,6 +8,7 @@ import {
   LinkTokenDoc,
   MemoryDoc,
   MessageDoc,
+  PaddleSubscriptionDoc,
   PairingCodeDoc,
   ReminderDoc,
   UserDoc,
@@ -83,6 +84,14 @@ export class MongoService implements OnModuleInit, OnApplicationShutdown {
   /** Written by Better Auth in the web app; read here, and linked here. */
   get webUsers(): Collection<WebUserDoc> {
     return this.db.collection<WebUserDoc>(COLLECTIONS.webUsers);
+  }
+
+  /**
+   * Written by the Paddle webhook in the web app; read here and nowhere else.
+   * Read-only from this process — the bot must never write billing state.
+   */
+  get paddleSubscriptions(): Collection<PaddleSubscriptionDoc> {
+    return this.db.collection<PaddleSubscriptionDoc>(COLLECTIONS.paddleSubscriptions);
   }
 
   private async connect(): Promise<void> {

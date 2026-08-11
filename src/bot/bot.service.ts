@@ -1,5 +1,6 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 
+import { Paywall } from '../billing/paywall';
 import { BrainService } from '../brain/brain.service';
 import { CHANNEL_ADAPTERS, ChannelAdapter, InboundMessage } from '../channels/channel';
 import { Outbox } from '../channels/outbox';
@@ -20,6 +21,7 @@ export class BotService implements OnModuleInit {
   constructor(
     @Inject(CHANNEL_ADAPTERS) private readonly adapters: ChannelAdapter[],
     private readonly outbox: Outbox,
+    private readonly paywall: Paywall,
     private readonly users: UserStore,
     private readonly log: ConversationLog,
     private readonly brain: BrainService,
@@ -33,6 +35,10 @@ export class BotService implements OnModuleInit {
   }
 
   private async handle({ userId, address, text, receivedAt }: InboundMessage): Promise<void> {
+    // Before persistence and before the model, for the same reason the link
+    // check runs before both: everything below this line costs money.
+    if (!(await this.paywall.admits(userId))) return;
+
     await this.users.ensure(userId);
 
     // Before anything slow, so a reminder that fires mid-conversation goes to

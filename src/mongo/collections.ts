@@ -282,6 +282,36 @@ export interface WebUserDoc {
   telegramLinkedAt?: Date;
 }
 
+/**
+ * Paddle subscription states, in Paddle's own vocabulary. `canceled` carries
+ * Paddle's single `l` deliberately — it is what arrives on the wire.
+ */
+export type SubscriptionStatus =
+  | 'active'
+  | 'trialing'
+  | 'past_due'
+  | 'paused'
+  | 'canceled';
+
+/**
+ * A subscription mirrored from Paddle's webhooks. The direction is the reverse
+ * of every other collection here: the web app writes this one and the bot only
+ * reads it, so the full shape and the reasoning behind each field live in
+ * `web/lib/paddle/mirror.ts`. Only the fields the bot reads are declared.
+ */
+export interface PaddleSubscriptionDoc {
+  /** `sub_01h...` */
+  _id: string;
+  customerId: string;
+  /** The account this unlocks. Absent until checkout's custom_data binds it. */
+  userId?: string;
+  status: SubscriptionStatus;
+  priceId: string;
+  /** Set while a cancel or pause is pending. Not itself a revocation. */
+  scheduledChange?: { action: string; at: Date };
+  createdAt: Date;
+}
+
 export const COLLECTIONS = {
   users: 'users',
   messages: 'messages',

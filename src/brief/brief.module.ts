@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { BillingModule } from '../billing/billing.module';
 import { BotModule } from '../bot/bot.module';
 import { BrainModule } from '../brain/brain.module';
 import { LlmModule } from '../llm/llm.module';
@@ -10,7 +11,15 @@ import { BriefComposer } from './brief-composer';
 import { BriefScheduler } from './brief.scheduler';
 
 @Module({
-  imports: [LlmModule, MemoryModule, RemindersModule, ChannelsModule, BrainModule, BotModule],
+  imports: [
+    LlmModule,
+    MemoryModule,
+    RemindersModule,
+    ChannelsModule,
+    BrainModule,
+    BotModule,
+    BillingModule,
+  ],
   providers: [BriefComposer, BriefScheduler],
 })
 export class BriefModule {}

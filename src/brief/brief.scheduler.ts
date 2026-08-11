@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 
+import { Paywall } from '../billing/paywall';
 import { ConversationLog } from '../bot/conversation-log';
 import { UserStore } from '../memory/user.store';
 import { UserDoc } from '../mongo/collections';
@@ -31,6 +32,7 @@ export class BriefScheduler {
     private readonly composer: BriefComposer,
     private readonly outbox: Outbox,
     private readonly log: ConversationLog,
+    private readonly paywall: Paywall,
   ) {}
 
   @Interval(TICK_MS)
@@ -40,6 +42,11 @@ export class BriefScheduler {
     try {
       const now = new Date();
       for (const user of await this.users.onboarded()) {
+        // Ahead of the day-claim, not after it. Claiming and then suppressing
+        // would spend the day's at-most-once token on a message nobody got,
+        // so someone who subscribes at 9am would silently miss that morning.
+        if (!(await this.paywall.permits(user._id))) continue;
+
         await this.maybeSendBrief(user, now);
         await this.maybeSendReflection(user, now);
       }
