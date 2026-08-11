@@ -13,6 +13,10 @@ export const QUESTIONS = [
     a: "No. You add it inside the chat app you already have open, and that's the whole setup — no client, no notification settings to negotiate. Reminders arrive as messages, because that's what they are.",
   },
   {
+    q: "How does the expense tracking work?",
+    a: "You say what you spent, in the words you'd use anyway — “cucumber 250”, “rickshaw 100”. It picks the category, keeps the running total, and answers when you ask how the month is going. “buy cucumber 250” is understood as the opposite: nothing spent yet, so it goes on your shopping list until you say you bought it. Set a monthly cap by saying it once, and every total is measured against it. The same mechanism tracks anything countable — litres of water, gym visits, weigh-ins — and it works out for itself whether to add them up, count them, or keep only the latest.",
+  },
+  {
     q: "How is this different from writing myself notes?",
     a: "A note is something you have to remember to go and read. Recalfy reads itself, reconciles things you said months apart, and speaks first when a time you mentioned once actually comes around.",
   },

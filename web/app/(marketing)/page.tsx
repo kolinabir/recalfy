@@ -21,7 +21,7 @@ const JSON_LD = [
     applicationCategory: "ProductivityApplication",
     operatingSystem: "Any",
     description:
-      "A personal memory that lives in your chat app. Text it facts, ask it anything, and it messages you first when the moment comes.",
+      "A personal memory that lives in your chat app. Text it facts, track what you spend, ask it anything, and it messages you first when the moment comes.",
     offers: {
       "@type": "AggregateOffer",
       priceCurrency: "USD",
@@ -53,6 +53,7 @@ import { How } from "@/components/sections/how";
 import { Features } from "@/components/sections/features";
 import { Manifesto } from "@/components/sections/manifesto";
 import { Moments } from "@/components/sections/moments";
+import { Tracking } from "@/components/sections/tracking";
 
 export default function HomePage() {
   return (
@@ -65,6 +66,7 @@ export default function HomePage() {
       <Proof />
       <How />
       <Moments />
+      <Tracking />
       <Against />
       <Manifesto />
       <Features />

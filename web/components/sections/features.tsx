@@ -1,4 +1,5 @@
 import {
+  Activity,
   ArrowLeftRight,
   BellRing,
   Clock,
@@ -6,7 +7,10 @@ import {
   EyeOff,
   Globe,
   Layers,
+  ListChecks,
+  Target,
   Trash2,
+  Wallet,
 } from "lucide-react";
 
 import { Reveal } from "@/components/motion/reveal";
@@ -51,6 +55,26 @@ const FEATURES = [
     icon: Globe,
     title: "Channel-portable",
     body: "Add a second chat app and the whole memory is already there.",
+  },
+  {
+    icon: Wallet,
+    title: "Spending, by sentence",
+    body: "“cucumber 250” is a logged expense, categorised, counted, no app opened.",
+  },
+  {
+    icon: ListChecks,
+    title: "A list that becomes the ledger",
+    body: "“buy milk” waits on your list; buying it turns that same line into the expense.",
+  },
+  {
+    icon: Target,
+    title: "Budgets and goals",
+    body: "State a monthly cap or a daily target once, and every total is measured against it.",
+  },
+  {
+    icon: Activity,
+    title: "Trackers it sets up itself",
+    body: "Water, gym, weight, pages — it picks sum, count, or latest reading to fit the thing.",
   },
 ];
 

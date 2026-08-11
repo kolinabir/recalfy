@@ -33,9 +33,10 @@ export function Hero() {
             className="resolve mx-auto mt-7 max-w-xl text-[1.0625rem] leading-relaxed text-fg-muted"
             style={{ animationDelay: "170ms" }}
           >
-            Text Recalfy the way you&apos;d text a friend — dates, names,
-            quotes, where you left things. It keeps every fact, answers when
-            you ask, and messages you first when the moment comes.
+            Text Recalfy the way you&apos;d text a friend — dates, names, where
+            you left things, what you just spent. It keeps every fact, counts
+            what should be counted, and messages you first when the moment
+            comes.
           </p>
 
           <div
