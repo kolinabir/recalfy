@@ -19,7 +19,7 @@ export default function WelcomePage() {
       <div className="mx-auto w-full max-w-md text-center">
         <div className="resolve rounded-xl border border-line bg-s1 p-8 sm:p-10">
           <h1 className="display text-[2rem]">
-            You&rsquo;re in.
+            You&rsquo;re in.{" "}
             <span className="block text-accent">Go say something.</span>
           </h1>
           <p className="mt-5 leading-relaxed text-fg-muted">

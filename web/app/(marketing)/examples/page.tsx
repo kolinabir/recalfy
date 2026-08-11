@@ -6,17 +6,76 @@ import { Reveal } from "@/components/motion/reveal";
 import { SectionHash } from "@/components/section-hash";
 import { Closing } from "@/components/sections/closing";
 import { EXAMPLE_COUNT, EXAMPLE_GROUPS } from "@/lib/examples-data";
+import { SITE } from "@/lib/sections";
 
 export const metadata: Metadata = {
-  title: "Examples",
-  description: `${EXAMPLE_COUNT} things you can text Recalfy — dates, people, codes, spending, lists, habits and reminders — and exactly what comes back later.`,
+  // Built from the data so the number can never drift from the page.
+  title: `${EXAMPLE_COUNT} things you can text Recalfy`,
+  description: `${EXAMPLE_COUNT} worked examples: what you text Recalfy in passing, and exactly what comes back later. Dates, people, codes, spending, lists, habits, reminders and recall.`,
+  alternates: { canonical: "/examples" },
+  openGraph: {
+    title: `${EXAMPLE_COUNT} things you can text Recalfy`,
+    description: `What you say in passing, and what comes back months later — across ${EXAMPLE_GROUPS.length} kinds of everyday memory.`,
+    url: `${SITE}/examples`,
+    type: "article",
+  },
 };
 
 const IDS = EXAMPLE_GROUPS.map((group) => group.id);
 
+/*
+  The catalogue described as a list of named parts, each with its own anchor.
+  Every claim here is visible on the page — schema that outruns the content is
+  how rich results get taken away.
+*/
+const JSON_LD = [
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Examples",
+        item: `${SITE}/examples`,
+      },
+    ],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${SITE}/examples#webpage`,
+    url: `${SITE}/examples`,
+    name: `${EXAMPLE_COUNT} things you can text Recalfy`,
+    description: `${EXAMPLE_COUNT} worked examples of what you can text Recalfy and what comes back later.`,
+    hasPart: EXAMPLE_GROUPS.map((group) => ({
+      "@type": "WebPageElement",
+      "@id": `${SITE}/examples#${group.id}`,
+      url: `${SITE}/examples#${group.id}`,
+      name: group.title,
+      description: group.blurb,
+    })),
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: EXAMPLE_GROUPS.length,
+      itemListElement: EXAMPLE_GROUPS.map((group, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name: group.title,
+        url: `${SITE}/examples#${group.id}`,
+      })),
+    },
+  },
+];
+
 export default function ExamplesPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+      />
       <SectionHash ids={IDS} />
 
       <section className="relative isolate overflow-hidden pt-36 pb-12 sm:pt-44">
@@ -26,7 +85,7 @@ export default function ExamplesPage() {
             className="resolve display mt-5 text-[clamp(2.5rem,5.4vw,3.75rem)]"
             style={{ animationDelay: "80ms" }}
           >
-            {EXAMPLE_COUNT} things you can
+            {EXAMPLE_COUNT} things you can{" "}
             <span className="block text-fg-muted">say to it today.</span>
           </h1>
           <p

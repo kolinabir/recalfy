@@ -108,7 +108,7 @@ export function How() {
           <div>
             <p className="eyebrow">How it works</p>
             <h2 className="display display-fill mt-5 text-[clamp(2rem,4.2vw,3rem)]">
-              Nothing to learn.
+              Nothing to learn.{" "}
               <span className="block text-fg-muted">
                 You talk, and it keeps up.
               </span>

@@ -63,7 +63,7 @@ export function Moments() {
           <div>
             <p className="eyebrow">Across a life</p>
             <h2 className="display display-fill mt-5 text-[clamp(2rem,4.2vw,3rem)]">
-              Too small to file.
+              Too small to file.{" "}
               <span className="block text-fg-muted">Too costly to forget.</span>
             </h2>
           </div>

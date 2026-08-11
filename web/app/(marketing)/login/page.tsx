@@ -36,12 +36,12 @@ export default async function LoginPage({
           <h1 className="display text-[2rem]">
             {plan ? (
               <>
-                Two clicks, then
+                Two clicks, then{" "}
                 <span className="block text-accent">say something.</span>
               </>
             ) : (
               <>
-                Welcome
+                Welcome{" "}
                 <span className="block text-accent">back.</span>
               </>
             )}

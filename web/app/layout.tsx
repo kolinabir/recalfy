@@ -25,7 +25,10 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://recalfy.com"),
+  // www, not the apex: the site is served on www and the sitemap declares www.
+  // A canonical pointing at the apex while the sitemap points at www splits the
+  // same page across two hosts and asks Google to pick — so it must match.
+  metadataBase: new URL("https://www.recalfy.com"),
   title: {
     default: "Recalfy — the memory that lives in your chats",
     template: "%s · Recalfy",
@@ -40,7 +43,7 @@ export const metadata: Metadata = {
     title: "Recalfy — the memory that lives in your chats",
     description:
       "Tell it once. Recalfy keeps every fact you give it, answers from memory, and speaks up at the right time.",
-    url: "https://recalfy.com",
+    url: "https://www.recalfy.com",
     siteName: "Recalfy",
     type: "website",
   },

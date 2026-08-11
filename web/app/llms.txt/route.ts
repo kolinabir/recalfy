@@ -1,3 +1,4 @@
+import { EXAMPLE_COUNT } from "@/lib/examples-data";
 import { QUESTIONS } from "@/lib/faq-data";
 import { PLANS } from "@/lib/pricing";
 
@@ -26,7 +27,7 @@ Key facts:
 - Monthly budgets and daily goals are set by saying them; the same mechanism tracks water, gym visits, weight, or anything else countable.
 - Your whole memory exports as plain markdown or JSON, any day, from the dashboard.
 - Nothing is used for AI training; memories are readable only by you and the model answering you.
-- 7-day free trial on every plan; card details are taken at signup but nothing is charged until the trial ends. Refunds within 14 days, no questions. Self-hosting is supported.
+- 7-day free trial on every plan; card details are taken at signup but nothing is charged until the trial ends. Refunds within 14 days, no questions.
 
 ## Plans
 
@@ -34,10 +35,11 @@ ${plans}
 
 ## Pages
 
-- [Home](https://recalfy.com): what Recalfy is, how it remembers, and how it tracks spending and habits
-- [Pricing](https://recalfy.com/pricing): plans, limits, and the self-hosted option
-- [Privacy](https://recalfy.com/privacy): what Recalfy collects, why, and how to remove it
-- [Terms](https://recalfy.com/terms): the terms that govern using Recalfy
+- [Home](https://www.recalfy.com): what Recalfy is, how it remembers, and how it tracks spending and habits
+- [Examples](https://www.recalfy.com/examples): ${EXAMPLE_COUNT} worked examples across dates, people, places, codes, money, lists, habits, reminders, corrections and recall
+- [Pricing](https://www.recalfy.com/pricing): plans, limits, and what each one includes
+- [Privacy](https://www.recalfy.com/privacy): what Recalfy collects, why, and how to remove it
+- [Terms](https://www.recalfy.com/terms): the terms that govern using Recalfy
 
 ## FAQ
 

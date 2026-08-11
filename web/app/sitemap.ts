@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const BASE = "https://www.recalfy.com";
+import { SITE as BASE } from "@/lib/sections";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

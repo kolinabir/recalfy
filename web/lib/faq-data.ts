@@ -26,6 +26,6 @@ export const QUESTIONS = [
   },
   {
     q: "Is there a free trial?",
-    a: "Seven days on either plan. Card details are taken when you subscribe so nothing stops when the trial ends, but you aren't charged until it does — and if you do pay, you have fourteen days to ask for it back, no questions. If you'd rather not have an account at all, the codebase is yours to run — self-hosting is a real option here, not a footnote.",
+    a: "Seven days on either plan. Card details are taken when you subscribe so nothing stops when the trial ends, but you aren't charged until it does — and if you do pay, you have fourteen days to ask for it back, no questions asked and no retention call.",
   },
 ];

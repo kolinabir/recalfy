@@ -63,16 +63,6 @@ export const PLANS: Plan[] = [
   },
 ];
 
-export const SELF_HOST = {
-  name: "Self-hosted",
-  tagline: "Run it yourself, on your own box.",
-  points: [
-    "The whole thing is one process and one Mongo database",
-    "Bring your own model key — the provider is a config line, not a rewrite",
-    "No telemetry, no account, no us",
-  ],
-};
-
 export function priceFor(plan: Plan, cycle: "monthly" | "yearly") {
   return cycle === "monthly"
     ? { amount: plan.monthly, per: "month" }

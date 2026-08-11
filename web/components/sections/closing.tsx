@@ -14,7 +14,7 @@ export function Closing() {
         <div className="hairline" />
         <Reveal className="pt-20 text-center lg:pt-28">
           <h2 className="display display-fill mx-auto max-w-3xl text-[clamp(2.25rem,5.2vw,3.75rem)]">
-            Say it once.
+            Say it once.{" "}
             <span className="block text-fg-muted">
               Stop carrying it around.
             </span>

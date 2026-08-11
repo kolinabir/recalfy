@@ -25,7 +25,9 @@ export function Hero() {
             className="resolve display mt-8 text-[clamp(3rem,7.5vw,5.5rem)] text-balance"
             style={{ animationDelay: "80ms" }}
           >
-            <span className="block text-fg-subtle">The memory</span>
+            {/* The space matters: without it the accessible name and the text
+                Google reads run together as "The memorythat texts back." */}
+            <span className="block text-fg-subtle">The memory</span>{" "}
             <span className="display-fill block">that texts back.</span>
           </h1>
 

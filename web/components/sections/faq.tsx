@@ -20,7 +20,7 @@ export function Faq() {
         <Reveal as="header">
           <p className="eyebrow">Before you ask</p>
           <h2 className="display display-fill mt-5 text-[clamp(2rem,4.2vw,3rem)]">
-            Reasonable
+            Reasonable{" "}
             <span className="block text-fg-muted">doubts.</span>
           </h2>
           <p className="mt-6 max-w-xs leading-relaxed text-fg-muted">

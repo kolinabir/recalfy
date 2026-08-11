@@ -12,7 +12,7 @@ export function Manifesto() {
           <Reveal className="mx-auto max-w-3xl text-center">
             <p className="eyebrow">Why this exists</p>
             <p className="display mt-8 text-[clamp(1.75rem,3.4vw,2.5rem)] leading-[1.15]">
-              You are not bad at remembering.
+              You are not bad at remembering.{" "}
               <span className="block text-fg-muted">
                 You&apos;re holding hundreds of small things that were never
                 meant to live in a head.

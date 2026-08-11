@@ -85,7 +85,7 @@ export function Features() {
         <Reveal as="header" className="max-w-2xl pb-12">
           <p className="eyebrow">Everything in it</p>
           <h2 className="display display-fill mt-5 text-[clamp(2rem,4.2vw,3rem)]">
-            Small product.
+            Small product.{" "}
             <span className="block text-fg-muted">Very few loose ends.</span>
           </h2>
         </Reveal>

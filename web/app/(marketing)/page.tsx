@@ -6,6 +6,7 @@ import { Closing } from "@/components/sections/closing";
 import { Faq } from "@/components/sections/faq";
 import { QUESTIONS } from "@/lib/faq-data";
 import { PLANS } from "@/lib/pricing";
+import { SECTIONS, SECTION_IDS, SITE } from "@/lib/sections";
 import { getViewer } from "@/lib/dashboard-data";
 import { tiers } from "@/lib/paddle/config";
 import { visitorCountry } from "@/lib/paddle/country";
@@ -20,7 +21,7 @@ const JSON_LD = [
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: "Recalfy",
-    url: "https://recalfy.com",
+    url: SITE,
     applicationCategory: "ProductivityApplication",
     operatingSystem: "Any",
     description:
@@ -37,8 +38,31 @@ const JSON_LD = [
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Recalfy",
-    url: "https://recalfy.com",
-    logo: "https://recalfy.com/icon.svg",
+    url: SITE,
+    logo: `${SITE}/icon.svg`,
+  },
+  /*
+    Each section declared as a part of this page, with its own anchor URL. A
+    fragment can't carry meta tags, but it can be named and described here —
+    which is what makes it linkable, understood as a distinct part, and
+    eligible to appear as a jump-to link under the main result.
+  */
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${SITE}/#webpage`,
+    url: SITE,
+    name: "Recalfy — the memory that lives in your chats",
+    description:
+      "Tell it once. Recalfy keeps every fact you give it, answers from memory, and speaks up at the right time — inside the chat app you already use.",
+    primaryImageOfPage: `${SITE}/opengraph-image`,
+    hasPart: SECTIONS.map((section) => ({
+      "@type": "WebPageElement",
+      "@id": `${SITE}/#${section.id}`,
+      url: `${SITE}/#${section.id}`,
+      name: section.name,
+      description: section.description,
+    })),
   },
   {
     "@context": "https://schema.org",
@@ -58,20 +82,6 @@ import { Manifesto } from "@/components/sections/manifesto";
 import { Moments } from "@/components/sections/moments";
 import { Tracking } from "@/components/sections/tracking";
 
-/** In page order — the scroll spy walks this to decide the current section. */
-const SECTIONS = [
-  "how-it-works",
-  "examples",
-  "tracking",
-  "approach",
-  "why",
-  "features",
-  "channels",
-  "pricing",
-  "faq",
-  "start",
-];
-
 export default async function HomePage() {
   // The home page carries the same live plan table as /pricing, so it needs
   // the same two server-side facts: where the visitor is, and who they are.
@@ -83,7 +93,7 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
       />
-      <SectionHash ids={SECTIONS} />
+      <SectionHash ids={SECTION_IDS} />
       <Hero />
       <How />
       <Moments />
@@ -98,7 +108,7 @@ export default async function HomePage() {
           <Reveal as="header" className="mx-auto max-w-xl text-center">
             <p className="eyebrow">Pricing</p>
             <h2 className="display mt-5 text-[clamp(2rem,4.2vw,3rem)]">
-              Cheaper than the thing
+              Cheaper than the thing{" "}
               <span className="block text-fg-muted">you forgot.</span>
             </h2>
           </Reveal>

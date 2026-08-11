@@ -17,7 +17,7 @@ export function Channels() {
         <Reveal as="header">
           <p className="eyebrow">Where it lives</p>
           <h2 className="display display-fill mt-5 text-[clamp(2rem,4.2vw,3rem)]">
-            The memory outlives
+            The memory outlives{" "}
             <span className="block text-fg-muted">the app you started in.</span>
           </h2>
           <p className="mt-6 max-w-sm leading-relaxed text-fg-muted">

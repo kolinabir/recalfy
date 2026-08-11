@@ -11,7 +11,7 @@ import { visitorCountry } from "@/lib/paddle/country";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Two plans and a self-hosted option. Seven days free, refunds within fourteen days, export your memory any day.",
+    "Two plans, from $6 a month. Seven days free, refunds within fourteen days, and your memory exports as plain markdown any day you like.",
 };
 
 const ASSURANCES = [
@@ -44,7 +44,7 @@ export default async function PricingPage() {
             className="resolve display mt-5 text-[clamp(2.5rem,5.4vw,3.75rem)]"
             style={{ animationDelay: "80ms" }}
           >
-            Pay for the memory,
+            Pay for the memory,{" "}
             <span className="block text-fg-muted">not for the seat.</span>
           </h1>
           <p

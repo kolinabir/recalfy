@@ -73,7 +73,7 @@ export function Tracking() {
           <div>
             <p className="eyebrow">Money and habits</p>
             <h2 className="display display-fill mt-5 text-[clamp(2rem,4.2vw,3rem)]">
-              The expense tracker
+              The expense tracker{" "}
               <span className="block text-fg-muted">you never open.</span>
             </h2>
           </div>

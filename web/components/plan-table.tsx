@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import type { Cycle, Tier } from "@/lib/paddle/config";
-import { SELF_HOST } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -150,7 +149,7 @@ export function PlanTable({ tiers, country, viewer }: Props) {
         </div>
       </div>
 
-      <div className="mt-10 grid items-start gap-4 lg:grid-cols-2">
+      <div className="mt-10 grid items-stretch gap-4 lg:grid-cols-2">
         {tiers.map((tier) => {
           const priceId = tier.priceId[cycle];
           const total = totals[priceId];
@@ -159,7 +158,9 @@ export function PlanTable({ tiers, country, viewer }: Props) {
             <section
               key={tier.id}
               className={cn(
-                "relative overflow-hidden rounded-xl border p-8 transition-colors duration-500 sm:p-10",
+                // Flex column so the two cards share a height and their CTAs
+                // line up, however many features each one lists.
+                "relative flex flex-col overflow-hidden rounded-xl border p-8 transition-colors duration-500 sm:p-10",
                 tier.featured
                   ? "border-accent/30 bg-s1 "
                   : "border-line hover:border-line",
@@ -222,7 +223,7 @@ export function PlanTable({ tiers, country, viewer }: Props) {
                 ))}
               </dl>
 
-              <ul className="mt-8 space-y-3.5">
+              <ul className="mt-8 space-y-3.5 pb-4">
                 {tier.features.map((item) => (
                   <li
                     key={item}
@@ -245,7 +246,7 @@ export function PlanTable({ tiers, country, viewer }: Props) {
                 onClick={() => subscribe(tier)}
                 disabled={Boolean(viewer) && (!paddle || failed || !CONFIGURED)}
                 className={cn(
-                  "mt-9 inline-flex h-11 w-full items-center justify-center rounded-xl text-[0.9375rem] font-medium transition-transform duration-300 hover:scale-[1.01] active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50",
+                  "mt-auto inline-flex h-11 w-full items-center justify-center rounded-xl text-[0.9375rem] font-medium transition-transform duration-300 hover:scale-[1.01] active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50",
                   tier.featured
                     ? "bg-accent text-accent-ink"
                     : "border border-line text-fg hover:border-fg-faint",
@@ -272,25 +273,6 @@ export function PlanTable({ tiers, country, viewer }: Props) {
           );
         })}
       </div>
-
-      <section className="mt-4 flex flex-col gap-6 rounded-xl border border-line p-8 sm:p-10 lg:flex-row lg:items-center lg:justify-between">
-        <div className="max-w-xs">
-          <h3 className="display text-[1.25rem]">{SELF_HOST.name}</h3>
-          <p className="mt-2 text-[0.9375rem] text-fg-muted">
-            {SELF_HOST.tagline}
-          </p>
-        </div>
-        <ul className="grid gap-2 sm:grid-cols-3 lg:max-w-2xl lg:flex-1">
-          {SELF_HOST.points.map((point) => (
-            <li
-              key={point}
-              className="rounded-lg border border-line px-4 py-3.5 text-[0.8125rem] leading-relaxed text-fg-muted"
-            >
-              {point}
-            </li>
-          ))}
-        </ul>
-      </section>
     </div>
   );
 }

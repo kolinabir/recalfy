@@ -29,7 +29,7 @@ export function Against() {
           <div>
             <p className="eyebrow">The decision underneath</p>
             <h2 className="display display-fill mt-5 text-[clamp(2rem,4.2vw,3rem)]">
-              Other tools search.
+              Other tools search.{" "}
               <span className="block text-fg-muted">Recalfy reads.</span>
             </h2>
           </div>
