@@ -8,6 +8,7 @@ import { Faq } from "@/components/sections/faq";
 import { getViewer } from "@/lib/dashboard-data";
 import { tiers } from "@/lib/paddle/config";
 import { visitorCountry } from "@/lib/paddle/country";
+import { planForUser } from "@/lib/paddle/plan";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -35,6 +36,11 @@ export default async function PricingPage() {
   // only the edge knows it, the viewer so checkout can prefill an email the
   // client is never asked to supply.
   const [country, viewer] = await Promise.all([visitorCountry(), getViewer()]);
+  // What they already hold, so the table can offer to manage it rather than
+  // sell it again. Undefined for signed-out or unsubscribed visitors, which is
+  // the only state where a checkout is the right thing to open.
+  const plan = viewer ? await planForUser(viewer.id) : null;
+  const current = plan?.active ? { id: plan.id, name: plan.name } : undefined;
 
   return (
     <>
@@ -64,9 +70,8 @@ export default async function PricingPage() {
           <PlanTable
             tiers={tiers()}
             country={country}
-            viewer={
-              viewer ? { id: viewer.id, email: viewer.email } : undefined
-            }
+            viewer={viewer ? { id: viewer.id, email: viewer.email } : undefined}
+            current={current}
           />
         </div>
       </section>

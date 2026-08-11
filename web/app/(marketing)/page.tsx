@@ -10,6 +10,7 @@ import { SECTIONS, SECTION_TABS, SITE } from "@/lib/sections";
 import { getViewer } from "@/lib/dashboard-data";
 import { tiers } from "@/lib/paddle/config";
 import { visitorCountry } from "@/lib/paddle/country";
+import { planForUser } from "@/lib/paddle/plan";
 
 /**
  * Structured data for the one page Google should care about. Everything here
@@ -86,6 +87,11 @@ export default async function HomePage() {
   // The home page carries the same live plan table as /pricing, so it needs
   // the same two server-side facts: where the visitor is, and who they are.
   const [country, viewer] = await Promise.all([visitorCountry(), getViewer()]);
+  // What they already hold, so the table can offer to manage it rather than
+  // sell it again. Undefined for signed-out or unsubscribed visitors, which is
+  // the only state where a checkout is the right thing to open.
+  const plan = viewer ? await planForUser(viewer.id) : null;
+  const current = plan?.active ? { id: plan.id, name: plan.name } : undefined;
 
   return (
     <>
@@ -119,6 +125,7 @@ export default async function HomePage() {
               viewer={
                 viewer ? { id: viewer.id, email: viewer.email } : undefined
               }
+              current={current}
               // Bottom of a long page — Paddle can wait until it's approached.
               defer
             />

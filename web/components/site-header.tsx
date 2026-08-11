@@ -1,13 +1,23 @@
 "use client";
 
+import { LayoutDashboard, LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, useMotionValueEvent, useScroll } from "motion/react";
 import { useState } from "react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Wordmark } from "@/components/wordmark";
-import { useSession } from "@/lib/auth-client";
+import { signOut, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -17,6 +27,15 @@ const NAV = [
   { href: "/pricing", label: "Pricing" },
 ];
 
+/**
+ * The signed-in control. A menu rather than a link: the avatar is where people
+ * look for "get me out of here", and the dashboard already has its own link
+ * beside it.
+ *
+ * Deliberately the same shape as the sidebar's UserMenu — identity on top,
+ * one destructive action under a rule — so the two never teach different
+ * habits for the same gesture.
+ */
 function AccountChip({
   name,
   email,
@@ -26,6 +45,9 @@ function AccountChip({
   email: string;
   image?: string | null;
 }) {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
   const source = name?.trim() || email;
   const initials = source
     .split(/[\s@._-]+/)
@@ -35,29 +57,71 @@ function AccountChip({
     .join("");
 
   return (
-    <Link
-      href="/dashboard"
-      className="group flex items-center gap-2.5 rounded-xl border border-transparent py-1 pr-3 pl-1 transition-colors hover:border-line hover:bg-s2"
-    >
-      {image ? (
-        <Image
-          src={image}
-          alt=""
-          width={28}
-          height={28}
-          // Google 403s the request when a referrer is sent from another origin.
-          referrerPolicy="no-referrer"
-          className="size-7 rounded-lg object-cover ring-1 ring-line"
-        />
-      ) : (
-        <span className="grid size-7 place-items-center rounded-lg bg-accent font-mono text-[0.625rem] text-[var(--accent-ink)]">
-          {initials}
-        </span>
-      )}
-      <span className="hidden text-[0.875rem] text-fg-muted transition-colors group-hover:text-fg sm:block">
-        {name?.split(" ")[0] ?? "Account"}
-      </span>
-    </Link>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Account menu"
+          className="group flex items-center gap-2.5 rounded-xl border border-transparent py-1 pr-3 pl-1 transition-colors hover:border-line hover:bg-s2 data-[state=open]:border-line data-[state=open]:bg-s2"
+        >
+          {image ? (
+            <Image
+              src={image}
+              alt=""
+              width={28}
+              height={28}
+              // Google 403s the request when a referrer is sent from another origin.
+              referrerPolicy="no-referrer"
+              className="size-7 rounded-lg object-cover ring-1 ring-line"
+            />
+          ) : (
+            <span className="grid size-7 place-items-center rounded-lg bg-accent font-mono text-[0.625rem] text-[var(--accent-ink)]">
+              {initials}
+            </span>
+          )}
+          <span className="hidden text-[0.875rem] text-fg-muted transition-colors group-hover:text-fg sm:block">
+            {name?.split(" ")[0] ?? "Account"}
+          </span>
+        </button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent
+        align="end"
+        sideOffset={8}
+        className="w-56 rounded-lg border-line bg-s1"
+      >
+        <DropdownMenuLabel className="font-normal">
+          <span className="grid leading-tight">
+            <span className="truncate text-[0.8125rem]">
+              {name ?? "Account"}
+            </span>
+            <span className="truncate font-mono text-[0.6875rem] text-fg-subtle">
+              {email}
+            </span>
+          </span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator className="bg-line" />
+        {/* Repeated here because the sibling link is hidden below `sm`. */}
+        <DropdownMenuItem asChild className="sm:hidden">
+          <Link href="/dashboard">
+            <LayoutDashboard />
+            Dashboard
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={pending}
+          onSelect={async () => {
+            setPending(true);
+            await signOut();
+            router.push("/");
+            router.refresh();
+          }}
+        >
+          <LogOut />
+          {pending ? "Signing out…" : "Sign out"}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -117,11 +181,24 @@ export function SiteHeader() {
             // signed-in visitor while the session resolves.
             <div aria-hidden className="h-9 w-[6.5rem] rounded-xl bg-s2/50" />
           ) : session ? (
-            <AccountChip
-              name={session.user.name}
-              email={session.user.email}
-              image={session.user.image}
-            />
+            <>
+              {/*
+                Beside the avatar rather than in the nav: the marketing links
+                are for people deciding, this one is for people who already
+                did. Hidden on the smallest screens, where the menu carries it.
+              */}
+              <Link
+                href="/dashboard"
+                className="hidden rounded-lg px-3 py-2 text-[0.875rem] text-fg-muted transition-colors hover:text-fg sm:block"
+              >
+                Dashboard
+              </Link>
+              <AccountChip
+                name={session.user.name}
+                email={session.user.email}
+                image={session.user.image}
+              />
+            </>
           ) : (
             <>
               <Link

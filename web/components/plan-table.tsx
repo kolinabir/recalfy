@@ -2,6 +2,7 @@
 
 import { initializePaddle, type Paddle } from "@paddle/paddle-js";
 import { AnimatePresence, motion, useInView } from "motion/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -34,6 +35,20 @@ function money(minor: number, currency: string) {
  * its copy with no prices and no buttons, which is loud; quietly falling back
  * to sandbox is how test prices get shown to real customers.
  */
+/**
+ * Whether the plan they hold is the one this card is selling.
+ *
+ * An active subscription on an unrecognised price reports `id: null` — the
+ * catalogue moved under them — and then no card is "theirs". Both read
+ * "Manage plan" rather than one of them claiming to be their current plan.
+ */
+function onThisTier(
+  current: { id: "keep" | "archive" | null },
+  tier: Tier,
+): boolean {
+  return current.id !== null && current.id === tier.id;
+}
+
 const PADDLE_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
 const PADDLE_ENV = process.env.NEXT_PUBLIC_PADDLE_ENV;
 const CONFIGURED =
@@ -46,6 +61,12 @@ interface Props {
   country?: string;
   viewer?: { id: string; email: string };
   /**
+   * The plan they already hold, when one is active. Its absence means "no
+   * live subscription", which is the only state where opening a checkout is
+   * the right thing to do.
+   */
+  current?: { id: "keep" | "archive" | null; name: string };
+  /**
    * Hold Paddle back until the table is nearly in view. Set on the home page,
    * where this sits far below the fold; left off on /pricing, where prices are
    * the reason for the visit and must not wait on anything.
@@ -53,7 +74,7 @@ interface Props {
   defer?: boolean;
 }
 
-export function PlanTable({ tiers, country, viewer, defer }: Props) {
+export function PlanTable({ tiers, country, viewer, current, defer }: Props) {
   const router = useRouter();
   /*
     Paddle is three third-party requests — its script, its stylesheet, and a
@@ -154,6 +175,15 @@ export function PlanTable({ tiers, country, viewer, defer }: Props) {
     // webhook joins on, and a purchase without it fulfils to nobody.
     if (!viewer) {
       router.push(`/login?plan=${tier.id}&cycle=${cycle}`);
+      return;
+    }
+
+    // Belt and braces: the button for a subscribed account is already a link
+    // rather than this handler, but a second checkout would create a second
+    // subscription and charge them twice — so the guard lives here too, at
+    // the only place that can actually open one.
+    if (current) {
+      router.push("/dashboard/billing");
       return;
     }
 
@@ -291,7 +321,10 @@ export function PlanTable({ tiers, country, viewer, defer }: Props) {
 
               {listPrice ? (
                 <p className="mt-3 inline-flex items-center gap-2 self-start rounded-full bg-accent/12 px-3 py-1 font-mono text-[0.6875rem] tracking-wide text-accent">
-                  <span aria-hidden className="size-1.5 rounded-full bg-accent" />
+                  <span
+                    aria-hidden
+                    className="size-1.5 rounded-full bg-accent"
+                  />
                   Early bird — {listPrice} after launch
                 </p>
               ) : null}
@@ -330,33 +363,72 @@ export function PlanTable({ tiers, country, viewer, defer }: Props) {
                 ))}
               </ul>
 
-              <button
-                type="button"
-                onClick={() => subscribe(tier)}
-                disabled={Boolean(viewer) && (!paddle || failed || !CONFIGURED)}
-                className={cn(
-                  "mt-auto inline-flex h-11 w-full items-center justify-center rounded-xl text-[0.9375rem] font-medium transition-transform duration-300 hover:scale-[1.01] active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50",
-                  tier.featured
-                    ? "bg-accent text-accent-ink"
-                    : "border border-line text-fg hover:border-fg-faint",
-                )}
-              >
-                {viewer ? tier.cta : `Sign in to ${tier.cta.toLowerCase()}`}
-              </button>
+              {/*
+                Someone who already pays must never be handed a checkout. A
+                second one creates a second subscription and charges them
+                twice, and Paddle has no idea the first exists — so for them
+                this is a link to billing, not a button that opens anything.
+              */}
+              {current ? (
+                <Link
+                  href="/dashboard/billing"
+                  className={cn(
+                    "mt-auto inline-flex h-11 w-full items-center justify-center rounded-xl text-[0.9375rem] font-medium transition-transform duration-300 hover:scale-[1.01] active:scale-[0.99]",
+                    onThisTier(current, tier)
+                      ? "border border-line text-fg-muted hover:border-fg-faint"
+                      : tier.featured
+                        ? "bg-accent text-accent-ink"
+                        : "border border-line text-fg hover:border-fg-faint",
+                  )}
+                >
+                  {onThisTier(current, tier)
+                    ? "Your plan"
+                    : current.id
+                      ? `Switch to ${tier.name}`
+                      : "Manage plan"}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => subscribe(tier)}
+                  disabled={
+                    Boolean(viewer) && (!paddle || failed || !CONFIGURED)
+                  }
+                  className={cn(
+                    "mt-auto inline-flex h-11 w-full items-center justify-center rounded-xl text-[0.9375rem] font-medium transition-transform duration-300 hover:scale-[1.01] active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50",
+                    tier.featured
+                      ? "bg-accent text-accent-ink"
+                      : "border border-line text-fg hover:border-fg-faint",
+                  )}
+                >
+                  {viewer ? tier.cta : `Sign in to ${tier.cta.toLowerCase()}`}
+                </button>
+              )}
 
               {/* Paddle requires the buyer to have accepted the seller's terms
                   and refund policy before purchase, so the link sits on the
-                  button rather than buried in the footer. */}
+                  button rather than buried in the footer. Nobody is buying
+                  anything here once they hold a plan, so it goes away. */}
               <p className="mt-3 text-center text-[0.75rem] leading-relaxed text-fg-subtle">
-                7 days free. By subscribing you agree to the{" "}
-                <a href="/terms" className="underline underline-offset-2">
-                  terms
-                </a>{" "}
-                and{" "}
-                <a href="/refunds" className="underline underline-offset-2">
-                  refund policy
-                </a>
-                .
+                {current ? (
+                  onThisTier(current, tier) ? (
+                    "This is what you are on today."
+                  ) : (
+                    "Changing plan is handled in billing — no second charge."
+                  )
+                ) : (
+                  <>
+                    7 days free. By subscribing you agree to the{" "}
+                    <a href="/terms" className="underline underline-offset-2">
+                      terms
+                    </a>{" "}
+                    and{" "}
+                    <a href="/refunds" className="underline underline-offset-2">
+                      refund policy
+                    </a>
+                    .
+                  </>
+                )}
               </p>
             </section>
           );

@@ -32,7 +32,9 @@ export default async function OverviewPage() {
   if (!isConnected(viewer)) {
     // The connect widget is what a plan buys, so this branch has to know about
     // billing too — it is the first screen a new account lands on.
-    return <NotConnected firstName={firstName} plan={await planForUser(viewer.id)} />;
+    return (
+      <NotConnected firstName={firstName} plan={await planForUser(viewer.id)} />
+    );
   }
 
   const [memories, reminders, profile, plan] = await Promise.all([
@@ -73,10 +75,10 @@ export default async function OverviewPage() {
         </div>
       </header>
 
-      {memories.length === 0 ? (
-        <FirstForward />
-      ) : (
-        <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_18rem]">
+      <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_18rem]">
+        {memories.length === 0 ? (
+          <FirstForward />
+        ) : (
           <section aria-label="Recent memories">
             <SectionHead
               title="Recent"
@@ -90,60 +92,60 @@ export default async function OverviewPage() {
 
             <Resurfaced memories={memories} />
           </section>
+        )}
 
-          <aside className="grid content-start gap-8">
-            <Usage
-              held={memories.length}
-              cap={plan.memoryCap}
-              thisWeek={thisWeek}
-              reminders={reminders.length}
-              lastAt={memories[0]?.createdAt}
+        <aside className="grid content-start gap-8">
+          <Usage
+            held={memories.length}
+            cap={plan.memoryCap}
+            thisWeek={thisWeek}
+            reminders={reminders.length}
+            lastAt={memories[0]?.createdAt}
+          />
+
+          <section aria-label="Upcoming reminders">
+            <SectionHead
+              title="Coming up"
+              action={{ href: "/dashboard/reminders", label: "All" }}
             />
+            {reminders.length === 0 ? (
+              <p className="rounded-xl border border-line px-4 py-5 text-[0.8125rem] leading-relaxed text-fg-subtle">
+                Nothing scheduled. Tell the bot{" "}
+                <em className="not-italic text-fg-muted">
+                  “remind me Friday at 9”
+                </em>{" "}
+                and it lands here.
+              </p>
+            ) : (
+              <ul className="grid gap-2">
+                {reminders.slice(0, 3).map((reminder) => (
+                  <ReminderCard
+                    key={reminder.id}
+                    reminder={reminder}
+                    tz={profile.tz}
+                  />
+                ))}
+              </ul>
+            )}
+          </section>
 
-            <section aria-label="Upcoming reminders">
-              <SectionHead
-                title="Coming up"
-                action={{ href: "/dashboard/reminders", label: "All" }}
-              />
-              {reminders.length === 0 ? (
-                <p className="rounded-xl border border-line px-4 py-5 text-[0.8125rem] leading-relaxed text-fg-subtle">
-                  Nothing scheduled. Tell the bot{" "}
-                  <em className="not-italic text-fg-muted">
-                    “remind me Friday at 9”
-                  </em>{" "}
-                  and it lands here.
-                </p>
-              ) : (
-                <ul className="grid gap-2">
-                  {reminders.slice(0, 3).map((reminder) => (
-                    <ReminderCard
-                      key={reminder.id}
-                      reminder={reminder}
-                      tz={profile.tz}
-                    />
-                  ))}
-                </ul>
-              )}
+          {profile.brief?.enabled ? (
+            <section aria-label="Daily brief">
+              <SectionHead title="Daily brief" />
+              <p className="rounded-xl border border-line px-4 py-5 text-[0.8125rem] leading-relaxed text-fg-subtle">
+                Arrives in your chat at{" "}
+                <span className="font-mono text-fg-muted">
+                  {String(profile.brief.hour).padStart(2, "0")}:
+                  {String(profile.brief.minute).padStart(2, "0")}
+                </span>
+                {profile.tz ? (
+                  <> · {profile.tz.split("/").pop()?.replace("_", " ")}</>
+                ) : null}
+              </p>
             </section>
-
-            {profile.brief?.enabled ? (
-              <section aria-label="Daily brief">
-                <SectionHead title="Daily brief" />
-                <p className="rounded-xl border border-line px-4 py-5 text-[0.8125rem] leading-relaxed text-fg-subtle">
-                  Arrives in your chat at{" "}
-                  <span className="font-mono text-fg-muted">
-                    {String(profile.brief.hour).padStart(2, "0")}:
-                    {String(profile.brief.minute).padStart(2, "0")}
-                  </span>
-                  {profile.tz ? (
-                    <> · {profile.tz.split("/").pop()?.replace("_", " ")}</>
-                  ) : null}
-                </p>
-              </section>
-            ) : null}
-          </aside>
-        </div>
-      )}
+          ) : null}
+        </aside>
+      </div>
     </div>
   );
 }
@@ -189,8 +191,8 @@ function FirstForward() {
     <div className="mt-10 rounded-xl border border-line bg-s1 p-8 sm:p-10">
       <h2 className="display-sm text-[1.25rem]">You&apos;re connected.</h2>
       <p className="mt-3 max-w-prose leading-relaxed text-fg-muted">
-        Forward any message to the bot — or just tell it something worth
-        keeping — and it appears here within seconds. Try{" "}
+        Forward any message to the bot — or just tell it something worth keeping
+        — and it appears here within seconds. Try{" "}
         <em className="not-italic text-fg">
           “the wifi password at the studio is duckpond42”
         </em>
@@ -202,13 +204,7 @@ function FirstForward() {
 }
 
 /** The pre-connection page: the empty dashboard is the onboarding. */
-function NotConnected({
-  firstName,
-  plan,
-}: {
-  firstName?: string;
-  plan: Plan;
-}) {
+function NotConnected({ firstName, plan }: { firstName?: string; plan: Plan }) {
   const telegram = channelConfig("telegram");
   const paid = plan.active;
 
@@ -242,12 +238,10 @@ function NotConnected({
         </Link>
         {paid ? (
           <span className="text-fg-faint">
-            ·{" "}
-            {plan.state === "trialing"
-              ? "trial running"
-              : plan.memoryCap
-                ? `${plan.memoryCap.toLocaleString()} memories`
-                : "unlimited memories"}
+            {plan.state === "trialing" ? " · trial running" : ""} ·{" "}
+            {plan.memoryCap
+              ? `${plan.memoryCap.toLocaleString()} memories`
+              : "unlimited memories"}
           </span>
         ) : null}
       </p>
@@ -272,10 +266,7 @@ function NotConnected({
             "Forward anything",
             "Messages, notes, addresses, codes. One fact, one row.",
           ],
-          [
-            "Find it here",
-            "Search the whole memory, or just ask the bot.",
-          ],
+          ["Find it here", "Search the whole memory, or just ask the bot."],
         ].map(([title, body], index) => (
           <li key={title} className="rounded-xl border border-line px-5 py-5">
             <p className="font-mono text-[0.625rem] text-fg-faint">
