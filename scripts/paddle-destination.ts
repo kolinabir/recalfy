@@ -13,9 +13,47 @@
  * existing destination in place and keeps the same secret.
  */
 import 'dotenv/config';
-import { Environment, Paddle, type IEventName } from '@paddle/paddle-node-sdk';
+import { type IEventName } from '@paddle/paddle-node-sdk';
+
+import { paddleTarget } from './paddle-env';
 
 const DESCRIPTION = 'Recalfy fulfilment';
+
+/**
+ * Hosts that are somebody's laptop today and nobody's tomorrow.
+ *
+ * Matched by suffix rather than by "does this look like a domain" — the first
+ * version of this check tested for a valid TLD, which `ngrok-free.app` happily
+ * satisfies, and it let a live destination through to a tunnel.
+ */
+const EPHEMERAL_HOSTS = [
+  'ngrok.io',
+  'ngrok-free.app',
+  'ngrok.app',
+  'ngrok.dev',
+  'loca.lt',
+  'localhost',
+  'trycloudflare.com',
+  'hkdk.events',
+  'serveo.net',
+  'lhr.life',
+  'localhost.run',
+  'devtunnels.ms',
+  'vercel.app',
+  'netlify.app',
+  'onrender.com',
+];
+
+function isEphemeralHost(url: string): boolean {
+  let host: string;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return true;
+  }
+  if (host === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(host)) return true;
+  return EPHEMERAL_HOSTS.some((bad) => host === bad || host.endsWith(`.${bad}`));
+}
 
 /** Everything the mirror acts on. Anything else the handler ignores. */
 const EVENTS: IEventName[] = [
@@ -33,9 +71,22 @@ async function main(): Promise<void> {
     throw new Error('Pass the https URL of the webhook route as the first argument.');
   }
 
-  const key = required('PADDLE_API_KEY');
-  if (!key.includes('_sdbx')) throw new Error('Not a sandbox key. Refusing.');
-  const paddle = new Paddle(key, { environment: Environment.sandbox });
+  const { paddle, live, label } = paddleTarget();
+  console.log(`— ${label} —`);
+
+  if (live && isEphemeralHost(url)) {
+    throw new Error(
+      `Refusing to point a LIVE destination at ${url}.\n` +
+        'Live fulfilment events must go to a stable, deployed host — not a tunnel\n' +
+        'or preview URL. When the tunnel dies, real customers are charged and\n' +
+        'provisioned nothing, silently, until the 3-day retry budget expires.',
+    );
+  }
+
+  // Live takes platform traffic only. "all" additionally accepts simulator
+  // runs, which would let a test scenario write fabricated subscriptions into
+  // the production mirror.
+  const trafficSource = live ? 'platform' : 'all';
 
   const existing = (await paddle.notificationSettings.list()).find(
     (d) => d.description === DESCRIPTION,
@@ -46,7 +97,7 @@ async function main(): Promise<void> {
       destination: url,
       subscribedEvents: EVENTS,
       active: true,
-      trafficSource: 'all',
+      trafficSource,
     });
     console.log(`updated ${updated.id} -> ${url}`);
     console.log(`secret: ${updated.endpointSecretKey}`);
@@ -58,18 +109,12 @@ async function main(): Promise<void> {
     destination: url,
     subscribedEvents: EVENTS,
     type: 'url',
-    // "platform" is the default and refuses simulator traffic, so a scenario
-    // run cannot exercise the endpoint. "all" takes both real and simulated.
-    trafficSource: 'all',
+    // Sandbox needs "all" so the simulator can exercise the endpoint; live
+    // stays on "platform" so only real events can reach the mirror.
+    trafficSource,
   });
   console.log(`created ${created.id} -> ${url}`);
   console.log(`secret: ${created.endpointSecretKey}`);
-}
-
-function required(k: string): string {
-  const v = process.env[k];
-  if (!v) throw new Error(`Missing required environment variable: ${k}`);
-  return v;
 }
 
 main().catch((e: unknown) => {

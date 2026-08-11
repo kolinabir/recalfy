@@ -11,13 +11,13 @@ import { visitorCountry } from "@/lib/paddle/country";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Two plans and a self-hosted option. Fourteen days free, no card up front, export your memory any day.",
+    "Two plans and a self-hosted option. Seven days free, refunds within fourteen days, export your memory any day.",
 };
 
 const ASSURANCES = [
   {
-    title: "Fourteen days, no card",
-    body: "Use it properly before you decide anything. Nothing is collected until you say so.",
+    title: "Seven days free, then fourteen to change your mind",
+    body: "Nothing is charged during the trial, and any payment is refundable for fourteen days. No survey, no retention call.",
   },
   {
     title: "Cancel in a sentence",

@@ -1,11 +1,10 @@
 /**
- * Creates the Recalfy plans — Keep and Archive — in the Paddle *sandbox*, each
- * with a monthly and an annual price, a 7-day trial, and GB/IE/AU overrides.
+ * Creates the Recalfy plans — Keep and Archive — each with a monthly and an
+ * annual price, a 7-day trial, and GB/IE/AU overrides.
  *
- *   1. Create a sandbox API key with product.write and price.write at
- *      https://sandbox-vendors.paddle.com/authentication-v2
- *   2. Put it in .env as PADDLE_API_KEY (sandbox keys contain "_sdbx")
- *   3. npm run seed:paddle
+ *   1. Create an API key with product.write and price.write
+ *   2. Put it in .env as PADDLE_API_KEY
+ *   3. npm run seed:paddle          (live: npm run seed:paddle -- --live)
  *
  * Prints the product and price ids as JSON — that mapping is what checkout
  * needs, so keep the output.
@@ -14,10 +13,13 @@
  * "Keep" products, which is why it refuses to touch a plan whose name already
  * exists. Pass --force to create anyway.
  *
- * Sandbox only by design. Live prices are a pricing decision, not a script.
+ * Targets whichever account PADDLE_API_KEY belongs to. A live key additionally
+ * requires --live, because live products cannot be deleted and a tax category
+ * freezes on first sale.
  */
 import 'dotenv/config';
-import { Environment, Paddle } from '@paddle/paddle-node-sdk';
+
+import { paddleTarget } from './paddle-env';
 
 /**
  * Amounts are strings in the currency's lowest denomination — "600" is $6.00.
@@ -60,13 +62,9 @@ const PLANS: Plan[] = [
 ];
 
 async function main(): Promise<void> {
-  const key = required('PADDLE_API_KEY');
-  if (!key.includes('_sdbx')) {
-    throw new Error('PADDLE_API_KEY is not a sandbox key (sandbox keys contain "_sdbx"). Refusing to touch live.');
-  }
-
-  const paddle = new Paddle(key, { environment: Environment.sandbox });
+  const { paddle, label } = paddleTarget();
   const force = process.argv.includes('--force');
+  console.log(`— ${label} —\n`);
 
   if (!force) {
     const taken = new Set<string>();
@@ -76,7 +74,7 @@ async function main(): Promise<void> {
     const clashes = PLANS.map((plan) => plan.name).filter((name) => taken.has(name));
     if (clashes.length > 0) {
       throw new Error(
-        `Already in this sandbox: ${clashes.join(', ')}. Creating again would duplicate them — ` +
+        `Already in this ${label} account: ${clashes.join(', ')}. Creating again would duplicate them — ` +
           'archive the old ones in the dashboard, or re-run with --force.',
       );
     }
@@ -113,12 +111,6 @@ async function main(): Promise<void> {
   }
 
   console.log(JSON.stringify(catalog, null, 2));
-}
-
-function required(key: string): string {
-  const value = process.env[key];
-  if (!value) throw new Error(`Missing required environment variable: ${key}`);
-  return value;
 }
 
 main().catch((error: unknown) => {

@@ -41,10 +41,15 @@ export const INDEXES: Record<string, IndexDescription[]> = {
   // Both are keyed by their Paddle id, so `_id` already serves the webhook's
   // upsert. These serve the other direction: "what is this account entitled
   // to", which every gated read asks.
+  // Unique, not merely indexed: one Paddle customer per account is what makes
+  // "which customer is this?" a single answer. Without it a second row can
+  // shadow the real one and an unordered findOne picks arbitrarily — which is
+  // the difference between showing someone their invoices and someone else's.
   [COLLECTIONS.paddleCustomers]: [
     {
       key: { userId: 1 },
       name: 'by_account',
+      unique: true,
       partialFilterExpression: { userId: { $type: 'string' } },
     },
   ],

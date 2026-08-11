@@ -253,6 +253,21 @@ export function PlanTable({ tiers, country, viewer }: Props) {
               >
                 {viewer ? tier.cta : `Sign in to ${tier.cta.toLowerCase()}`}
               </button>
+
+              {/* Paddle requires the buyer to have accepted the seller's terms
+                  and refund policy before purchase, so the link sits on the
+                  button rather than buried in the footer. */}
+              <p className="mt-3 text-center text-[0.75rem] leading-relaxed text-fg-subtle">
+                7 days free. By subscribing you agree to the{" "}
+                <a href="/terms" className="underline underline-offset-2">
+                  terms
+                </a>{" "}
+                and{" "}
+                <a href="/refunds" className="underline underline-offset-2">
+                  refund policy
+                </a>
+                .
+              </p>
             </section>
           );
         })}

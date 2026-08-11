@@ -60,7 +60,14 @@ export async function planForUser(userId: string): Promise<Plan> {
     cycle,
     state: accessState(subscription),
     active: grantsAccess(subscription),
-    endsAt: subscription.scheduledChange?.at ?? null,
+    // Only a cancel or pause ends anything. A scheduled `resume` also lands
+    // in this field, and reporting that date as "ends" would tell someone
+    // their plan stops on the day it actually restarts.
+    endsAt:
+      subscription.scheduledChange &&
+      subscription.scheduledChange.action !== "resume"
+        ? subscription.scheduledChange.at
+        : null,
   };
 }
 

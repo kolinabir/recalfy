@@ -17,7 +17,7 @@ export function Closing() {
             </span>
           </h2>
           <p className="mx-auto mt-6 max-w-md leading-relaxed text-fg-muted">
-            Fourteen days, no card. Bring one week of the things you keep meaning
+            Seven days free, and fourteen more to change your mind. Bring one week of the things you keep meaning
             to write down, and see whether you still need to.
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">

@@ -1,3 +1,6 @@
+import { ObjectId } from "mongodb";
+
+import { db } from "@/lib/mongo";
 import {
   EventName,
   type CustomerCreatedEvent,
@@ -85,10 +88,17 @@ async function onSubscription(
   const data = event.data;
   const item = data.items[0];
 
+  const userId = await accountFrom(data.customData);
+
+  // Bind the customer here too. `transaction.completed` used to be the only
+  // writer of this link, so losing that one delivery left a paying customer
+  // with no portal session and an empty invoice list.
+  await upsertCustomer({ customerId: data.customerId, userId });
+
   await upsertSubscription({
     subscriptionId: data.id,
     customerId: data.customerId,
-    userId: userIdFrom(data.customData),
+    userId,
     status: data.status as SubscriptionStatus,
     priceId: item?.price?.id ?? "",
     productId: item?.price?.productId ?? "",
@@ -105,10 +115,12 @@ async function onSubscription(
 async function onCustomer(
   event: CustomerCreatedEvent | CustomerUpdatedEvent,
 ): Promise<void> {
+  // No userId here on purpose: checkout custom_data is stored against the
+  // transaction and copied to the subscription, never onto the customer
+  // entity, so reading it here would always be undefined.
   await upsertCustomer({
     customerId: event.data.id,
     email: event.data.email,
-    userId: userIdFrom(event.data.customData),
   });
 }
 
@@ -118,7 +130,7 @@ async function onCustomer(
  * names both the Paddle customer and our account id.
  */
 async function onTransaction(event: TransactionCompletedEvent): Promise<void> {
-  const userId = userIdFrom(event.data.customData);
+  const userId = await accountFrom(event.data.customData);
   const customerId = event.data.customerId;
   if (!userId || !customerId) return;
 
@@ -129,10 +141,22 @@ async function onTransaction(event: TransactionCompletedEvent): Promise<void> {
 
 /**
  * The account id we put on the checkout. Everything else about a customer can
- * change — email especially — so this is the only join we trust.
+ * change — email especially — so this is the only join we have.
+ *
+ * It is a claim, not a fact: `custom_data` is set by the browser that opened
+ * the checkout, and Paddle's signature says nothing about who chose the value.
+ * So it is checked against a real account here, and the mirror binds it
+ * write-once. Both are needed — this stops rows being created for accounts
+ * that do not exist, the mirror stops an existing row being repointed.
  */
-function userIdFrom(customData: unknown): string | undefined {
+async function accountFrom(customData: unknown): Promise<string | undefined> {
   if (typeof customData !== "object" || customData === null) return undefined;
   const value = (customData as { userId?: unknown }).userId;
-  return typeof value === "string" && value.length > 0 ? value : undefined;
+  if (typeof value !== "string" || !ObjectId.isValid(value)) return undefined;
+
+  const account = await db
+    .collection("user")
+    .findOne({ _id: new ObjectId(value) }, { projection: { _id: 1 } });
+
+  return account ? value : undefined;
 }

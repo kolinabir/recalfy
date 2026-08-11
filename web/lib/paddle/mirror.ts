@@ -72,23 +72,48 @@ export async function upsertCustomer(input: {
   userId?: string;
 }): Promise<void> {
   const now = new Date();
+
   await customers().updateOne(
     { _id: input.customerId },
     {
       // Only ever widen what we know. Events that omit a field — a
       // transaction with no email expanded, a customer.updated with no
       // custom_data — must not erase what an earlier event established.
-      $set: {
-        updatedAt: now,
-        ...(input.email ? { email: input.email } : {}),
-        ...(input.userId ? { userId: input.userId } : {}),
-      },
+      $set: { updatedAt: now, ...(input.email ? { email: input.email } : {}) },
       // `email` is only named here when $set did not already claim it —
       // Mongo rejects an update touching the same path twice.
       $setOnInsert: { createdAt: now, ...(input.email ? {} : { email: "" }) },
     },
     { upsert: true },
   );
+
+  if (!input.userId) return;
+
+  // `userId` is bound in a second, guarded write rather than in the $set above,
+  // because it is the account this customer's money and invoices belong to and
+  // it arrives from `custom_data` — which the browser sets when it opens the
+  // checkout. Paddle's signature proves Paddle sent the event; it proves
+  // nothing about who chose that value. So the binding is write-once: it takes
+  // only when the row has no account yet, or already names this one.
+  //
+  // Without this filter, anyone who can open a checkout could repoint an
+  // existing customer row at their own account and inherit that customer's
+  // portal, payment method and invoice history.
+  const bound = await customers().updateOne(
+    {
+      _id: input.customerId,
+      $or: [{ userId: { $exists: false } }, { userId: input.userId }],
+    },
+    { $set: { userId: input.userId, updatedAt: now } },
+  );
+
+  if (bound.matchedCount === 0) {
+    // Either a genuine re-link that needs a human, or someone trying to claim
+    // another account's customer. Both are worth seeing; neither is applied.
+    console.warn(
+      `[paddle] refused to rebind customer ${input.customerId} to ${input.userId}: already bound to a different account`,
+    );
+  }
 }
 
 export async function upsertSubscription(input: {
@@ -110,7 +135,7 @@ export async function upsertSubscription(input: {
     productId: input.productId,
     occurredAt: input.occurredAt,
     updatedAt: now,
-    ...(input.userId ? { userId: input.userId } : {}),
+    // userId is deliberately absent — see the guarded bind below.
     // Absent means no pending change — the field has to be removed, not left
     // behind, when Paddle clears it.
     ...(input.scheduledChange ? { scheduledChange: input.scheduledChange } : {}),
@@ -135,6 +160,25 @@ export async function upsertSubscription(input: {
     // 2xx, where rethrowing would make Paddle retry an event we will never
     // apply. Anything else is a real failure and must still fail the request.
     if (!isDuplicateKey(error)) throw error;
+  }
+
+  if (!input.userId) return;
+
+  // Write-once, for the same reason as the customer binding: this decides
+  // whose account a subscription unlocks, and it comes from browser-supplied
+  // custom_data. A later event may not move it to a different account.
+  const bound = await subscriptions().updateOne(
+    {
+      _id: input.subscriptionId,
+      $or: [{ userId: { $exists: false } }, { userId: input.userId }],
+    },
+    { $set: { userId: input.userId, updatedAt: now } },
+  );
+
+  if (bound.matchedCount === 0) {
+    console.warn(
+      `[paddle] refused to rebind subscription ${input.subscriptionId} to ${input.userId}: already bound to a different account`,
+    );
   }
 }
 

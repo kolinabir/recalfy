@@ -6,14 +6,13 @@
  *   npm run paddle:token
  */
 import 'dotenv/config';
-import { Environment, Paddle } from '@paddle/paddle-node-sdk';
 
-const NAME = 'Recalfy web (sandbox)';
+import { paddleTarget } from './paddle-env';
 
 async function main(): Promise<void> {
-  const key = required('PADDLE_API_KEY');
-  if (!key.includes('_sdbx')) throw new Error('Not a sandbox key. Refusing.');
-  const paddle = new Paddle(key, { environment: Environment.sandbox });
+  const { paddle, live, label } = paddleTarget();
+  const NAME = `Recalfy web (${live ? 'live' : 'sandbox'})`;
+  console.log(`— ${label} —`);
 
   for await (const existing of paddle.clientTokens.list({ status: ['active'] })) {
     if (existing.name === NAME) {
@@ -27,12 +26,6 @@ async function main(): Promise<void> {
     description: 'Paddle.js on recalfy.com — pricing page and checkout overlay.',
   });
   console.log(`created: ${created.token}`);
-}
-
-function required(k: string): string {
-  const v = process.env[k];
-  if (!v) throw new Error(`Missing required environment variable: ${k}`);
-  return v;
 }
 
 main().catch((e: unknown) => {
