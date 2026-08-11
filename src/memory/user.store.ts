@@ -4,6 +4,7 @@ import { DateTime } from 'luxon';
 import { ENV, Env } from '../config/env';
 import { BriefConfig, Channel, UserDoc, UserId } from '../mongo/collections';
 import { MongoService } from '../mongo/mongo.service';
+import { currencyForZone } from '../tracker/currency';
 
 /**
  * The user record: timezone, the short-id counter, and where the person was
@@ -68,7 +69,18 @@ export class UserStore {
       // otherwise, so a later move doesn't rewrite when we first met them.
       { $set: { tz }, $min: { onboardedAt: new Date() } },
     );
+    // The zone is also the currency default — but only ever the first time.
+    // Moving to Berlin must not silently re-denominate a BDT ledger.
+    await this.mongo.users.updateOne(
+      { _id: userId, currency: { $exists: false } },
+      { $set: { currency: currencyForZone(tz) } },
+    );
     return true;
+  }
+
+  /** An explicit "use dollars" from the user, via configure_tracker. */
+  async setCurrency(userId: UserId, currency: string): Promise<void> {
+    await this.mongo.users.updateOne({ _id: userId }, { $set: { currency } });
   }
 
   async setBrief(userId: UserId, brief: BriefConfig): Promise<void> {

@@ -23,6 +23,13 @@ test('catches a claim that a reminder exists', () => {
   assert.equal(claimsAction('Reminder set for tomorrow.'), true);
 });
 
+test('catches a claim that an expense or entry was logged', () => {
+  assert.equal(claimsAction("Logged it — 250 on groceries."), true);
+  assert.equal(claimsAction("I've tracked that for you."), true);
+  assert.equal(claimsAction('Added it to your shopping list.'), true);
+  assert.equal(claimsAction('Marked it as bought.'), true);
+});
+
 test('leaves a plain answer alone', () => {
   assert.equal(claimsAction('Your rent is due on the 3rd of each month.'), false);
   assert.equal(claimsAction('Your landlord is Rahim.'), false);

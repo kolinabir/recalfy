@@ -1,5 +1,7 @@
 import { ObjectId } from 'mongodb';
 
+import { TrackerConfig } from '../tracker/tracker.types';
+
 /**
  * The person, independent of where they are typing. Hex form of the Better
  * Auth account `_id`, stored as the `_id` of `users`.
@@ -40,6 +42,12 @@ export interface UserDoc {
   /** IANA zone, e.g. "Asia/Kolkata". Every reminder resolution depends on it. */
   tz: string;
   /**
+   * ISO 4217 code amounts are assumed to be in, e.g. "BDT". Defaulted from
+   * the timezone the moment it is learned — see tracker/currency.ts — so a
+   * bare "250" always has a meaning.
+   */
+  currency?: string;
+  /**
    * Set once we've learned where the user actually is, rather than assuming
    * the default. Until then the assistant is still introducing itself.
    */
@@ -56,6 +64,14 @@ export interface UserDoc {
   lastReflectionDay?: string;
   /** Monotonic counter behind the short ids (`sid`) shown to the model. */
   sidCounter: number;
+  /** The same, for tracker entries — their sids wear an `e` prefix. */
+  entrySidCounter?: number;
+  /**
+   * Tracker configurations, embedded because a user has a handful at most
+   * and the brain fetches this document every turn anyway. The built-in
+   * "spending" tracker exists even when absent here — see TrackerStore.
+   */
+  trackers?: TrackerConfig[];
   /**
    * The channel the last inbound message came from. Anything the user did not
    * just ask for — a reminder, the daily brief — goes here, so the assistant
@@ -100,6 +116,38 @@ export interface MemoryDoc {
    * no sweep required, kept for audit like a soft delete.
    */
   staleAfter?: Date;
+  sourceMessageId?: ObjectId;
+  createdAt: Date;
+}
+
+/**
+ * One tracker entry: "cucumber 250", "2L water", "went to the gym". The
+ * high-volume sibling of MemoryDoc — thousands per year, so rows never render
+ * into the prompt; they are aggregated (see TrackerStore) and only a digest
+ * of totals appears there.
+ */
+export interface EntryDoc {
+  _id: ObjectId;
+  userId: UserId;
+  /** Short id with an `e` prefix (`e07`), so it can never collide with a fact. */
+  sid: string;
+  /** Which tracker, lower-case: "spending", "water". */
+  tracker: string;
+  /** What it was for: "cucumber", "rickshaw". */
+  item?: string;
+  /** Amount in the tracker's unit. A bare tick ("went to the gym") is 1. */
+  value: number;
+  /** Spending only: "groceries", "transport". */
+  category?: string;
+  /**
+   * Spending only: money not yet spent — a shopping-list line. Flipping it
+   * off (bought) unsets this and re-stamps `at` with the purchase moment.
+   */
+  planned?: boolean;
+  /** When it happened — the instant every report buckets on. */
+  at: Date;
+  /** Soft delete: "that wasn't an expense". Kept for audit, like memories. */
+  deletedAt?: Date;
   sourceMessageId?: ObjectId;
   createdAt: Date;
 }
@@ -238,6 +286,7 @@ export const COLLECTIONS = {
   users: 'users',
   messages: 'messages',
   memories: 'memories',
+  entries: 'entries',
   reminders: 'reminders',
   linkTokens: 'linkTokens',
   pairingCodes: 'pairingCodes',

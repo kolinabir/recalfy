@@ -4,6 +4,7 @@ import { Collection, Db, IndexDescription, MongoClient } from 'mongodb';
 import { ENV, Env } from '../config/env';
 import {
   COLLECTIONS,
+  EntryDoc,
   LinkTokenDoc,
   MemoryDoc,
   MessageDoc,
@@ -61,6 +62,10 @@ export class MongoService implements OnModuleInit, OnApplicationShutdown {
 
   get memories(): Collection<MemoryDoc> {
     return this.db.collection<MemoryDoc>(COLLECTIONS.memories);
+  }
+
+  get entries(): Collection<EntryDoc> {
+    return this.db.collection<EntryDoc>(COLLECTIONS.entries);
   }
 
   get reminders(): Collection<ReminderDoc> {

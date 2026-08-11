@@ -252,4 +252,158 @@ export const CASES: EvalCase[] = [
       },
     ],
   },
+  {
+    name: 'tracking: bare item + amount → expense, spent',
+    timezone: DHAKA,
+    turns: [
+      {
+        say: 'cucumber 250',
+        expect: [
+          {
+            tool: 'track',
+            check: (args) =>
+              entries(args).some((e) => e.value === 250 && e.planned !== true),
+            label: 'value=250, not planned',
+          },
+        ],
+        forbid: ['remember', 'remind'],
+      },
+    ],
+  },
+  {
+    name: 'tracking: "buy X" → shopping list, then bought → update_entry',
+    timezone: DHAKA,
+    turns: [
+      {
+        say: 'buy cucumber, should be around 250',
+        expect: [
+          {
+            tool: 'track',
+            check: (args) => entries(args).some((e) => e.planned === true),
+            label: 'planned=true',
+          },
+        ],
+        forbid: ['remind'],
+      },
+      {
+        say: 'got the cucumber just now',
+        expect: [
+          {
+            tool: 'update_entry',
+            check: (args) => args.bought === true,
+            label: 'bought=true, not a second entry',
+          },
+        ],
+        forbid: ['track'],
+      },
+    ],
+  },
+  {
+    name: 'tracking: price arrives only at purchase',
+    timezone: DHAKA,
+    turns: [
+      {
+        say: 'need to grab milk',
+        expect: [
+          {
+            tool: 'track',
+            check: (args) => entries(args).some((e) => e.planned === true),
+            label: 'planned=true',
+          },
+        ],
+      },
+      {
+        say: 'got the milk, it was 80',
+        expect: [
+          {
+            tool: 'update_entry',
+            check: (args) => args.bought === true && args.value === 80,
+            label: 'bought=true with the real price',
+          },
+        ],
+        forbid: ['track'],
+      },
+    ],
+  },
+  {
+    name: 'tracking: correction cites the entry',
+    timezone: DHAKA,
+    turns: [
+      { say: 'rickshaw 100' },
+      {
+        say: 'oh wait, it was actually 150',
+        expect: [
+          {
+            tool: 'update_entry',
+            check: (args) => args.value === 150,
+            label: 'value corrected to 150',
+          },
+        ],
+        forbid: ['track'],
+      },
+    ],
+  },
+  {
+    name: 'tracking: "track my water, 3L a day" → configure_tracker',
+    timezone: DHAKA,
+    turns: [
+      {
+        say: 'can you track my water intake? i want to drink 3 liters a day',
+        expect: [
+          {
+            tool: 'configure_tracker',
+            check: (args) => String(args.name ?? '').toLowerCase().includes('water'),
+            label: 'a water tracker with a goal',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'tracking: a durable amount is a fact, not an expense',
+    timezone: DHAKA,
+    turns: [
+      {
+        say: 'my rent is 15000 by the way',
+        expect: [{ tool: 'remember' }],
+        forbid: ['track'],
+      },
+    ],
+  },
+  {
+    name: 'tracking: "how much this month" answered from the digest',
+    timezone: DHAKA,
+    turns: [
+      { say: 'lunch 350' },
+      {
+        say: 'how much have I spent this month?',
+        replyMatch: /350/,
+        forbid: ['track'],
+      },
+    ],
+  },
+  {
+    name: 'tracking: last month needs the report tool',
+    timezone: DHAKA,
+    turns: [
+      {
+        say: 'how much did i spend last month?',
+        expect: [{ tool: 'report' }],
+      },
+    ],
+  },
+  {
+    name: 'tracking: buying at a future time is a reminder, not a list line',
+    timezone: DHAKA,
+    turns: [
+      {
+        say: 'i need to buy milk tomorrow evening on the way home',
+        expect: [{ tool: 'remind' }],
+      },
+    ],
+  },
 ];
+
+function entries(args: Record<string, unknown>): Record<string, unknown>[] {
+  return Array.isArray(args.entries) ? (args.entries as Record<string, unknown>[]) : [];
+}

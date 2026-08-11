@@ -5,6 +5,7 @@ import { GlmClient } from '../llm/glm.client';
 import { Turn } from '../llm/llm.types';
 import { MemoryStore } from '../memory/memory.store';
 import { UserStore } from '../memory/user.store';
+import { TrackerStore } from '../tracker/tracker.store';
 import { UserId } from '../mongo/collections';
 import { NO_ACTION_TAKEN, claimsAction } from './claims-action';
 import { ConversationWindow } from './conversation-window';
@@ -32,6 +33,7 @@ export class BrainService {
   constructor(
     private readonly glm: GlmClient,
     private readonly memories: MemoryStore,
+    private readonly trackers: TrackerStore,
     private readonly users: UserStore,
     private readonly window: ConversationWindow,
     private readonly tools: ToolExecutor,
@@ -121,8 +123,13 @@ export class BrainService {
   }
 
   private async systemPrompt(context: ToolContext): Promise<string> {
+    const [memory, tracking] = await Promise.all([
+      this.memories.render(context.userId, context.now),
+      this.trackers.digest(context.userId, context.timezone, context.now),
+    ]);
     return buildSystemPrompt({
-      memory: await this.memories.render(context.userId, context.now),
+      memory,
+      tracking,
       timezone: context.timezone,
       now: context.now,
       onboarded: context.onboarded,

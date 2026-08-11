@@ -9,6 +9,9 @@ const CLAIMS = [
   /\b(?:i(?:'ve| have)?\s+)?(?:forgotten|forgot|deleted|removed|dropped|erased|wiped)\b/i,
   /\bi(?:'ll| will|'ve| have)?\s*(?:set (?:a|the) reminder|remind you)\b/i,
   /\breminder (?:is )?(?:set|scheduled|created)\b/i,
+  /\b(?:i(?:'ve| have)?\s+)?(?:logged|tracked|recorded)\b/i,
+  /\b(?:added|put) (?:it|that|this)?\s*(?:on|to) (?:your|the) (?:shopping\s+)?list\b/i,
+  /\bmarked (?:it|that|this)?\s*(?:as\s+)?bought\b/i,
   /\b(?:got it|done|all set|consider it done)\b/i,
 ];
 
@@ -27,5 +30,5 @@ export function claimsAction(reply: string): boolean {
 export const NO_ACTION_TAKEN =
   'You just told the user something was done, but you called no tool, so nothing ' +
   'changed. Either call the correct tool now (remember / forget / remind / ' +
-  'set_timezone / cancel_reminder), or reply again without claiming anything ' +
-  'happened.';
+  'set_timezone / cancel_reminder / track / update_entry), or reply again ' +
+  'without claiming anything happened.';

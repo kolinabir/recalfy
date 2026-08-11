@@ -3,6 +3,8 @@ import { DateTime } from 'luxon';
 export interface PromptInput {
   /** The rendered memory document from MemoryStore. */
   memory: string;
+  /** The rendered tracking digest from TrackerStore. Empty until first use. */
+  tracking: string;
   timezone: string;
   now: Date;
   /** False until we've learned where they actually are. */
@@ -77,6 +79,34 @@ const RULES = `How to behave:
 - The user never types commands. If a message starts with "/", treat it as
   ordinary conversation.`;
 
+const TRACKING = `Tracking — repeating numbers (money, habits, measurements):
+
+- A bare item with an amount is money already spent: "cucumber 250",
+  "rickshaw 100", "paid 250 for lunch" → call \`track\` on "spending" with the
+  value, an item, and a broad category (groceries, transport, rent, eating
+  out, health). Confirm in a few words ("250, groceries").
+- An imperative to buy — "buy cucumber 250", "need milk", "pick up eggs" —
+  is money NOT yet spent: \`track\` with planned=true. It joins the shopping
+  list shown under Tracking. If they later say they bought it, call
+  \`update_entry\` with bought=true on that line's id instead of logging a
+  second entry — and include \`value\` if the real price is only named now
+  ("got the milk, it was 80"). A purchase tied to a future time ("buy milk
+  tomorrow at 6") is a \`remind\`, not a list line.
+- Corrections cite the entry id from the Tracking section: "actually 350" →
+  \`update_entry\` with the new value; "that was transport" → new category;
+  "that wasn't an expense" → remove=true.
+- Other repeating numbers — water, gym, weight, pages read — go to \`track\`
+  under that tracker's name; it is created on first use. "I want to keep it
+  under 15000 a month" or "aim for 3L a day" is \`configure_tracker\`.
+- The Tracking section below already answers "how much this month", the
+  shopping list, and habit progress — answer from it directly. For past
+  months or breakdowns it cannot answer, call \`report\`.
+- One-off amounts are still tracking ("gave the plumber 500" is an expense);
+  but a durable fact with a number in it ("rent is 15000") is a \`remember\`,
+  not an expense — nothing was spent by saying it.
+- Genuinely unsure whether money was spent or is planned? Log nothing and
+  ask in one short line — never both.`;
+
 const ONBOARDING = `THIS IS YOUR FIRST CONVERSATION WITH THIS USER.
 
 Before anything else, introduce yourself in one short line and ask them two
@@ -111,6 +141,9 @@ const CLOSING = `The user's next message may need an action, not just an answer:
   matching fact listed above
 - it asks to be reminded, or mentions a task/intention tied to a future time
   even offhand → call \`remind\`
+- it names money spent or an amount of something done → call \`track\`; an
+  instruction to buy something → \`track\` with planned=true; "bought it" or
+  a correction to an entry listed under Tracking → \`update_entry\`
 
 You MUST make that call in this turn. Saying "got it" or "done" without it
 loses the change and is a lie to the user.`;
@@ -126,7 +159,13 @@ loses the change and is a lie to the user.`;
  * possible prefix; the clock and the closing imperative, which change every
  * turn, come after it.
  */
-export function buildSystemPrompt({ memory, timezone, now, onboarded }: PromptInput): string {
+export function buildSystemPrompt({
+  memory,
+  tracking,
+  timezone,
+  now,
+  onboarded,
+}: PromptInput): string {
   const local = DateTime.fromJSDate(now, { zone: timezone });
 
   return [
@@ -135,8 +174,12 @@ export function buildSystemPrompt({ memory, timezone, now, onboarded }: PromptIn
     // and made no difference to tool-calling, so the cheaper layout wins.
     PERSONA,
     RULES,
+    TRACKING,
     '---',
     memory,
+    // After the memory document: both change as data changes, but the digest
+    // changes more often (every logged expense), so it sits later.
+    ...(tracking ? [tracking] : []),
     `Right now it is ${local.toFormat('EEEE d LLLL yyyy, h:mm a')} (${timezone}).`,
     `In ISO-8601 that is ${local.toISO()}. Use this offset for every reminder.`,
     onboarded ? CLOSING : ONBOARDING,

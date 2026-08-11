@@ -157,6 +157,7 @@ async function wipe(mongo: MongoService, userId: UserId): Promise<void> {
     mongo.users.deleteMany({ _id: userId }),
     mongo.messages.deleteMany({ userId }),
     mongo.memories.deleteMany({ userId }),
+    mongo.entries.deleteMany({ userId }),
     mongo.reminders.deleteMany({ userId }),
   ]);
 }

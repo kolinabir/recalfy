@@ -3,20 +3,25 @@ import { Module } from '@nestjs/common';
 import { LlmModule } from '../llm/llm.module';
 import { MemoryModule } from '../memory/memory.module';
 import { RemindersModule } from '../reminders/reminders.module';
+import { TrackerModule } from '../tracker/tracker.module';
 import { BrainService } from './brain.service';
 import { ConversationWindow } from './conversation-window';
 import { HistorySearch } from './history-search';
 import { SearchHistoryTool } from './tools/search-history.tool';
 import { CancelReminderTool } from './tools/cancel-reminder.tool';
+import { ConfigureTrackerTool } from './tools/configure-tracker.tool';
 import { ExportMemoryTool } from './tools/export-memory.tool';
 import { ForgetTool } from './tools/forget.tool';
 import { ListRemindersTool } from './tools/list-reminders.tool';
 import { RecallSourceTool } from './tools/recall-source.tool';
 import { RememberTool } from './tools/remember.tool';
 import { RemindTool } from './tools/remind.tool';
+import { ReportTool } from './tools/report.tool';
 import { SetDailyBriefTool } from './tools/set-daily-brief.tool';
 import { SetEveningReflectionTool } from './tools/set-evening-reflection.tool';
 import { SetTimezoneTool } from './tools/set-timezone.tool';
+import { TrackTool } from './tools/track.tool';
+import { UpdateEntryTool } from './tools/update-entry.tool';
 import { TOOLS, Tool } from './tools/tool';
 import { ToolExecutor } from './tools/tool-executor';
 
@@ -33,10 +38,14 @@ const TOOL_CLASSES = [
   SearchHistoryTool,
   RecallSourceTool,
   ExportMemoryTool,
+  TrackTool,
+  UpdateEntryTool,
+  ReportTool,
+  ConfigureTrackerTool,
 ];
 
 @Module({
-  imports: [LlmModule, MemoryModule, RemindersModule],
+  imports: [LlmModule, MemoryModule, RemindersModule, TrackerModule],
   providers: [
     HistorySearch,
     ...TOOL_CLASSES,

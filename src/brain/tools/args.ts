@@ -41,6 +41,26 @@ export function optionalPositiveInteger(
   return value;
 }
 
+/** Positive and finite, decimals welcome — 2.5 litres is a real amount. */
+export function optionalPositiveNumber(
+  args: Record<string, unknown>,
+  key: string,
+): number | undefined {
+  const value = args[key];
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    throw new BadArguments(`"${key}" must be a positive number.`);
+  }
+  return value;
+}
+
+export function optionalBoolean(args: Record<string, unknown>, key: string): boolean | undefined {
+  const value = args[key];
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'boolean') throw new BadArguments(`"${key}" must be true or false.`);
+  return value;
+}
+
 export function requireStringArray(args: Record<string, unknown>, key: string): string[] {
   const value = args[key];
   if (!Array.isArray(value)) throw new BadArguments(`"${key}" must be an array.`);

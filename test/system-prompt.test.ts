@@ -5,6 +5,7 @@ import { buildSystemPrompt } from '../src/brain/system-prompt';
 
 const INPUT = {
   memory: '# What I know about you\n_Timezone: Asia/Dhaka · 1 memory_\n\n## Home\n- Rent is due on the 5th. `01`',
+  tracking: '# Tracking\n\n## Spending (August)\nTotal: 1,250 BDT',
   timezone: 'Asia/Dhaka',
   onboarded: true,
   now: new Date('2026-08-09T08:00:00Z'),
@@ -49,4 +50,20 @@ test('keeps persona, rules and memory ahead of the volatile tail, for caching', 
   const prompt = buildSystemPrompt(INPUT);
 
   assert.ok(prompt.indexOf(INPUT.memory) < prompt.indexOf('Right now it is'));
+});
+
+test('includes the tracking digest after the memory, before the clock', () => {
+  const prompt = buildSystemPrompt(INPUT);
+
+  assert.match(prompt, /Total: 1,250 BDT/);
+  assert.ok(prompt.indexOf(INPUT.memory) < prompt.indexOf(INPUT.tracking));
+  assert.ok(prompt.indexOf(INPUT.tracking) < prompt.indexOf('Right now it is'));
+});
+
+test('an empty digest leaves no gap in the prompt', () => {
+  const prompt = buildSystemPrompt({ ...INPUT, tracking: '' });
+
+  assert.doesNotMatch(prompt, /# Tracking/);
+  // The rules still teach tracking even before anything is tracked.
+  assert.match(prompt, /call `track`/);
 });
