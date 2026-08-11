@@ -6,6 +6,7 @@ import { DashHeader } from "@/components/dashboard/dash-header";
 import { Splash } from "@/components/splash";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { isConnected, requireViewer } from "@/lib/dashboard-data";
+import { planForUser } from "@/lib/paddle/plan";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -30,6 +31,7 @@ async function DashboardShell({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const viewer = await requireViewer();
+  const plan = await planForUser(viewer.id);
 
   return (
     <SidebarProvider>
@@ -38,6 +40,7 @@ async function DashboardShell({
         email={viewer.email}
         image={viewer.image}
         linked={isConnected(viewer)}
+        plan={plan.active ? plan.name : null}
       />
       <SidebarInset className="bg-bg">
         <DashHeader />

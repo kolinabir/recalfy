@@ -25,6 +25,19 @@ export const TIER_CHANNELS: Record<"keep" | "archive", readonly ("telegram" | "w
   archive: ["telegram", "whatsapp"],
 };
 
+/**
+ * Live facts each tier may hold. `null` is unlimited.
+ *
+ * Same arrangement as TIER_CHANNELS: the bot owns the enforcing copy in
+ * `src/billing/entitlements.ts`, this one exists so the dashboard can *show*
+ * the ceiling, and `test/limits.test.ts` asserts they agree. A dashboard
+ * quoting a different cap from the one enforced is worse than showing none.
+ */
+export const TIER_MEMORY_CAP: Record<"keep" | "archive", number | null> = {
+  keep: 2_000,
+  archive: null,
+};
+
 export type SubscriptionStatus =
   | "active"
   | "trialing"

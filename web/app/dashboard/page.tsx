@@ -3,6 +3,8 @@ import Link from "next/link";
 
 import { ConnectChat } from "@/components/connect-chat";
 import { MemoryListShell, MemoryRow } from "@/components/dashboard/memory-row";
+import { SectionHead } from "@/components/dashboard/section-head";
+import { Usage } from "@/components/dashboard/usage";
 import {
   countThisWeek,
   getBotProfile,
@@ -16,7 +18,7 @@ import {
 } from "@/lib/dashboard-data";
 import { channelConfig } from "@/lib/channel-config";
 import { dueLabel, relativeDate, repeatLabel } from "@/lib/format";
-import { planForUser } from "@/lib/paddle/plan";
+import { type Plan, planForUser } from "@/lib/paddle/plan";
 
 export const metadata: Metadata = {
   title: "Overview",
@@ -30,12 +32,7 @@ export default async function OverviewPage() {
   if (!isConnected(viewer)) {
     // The connect widget is what a plan buys, so this branch has to know about
     // billing too — it is the first screen a new account lands on.
-    return (
-      <NotConnected
-        firstName={firstName}
-        paid={(await planForUser(viewer.id)).active}
-      />
-    );
+    return <NotConnected firstName={firstName} plan={await planForUser(viewer.id)} />;
   }
 
   const [memories, reminders, profile, plan] = await Promise.all([
@@ -64,10 +61,8 @@ export default async function OverviewPage() {
               </span>
             ) : null}
           </p>
-          <p className="font-mono text-[0.6875rem] tracking-[0.06em] text-fg-faint uppercase">
-            {memories.length} {memories.length === 1 ? "memory" : "memories"}
-            {thisWeek > 0 ? ` · ${thisWeek} this week` : ""}
-          </p>
+          {/* The count used to live here too. Usage owns it now — the same
+              number in two places is one of them going stale. */}
           <Link
             href="/dashboard/billing"
             className="font-mono text-[0.6875rem] tracking-[0.06em] text-fg-faint uppercase transition-colors hover:text-fg-muted"
@@ -97,6 +92,14 @@ export default async function OverviewPage() {
           </section>
 
           <aside className="grid content-start gap-8">
+            <Usage
+              held={memories.length}
+              cap={plan.memoryCap}
+              thisWeek={thisWeek}
+              reminders={reminders.length}
+              lastAt={memories[0]?.createdAt}
+            />
+
             <section aria-label="Upcoming reminders">
               <SectionHead
                 title="Coming up"
@@ -141,28 +144,6 @@ export default async function OverviewPage() {
           </aside>
         </div>
       )}
-    </div>
-  );
-}
-
-function SectionHead({
-  title,
-  action,
-}: {
-  title: string;
-  action?: { href: string; label: string };
-}) {
-  return (
-    <div className="mb-3 flex items-baseline justify-between">
-      <h2 className="eyebrow">{title}</h2>
-      {action ? (
-        <Link
-          href={action.href}
-          className="font-mono text-[0.6875rem] text-fg-subtle underline-offset-4 transition-colors hover:text-fg hover:underline"
-        >
-          {action.label} →
-        </Link>
-      ) : null}
     </div>
   );
 }
@@ -223,12 +204,13 @@ function FirstForward() {
 /** The pre-connection page: the empty dashboard is the onboarding. */
 function NotConnected({
   firstName,
-  paid,
+  plan,
 }: {
   firstName?: string;
-  paid: boolean;
+  plan: Plan;
 }) {
   const telegram = channelConfig("telegram");
+  const paid = plan.active;
 
   return (
     <div>
@@ -236,6 +218,39 @@ function NotConnected({
       <h1 className="display display-fill mt-4 text-[clamp(1.75rem,3.4vw,2.5rem)]">
         {firstName ? `Hello, ${firstName}.` : "Hello."}
       </h1>
+
+      {/*
+        Someone who has already paid should see it on the first screen they
+        land on. Without this the pre-connection page looks identical whether
+        the money went through or not, which is the moment people ask support
+        whether they were charged.
+      */}
+      <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[0.6875rem] tracking-[0.06em] text-fg-subtle uppercase">
+        <span
+          aria-hidden
+          className={
+            paid
+              ? "size-1.5 rounded-full bg-accent"
+              : "size-1.5 rounded-full bg-fg-faint/60"
+          }
+        />
+        <Link
+          href="/dashboard/billing"
+          className="transition-colors hover:text-fg"
+        >
+          {paid ? plan.name : "No plan"}
+        </Link>
+        {paid ? (
+          <span className="text-fg-faint">
+            ·{" "}
+            {plan.state === "trialing"
+              ? "trial running"
+              : plan.memoryCap
+                ? `${plan.memoryCap.toLocaleString()} memories`
+                : "unlimited memories"}
+          </span>
+        ) : null}
+      </p>
       <p className="mt-5 max-w-xl text-[1.0625rem] leading-relaxed text-fg-muted">
         {paid
           ? "Recalfy lives in your Telegram chat — this dashboard is where you look things up later. Connect the two and everything you tell the bot starts appearing here."

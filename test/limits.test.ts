@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { LIMITS, limitsForPrice, tierForPrice } from '../src/billing/entitlements';
-import { TIER_CHANNELS } from '../web/lib/paddle/access';
+import { TIER_CHANNELS, TIER_MEMORY_CAP } from '../web/lib/paddle/access';
 
 /**
  * What each plan permits. The bot and the dashboard each hold a copy of this
@@ -23,6 +23,15 @@ describe('the plan table', () => {
         [...TIER_CHANNELS[tier]].sort(),
         `the bot and the web app disagree about ${tier}`,
       );
+    }
+  });
+
+  it('agrees with the dashboard about the memory ceiling', () => {
+    // The dashboard draws a meter against its copy. A meter quoting a
+    // different ceiling from the one that refuses the write is worse than no
+    // meter at all — someone watches 1,800 of 2,000 and gets refused at 1,500.
+    for (const tier of ['keep', 'archive'] as const) {
+      assert.equal(LIMITS[tier].memories, TIER_MEMORY_CAP[tier], `disagreed about ${tier}`);
     }
   });
 

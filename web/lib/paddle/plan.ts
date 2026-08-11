@@ -1,12 +1,17 @@
 import "server-only";
 
 import type { Channel } from "@/lib/channels";
-import { TIER_CHANNELS, accessState, grantsAccess } from "./access";
+import {
+  TIER_CHANNELS,
+  TIER_MEMORY_CAP,
+  accessState,
+  grantsAccess,
+} from "./access";
 import { type Cycle, tiers } from "./config";
 import { subscriptionForUser } from "./mirror";
 
 // Re-exported so callers keep importing one module, as with `grantsAccess`.
-export { TIER_CHANNELS } from "./access";
+export { TIER_CHANNELS, TIER_MEMORY_CAP } from "./access";
 
 /**
  * "What has this account bought, and what does that let them do?" — the one
@@ -26,6 +31,13 @@ export interface Plan {
   active: boolean;
   /** Set while a cancel or pause is pending. */
   endsAt: Date | null;
+  /**
+   * What the plan permits, for display. The bot enforces its own copy — this
+   * exists so the dashboard can show a ceiling rather than invent one.
+   * An active plan on an unrecognised price reports the generous limits, the
+   * same answer `channelVerdict` gives it.
+   */
+  memoryCap: number | null;
 }
 
 export const NO_PLAN: Plan = {
@@ -35,6 +47,7 @@ export const NO_PLAN: Plan = {
   state: "none",
   active: false,
   endsAt: null,
+  memoryCap: null,
 };
 
 export async function planForUser(userId: string): Promise<Plan> {
@@ -72,6 +85,7 @@ export async function planForUser(userId: string): Promise<Plan> {
       subscription.scheduledChange.action !== "resume"
         ? subscription.scheduledChange.at
         : null,
+    memoryCap: id ? TIER_MEMORY_CAP[id] : TIER_MEMORY_CAP.archive,
   };
 }
 

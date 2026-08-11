@@ -65,11 +65,14 @@ export function AppSidebar({
   email,
   image,
   linked,
+  plan,
 }: {
   name?: string | null;
   email: string;
   image?: string | null;
   linked: boolean;
+  /** Plan name while one is active, null otherwise. */
+  plan: string | null;
 }) {
   const pathname = usePathname();
 
@@ -112,7 +115,13 @@ export function AppSidebar({
       </SidebarContent>
 
       <SidebarFooter>
-        <UserMenu name={name} email={email} image={image} linked={linked} />
+        <UserMenu
+          name={name}
+          email={email}
+          image={image}
+          linked={linked}
+          plan={plan}
+        />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
@@ -162,11 +171,13 @@ function UserMenu({
   email,
   image,
   linked,
+  plan,
 }: {
   name?: string | null;
   email: string;
   image?: string | null;
   linked: boolean;
+  plan: string | null;
 }) {
   const router = useRouter();
   const { isMobile } = useSidebar();
@@ -204,8 +215,27 @@ function UserMenu({
                 <span className="truncate text-[0.8125rem] text-fg">
                   {name ?? "Account"}
                 </span>
-                <span className="truncate font-mono text-[0.625rem] text-fg-faint">
-                  {linked ? "Connected" : "Not connected"}
+                {/*
+                  Was `fg-faint` at 10px, which measured too dim to read in
+                  either theme — it is the smallest type in the product and it
+                  had the lowest contrast. Lifted a step and given the thing
+                  people actually want here: which plan they are on.
+                */}
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span
+                    aria-hidden
+                    className={
+                      linked
+                        ? "size-1 shrink-0 rounded-full bg-accent"
+                        : "size-1 shrink-0 rounded-full bg-fg-faint/70"
+                    }
+                  />
+                  <span className="truncate font-mono text-[0.6875rem] text-fg-subtle">
+                    {plan ?? "No plan"}
+                    <span className="text-fg-faint">
+                      {linked ? " · connected" : " · not connected"}
+                    </span>
+                  </span>
                 </span>
               </span>
             </SidebarMenuButton>
