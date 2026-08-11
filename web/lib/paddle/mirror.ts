@@ -99,19 +99,38 @@ export async function upsertCustomer(input: {
   // Without this filter, anyone who can open a checkout could repoint an
   // existing customer row at their own account and inherit that customer's
   // portal, payment method and invoice history.
-  const bound = await customers().updateOne(
-    {
-      _id: input.customerId,
-      $or: [{ userId: { $exists: false } }, { userId: input.userId }],
-    },
-    { $set: { userId: input.userId, updatedAt: now } },
-  );
+  try {
+    const bound = await customers().updateOne(
+      {
+        _id: input.customerId,
+        $or: [{ userId: { $exists: false } }, { userId: input.userId }],
+      },
+      { $set: { userId: input.userId, updatedAt: now } },
+    );
 
-  if (bound.matchedCount === 0) {
-    // Either a genuine re-link that needs a human, or someone trying to claim
-    // another account's customer. Both are worth seeing; neither is applied.
+    if (bound.matchedCount === 0) {
+      // Either a genuine re-link that needs a human, or someone trying to claim
+      // another account's customer. Both are worth seeing; neither is applied.
+      console.warn(
+        `[paddle] refused to rebind customer ${input.customerId} to ${input.userId}: already bound to a different account`,
+      );
+    }
+  } catch (error) {
+    // The mirror image of the case above, and the one the filter cannot catch:
+    // the filter matches, then the unique `by_account` index rejects the write
+    // because this account already names a *different* customer. It happens
+    // whenever one account buys twice against two Paddle customers — a sandbox
+    // test and then a live purchase into the same database being the way we
+    // found it.
+    //
+    // This must not throw. Binding a customer is bookkeeping for the portal and
+    // the invoice list; the subscription is what grants access, and it is
+    // written after this call. Letting the collision escape returned 500 to
+    // Paddle, so the subscription never landed and a paying customer saw no
+    // plan — for the three days Paddle spends retrying, and then forever.
+    if (!isDuplicateKey(error)) throw error;
     console.warn(
-      `[paddle] refused to rebind customer ${input.customerId} to ${input.userId}: already bound to a different account`,
+      `[paddle] left customer ${input.customerId} unbound: account ${input.userId} already names another customer`,
     );
   }
 }
