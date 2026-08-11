@@ -54,7 +54,7 @@ export default async function LoginPage({
                 ${price.amount}
               </span>
               <span className="font-mono text-[0.6875rem] text-fg-subtle">
-                / {price.per} · 14 days free
+                / {price.per} · 7 days free
               </span>
             </div>
           ) : null}

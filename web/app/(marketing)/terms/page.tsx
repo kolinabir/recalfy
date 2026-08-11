@@ -33,9 +33,11 @@ export default function TermsPage() {
           body: (
             <>
               <p>
-                You sign in with Google to create an account. New accounts
-                get 14 days of full access before any payment is required —
-                no card is collected until you choose to subscribe.
+                You sign in with Google to create an account. Every plan
+                starts with a 7-day free trial. Card details are collected
+                when you subscribe so the plan can continue without
+                interruption, but nothing is charged until the trial ends —
+                cancel before then and you pay nothing.
               </p>
               <p>
                 You&apos;re responsible for keeping your account access
@@ -51,16 +53,20 @@ export default function TermsPage() {
               <p>
                 Paid plans are billed monthly or yearly, as described on the{" "}
                 <a href="/pricing">pricing page</a>. Payments are processed
-                by Lemon Squeezy Inc., our Merchant of Record — they handle
-                checkout, card processing, and applicable sales tax, and
-                appear as the merchant on your statement.
+                by Paddle.com Market Ltd, our Merchant of Record — they
+                handle checkout, card processing, and applicable sales tax,
+                are the seller of record for your purchase, and appear as the
+                merchant on your statement.
               </p>
               <p>
                 You can cancel at any time by asking Recalfy to cancel in
-                conversation, or by contacting us. Cancelling stops future
-                billing; it doesn&apos;t retroactively refund time already
-                paid for, except where required by law or stated otherwise
-                at checkout.
+                conversation, from{" "}
+                <a href="/dashboard/billing">manage billing</a>, or by
+                contacting us. Cancelling stops future billing and you keep
+                access until the end of the period you already paid for.
+                Refunds are covered in full by our{" "}
+                <a href="/refunds">refund policy</a> — fourteen days, no
+                questions asked.
               </p>
             </>
           ),

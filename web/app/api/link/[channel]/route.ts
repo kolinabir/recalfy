@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { isChannel, linkStatus, mintLink } from "@/lib/linking";
+import { requirePaidAccess } from "@/lib/paddle/plan";
 
 export const runtime = "nodejs";
 
@@ -32,6 +33,13 @@ export async function GET(_request: Request, params: Params) {
 export async function POST(_request: Request, params: Params) {
   const resolved = await resolve(params);
   if (resolved.error) return resolved.error;
+
+  // A link token is the only way to attach a chat to an account, so this is
+  // the chokepoint for "you need a plan to use Recalfy" — enforced here rather
+  // than in the page, because the page is just a caller and anyone can POST.
+  if (!(await requirePaidAccess(resolved.user.id))) {
+    return NextResponse.json({ error: "payment-required" }, { status: 402 });
+  }
 
   const result = await mintLink(resolved.channel, resolved.user);
   if (!result.ok) {

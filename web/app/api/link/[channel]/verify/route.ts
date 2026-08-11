@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { Channel, isChannel } from "@/lib/linking";
 import { db } from "@/lib/mongo";
+import { requirePaidAccess } from "@/lib/paddle/plan";
 import { normalisePairingCode } from "@/lib/pairing-code";
 
 export const runtime = "nodejs";
@@ -25,6 +26,14 @@ export async function POST(request: Request, params: { params: Promise<{ channel
   const { channel } = await params.params;
   if (!isChannel(channel)) {
     return NextResponse.json({ error: "unknown-channel" }, { status: 404 });
+  }
+
+  // The other half of the paywall. This route writes the channel link itself
+  // rather than going through mintLink, so gating that one alone would leave
+  // the pairing code as a way in. Checked before the code is claimed, so a
+  // paywalled attempt never burns a valid code.
+  if (!(await requirePaidAccess(session.user.id))) {
+    return NextResponse.json({ error: "payment-required" }, { status: 402 });
   }
 
   const body = await request.json().catch(() => null);

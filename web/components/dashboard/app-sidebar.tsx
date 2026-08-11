@@ -2,6 +2,7 @@
 
 import {
   AlarmClock,
+  CreditCard,
   Home,
   Library,
   LogOut,
@@ -48,6 +49,7 @@ const LIBRARY = [
 const ACCOUNT = [
   { href: "/dashboard/telegram", label: "Telegram", icon: Send },
   { href: "/dashboard/whatsapp", label: "WhatsApp", icon: MessageCircle },
+  { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/settings", label: "Settings", icon: Settings2 },
 ];
 

@@ -1,3 +1,12 @@
+/**
+ * The USD list price, for places that state it rather than sell it: the
+ * JSON-LD offer on the home page, llms.txt, and the plan named on /login.
+ *
+ * The pricing page itself no longer reads these — it renders whatever Paddle
+ * returns for the visitor's country. Keep the amounts here equal to the USD
+ * base prices in Paddle (see scripts/seed-paddle-catalog.ts) or the structured
+ * data will advertise a number nobody is ever charged.
+ */
 export type Plan = {
   id: string;
   name: string;
@@ -16,7 +25,7 @@ export const PLANS: Plan[] = [
     name: "Keep",
     tagline: "For one head that holds too much.",
     monthly: 6,
-    yearly: 60,
+    yearly: 50,
     cta: "Start with Keep",
     limits: [
       { label: "Memories", value: "2,000" },
@@ -35,7 +44,7 @@ export const PLANS: Plan[] = [
     name: "Archive",
     tagline: "For a memory you expect to keep for years.",
     monthly: 14,
-    yearly: 140,
+    yearly: 120,
     featured: true,
     cta: "Start with Archive",
     limits: [

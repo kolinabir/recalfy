@@ -26,7 +26,7 @@ Key facts:
 - Monthly budgets and daily goals are set by saying them; the same mechanism tracks water, gym visits, weight, or anything else countable.
 - Your whole memory exports as plain markdown or JSON, any day, from the dashboard.
 - Nothing is used for AI training; memories are readable only by you and the model answering you.
-- 14-day free trial on every plan, no card up front. Self-hosting is supported.
+- 7-day free trial on every plan; card details are taken at signup but nothing is charged until the trial ends. Refunds within 14 days, no questions. Self-hosting is supported.
 
 ## Plans
 

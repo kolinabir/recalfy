@@ -21,9 +21,15 @@
     "eval": "ts-node -T scripts/eval.ts",
     "inspect": "ts-node -T scripts/inspect.ts",
     "seed": "ts-node -T scripts/seed.ts",
+    "seed:paddle": "ts-node -T scripts/seed-paddle-catalog.ts",
     "migrate:channels": "ts-node -T scripts/migrate-channels.ts",
     "test": "node --no-experimental-strip-types --require ts-node/register --test 'test/*.test.ts'",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "paddle:inspect": "ts-node -T scripts/paddle-inspect.ts",
+    "paddle:token": "ts-node -T scripts/paddle-client-token.ts",
+    "paddle:destination": "ts-node -T scripts/paddle-destination.ts",
+    "paddle:simulate": "ts-node -T scripts/paddle-simulate.ts",
+    "paddle:mirror": "ts-node -T scripts/paddle-mirror.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -31,6 +37,7 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/schedule": "^6.1.3",
+    "@paddle/paddle-node-sdk": "^3.10.0",
     "grammy": "^1.30.0",
     "luxon": "^3.5.0",
     "mongodb": "^6.10.0",

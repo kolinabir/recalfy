@@ -47,7 +47,7 @@ export function Hero() {
               href="/pricing"
               className="btn-primary group inline-flex h-10 items-center gap-2 px-5 text-[0.875rem] font-medium"
             >
-              Start free for 14 days
+              Start free for 7 days
               <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
             </Link>
             <Link
@@ -62,7 +62,7 @@ export function Hero() {
             className="resolve mt-5 font-mono text-[0.6875rem] tracking-wide text-fg-faint"
             style={{ animationDelay: "320ms" }}
           >
-            no card · no install · no commands to learn
+            no charge for 7 days · no install · no commands to learn
           </p>
         </div>
 

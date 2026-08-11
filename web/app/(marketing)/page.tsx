@@ -6,6 +6,9 @@ import { Closing } from "@/components/sections/closing";
 import { Faq } from "@/components/sections/faq";
 import { QUESTIONS } from "@/lib/faq-data";
 import { PLANS } from "@/lib/pricing";
+import { getViewer } from "@/lib/dashboard-data";
+import { tiers } from "@/lib/paddle/config";
+import { visitorCountry } from "@/lib/paddle/country";
 
 /**
  * Structured data for the one page Google should care about. Everything here
@@ -55,7 +58,11 @@ import { Manifesto } from "@/components/sections/manifesto";
 import { Moments } from "@/components/sections/moments";
 import { Tracking } from "@/components/sections/tracking";
 
-export default function HomePage() {
+export default async function HomePage() {
+  // The home page carries the same live plan table as /pricing, so it needs
+  // the same two server-side facts: where the visitor is, and who they are.
+  const [country, viewer] = await Promise.all([visitorCountry(), getViewer()]);
+
   return (
     <>
       <script
@@ -82,7 +89,13 @@ export default function HomePage() {
             </h2>
           </Reveal>
           <div className="mt-12">
-            <PlanTable />
+            <PlanTable
+              tiers={tiers()}
+              country={country}
+              viewer={
+                viewer ? { id: viewer.id, email: viewer.email } : undefined
+              }
+            />
           </div>
         </div>
       </section>
