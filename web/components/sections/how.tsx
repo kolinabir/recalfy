@@ -33,11 +33,11 @@ function SplitVisual() {
   return (
     <div className="space-y-3">
       <p className="max-w-sm rounded-lg rounded-br-sm bg-s2 px-3.5 py-2 text-[0.9375rem]">
-        sara&apos;s birthday is nov 4 — she loved that ceramics studio
+        lisbon flight lands 6am on the 14th, spare sim&apos;s in my desk drawer
       </p>
       <div className="flex flex-wrap gap-2">
-        <Chip>Sara&apos;s birthday — 4 Nov</Chip>
-        <Chip>Sara loved the ceramics studio</Chip>
+        <Chip>Lisbon flight lands — 14th, 06:00</Chip>
+        <Chip>Spare SIM is in the desk drawer</Chip>
       </div>
     </div>
   );
@@ -46,11 +46,11 @@ function SplitVisual() {
 function ReplaceVisual() {
   return (
     <div className="space-y-2.5">
-      <Chip tone="dropped">Cleaning — Tue 9:00</Chip>
+      <Chip tone="dropped">Lisbon flight lands — 14th, 06:00</Chip>
       <p className="font-mono text-[0.6875rem] tracking-[0.14em] text-fg-subtle uppercase">
         replaced by
       </p>
-      <Chip>Cleaning — Fri 11:00</Chip>
+      <Chip>Lisbon flight lands — 15th, 06:00</Chip>
     </div>
   );
 }
@@ -59,14 +59,14 @@ function RemindVisual() {
   return (
     <div className="space-y-3">
       <p className="max-w-[17rem] rounded-lg rounded-br-sm bg-s2 px-3.5 py-2 text-[0.9375rem]">
-        remind me sunday to book her a class there
+        remind me the night before to print the boarding pass
       </p>
       <div className="flex flex-wrap items-center gap-3">
         <span className="rounded-lg rounded-bl-sm bg-accent px-3.5 py-2 text-[0.9375rem] font-medium text-accent-ink">
-          Book Sara a ceramics class
+          Print the boarding pass
         </span>
         <span className="font-mono text-[0.6875rem] tracking-wide text-fg-subtle">
-          Sun 9:00 · unprompted
+          14th, 20:00 · unprompted
         </span>
       </div>
     </div>
@@ -77,35 +77,47 @@ const STEPS = [
   {
     n: "01",
     title: "It breaks what you said into facts",
-    body: "One message usually carries two or three separate things — a date, a preference, a place. Each becomes its own record, which is what makes a memory editable later instead of a paragraph you have to rewrite.",
+    body: "One message usually carries two or three things — a date, a preference, a place. Each becomes its own record, so it can be corrected later without rewriting a paragraph.",
     visual: <SplitVisual />,
   },
   {
     n: "02",
     title: "Corrections replace, they don't pile up",
-    body: "Say “it moved to Friday” and Tuesday is retired, not buried underneath. Nothing in your memory contradicts anything else in it — so there's no stale answer waiting to ambush you in six months.",
+    body: "Say “the flight got pushed a day” and the 14th is retired, not buried. Nothing in your memory contradicts anything else — no stale answer waiting to ambush you at the airport.",
     visual: <ReplaceVisual />,
   },
   {
     n: "03",
     title: "It speaks first when it should",
-    body: "Times resolve in your timezone and get read back before anything is set, so a misheard time is caught while you can still fix it. Then the reminder simply arrives — as a message, in the same chat.",
+    body: "Times resolve in your timezone and get read back before anything is set. Then the reminder simply arrives — as a message, in the same chat.",
     visual: <RemindVisual />,
   },
 ];
 
 export function How() {
   return (
-    <section id="how" className="rails scroll-mt-24 pt-10 pb-24 lg:pt-14 lg:pb-32">
+    <section
+      id="how-it-works"
+      className="scroll-mt-24 pt-10 pb-24 lg:pt-14 lg:pb-32"
+    >
       <div className="shell">
-        <Reveal as="header" className="max-w-2xl">
-          <p className="eyebrow">How it works</p>
-          <h2 className="display display-fill mt-5 text-[clamp(2rem,4.2vw,3rem)]">
-            Nothing to learn.
-            <span className="block text-fg-muted">
-              You talk, and it keeps up.
-            </span>
-          </h2>
+        <Reveal
+          as="header"
+          className="grid gap-6 lg:grid-cols-2 lg:items-end lg:gap-16"
+        >
+          <div>
+            <p className="eyebrow">How it works</p>
+            <h2 className="display display-fill mt-5 text-[clamp(2rem,4.2vw,3rem)]">
+              Nothing to learn.
+              <span className="block text-fg-muted">
+                You talk, and it keeps up.
+              </span>
+            </h2>
+          </div>
+          <p className="max-w-md leading-relaxed text-fg-subtle lg:justify-self-end">
+            No commands, no syntax, no setup. Three things happen behind every
+            message you send — here they are.
+          </p>
         </Reveal>
 
         <div className="mt-14 divide-y divide-line border-y border-line">

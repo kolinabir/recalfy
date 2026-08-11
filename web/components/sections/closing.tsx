@@ -5,7 +5,10 @@ import { Reveal } from "@/components/motion/reveal";
 
 export function Closing() {
   return (
-    <section className="rails relative isolate overflow-hidden pb-28 lg:pb-36">
+    <section
+      id="start"
+      className="relative isolate scroll-mt-24 overflow-hidden pb-28 lg:pb-36"
+    >
 
       <div className="shell">
         <div className="hairline" />

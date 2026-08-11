@@ -19,7 +19,7 @@ export function LegalPage({
   sections: LegalSection[];
 }) {
   return (
-    <section className="rails relative isolate overflow-hidden pt-36 pb-24 sm:pt-44">
+    <section className="relative isolate overflow-hidden pt-36 pb-24 sm:pt-44">
       <div className="shell mx-auto max-w-2xl">
         <Reveal>
           <p className="eyebrow">{eyebrow}</p>

@@ -276,7 +276,7 @@
     Strength comes from --wash: 0% in dark (the ladder carries it), ~9% in light,
     where a bare near-white canvas otherwise reads flat. Still a background
     treatment, not elevation: the depth rule stands for components. A real
-    element, not ::after — .rails already owns that pseudo on the hero section.
+    element rather than a pseudo, so the hero can layer it under its own grid.
   */
   .wash {
     position: absolute;
@@ -296,25 +296,77 @@
       );
   }
 
-  /* Container rails — the page's only frame. */
-  .rails::before,
-  .rails::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: var(--line);
-    opacity: 0.6;
-    pointer-events: none;
+  /*
+    Telegram's own palette, carried as tokens so the mockup can follow the
+    site's theme. These are deliberately Telegram's colours rather than ours —
+    the frame is meant to read as a screenshot of the real app, and a bubble in
+    our amber would immediately give that away. Dark values first; .light
+    swaps in Telegram's light theme (pale-green outgoing, white incoming).
+  */
+  .tg {
+    --tg-bg: #0e1621;
+    --tg-bar: #17212b;
+    --tg-in: #182533;
+    --tg-out: #2b5278;
+    --tg-text: #f1f5f9;
+    --tg-dim: #6d7f8f;
+    --tg-tick: #64b5ef;
+    --tg-link: #64b5ef;
+    --tg-out-meta: #7da8cd;
+    --tg-chip: rgb(0 0 0 / 0.35);
+    --tg-chip-ink: #cbd5e1;
+    --tg-avatar: #0a0b0c;
+    --tg-mark: #ffffff;
   }
 
-  .rails::before {
-    left: max(1.25rem, calc(50% - 38rem + 2rem));
+  .light .tg {
+    --tg-bg: #eef1f4;
+    --tg-bar: #ffffff;
+    --tg-in: #ffffff;
+    --tg-out: #eeffde;
+    --tg-text: #0f172a;
+    --tg-dim: #8b98a5;
+    --tg-tick: #4fae4e;
+    --tg-link: #3390ec;
+    --tg-out-meta: #6ab04f;
+    --tg-chip: rgb(0 0 0 / 0.18);
+    --tg-chip-ink: #ffffff;
+    --tg-avatar: #ffffff;
+    --tg-mark: #0f172a;
   }
 
-  .rails::after {
-    right: max(1.25rem, calc(50% - 38rem + 2rem));
+  /*
+    A scrollable region that admits it scrolls without shouting about it — the
+    thumb only resolves on hover, so a resting mockup stays clean.
+  */
+  .scroll-quiet {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    overscroll-behavior: contain;
+    transition: scrollbar-color 0.3s;
+  }
+
+  .scroll-quiet:hover {
+    scrollbar-color: color-mix(in oklab, currentColor 22%, transparent)
+      transparent;
+  }
+
+  .scroll-quiet::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scroll-quiet::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scroll-quiet::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 999px;
+    transition: background 0.3s;
+  }
+
+  .scroll-quiet:hover::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, currentColor 22%, transparent);
   }
 
   /* A surface at a given rung of the ladder, always with its hairline. */

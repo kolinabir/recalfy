@@ -11,6 +11,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/dashboard/", "/dashboard", "/api/"],
     },
-    sitemap: "https://recalfy.com/sitemap.xml",
+    sitemap: "https://www.recalfy.com/sitemap.xml",
   };
 }

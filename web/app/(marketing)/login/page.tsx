@@ -29,7 +29,7 @@ export default async function LoginPage({
   const price = plan ? priceFor(plan, billing) : null;
 
   return (
-    <section className="rails relative isolate overflow-hidden px-5 pt-36 pb-24 sm:pt-40">
+    <section className="relative isolate overflow-hidden px-5 pt-36 pb-24 sm:pt-40">
 
       <div className="mx-auto w-full max-w-md">
         <div className="resolve rounded-xl border border-line bg-s1 p-8  sm:p-10">

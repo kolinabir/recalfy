@@ -37,7 +37,7 @@ export default async function PricingPage() {
 
   return (
     <>
-      <section className="rails relative isolate overflow-hidden pt-36 pb-14 sm:pt-44">
+      <section className="relative isolate overflow-hidden pt-36 pb-14 sm:pt-44">
         <div className="shell mx-auto max-w-2xl text-center">
           <p className="resolve eyebrow">Pricing</p>
           <h1
@@ -58,7 +58,7 @@ export default async function PricingPage() {
         </div>
       </section>
 
-      <section className="rails pb-24 lg:pb-28">
+      <section className="pb-24 lg:pb-28">
         <div className="shell">
           <PlanTable
             tiers={tiers()}
@@ -70,7 +70,7 @@ export default async function PricingPage() {
         </div>
       </section>
 
-      <section className="rails pb-24 lg:pb-32">
+      <section className="pb-24 lg:pb-32">
         <div className="shell grid gap-4 md:grid-cols-3">
           {ASSURANCES.map((item, i) => (
             <Reveal

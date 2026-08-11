@@ -50,33 +50,37 @@ function Tell({ children }: { children: React.ReactNode }) {
 const CONSEQUENCES = [
   {
     title: "A budget you set by saying it",
-    body: "“keep me under 15000 a month.” That's the entire setup. From then on the total carries the number with it, so you learn where you stand while you can still do something about it — not on the 31st.",
+    body: "“keep me under 15000 a month.” That's the entire setup. Every total tells you where you stand while you can still do something about it — not on the 31st.",
   },
   {
     title: "The list closes its own loop",
-    body: "Something bought off the shopping list becomes the expense it was always going to be — the same entry, at the price you actually paid. One record, not a list item and a receipt to reconcile later.",
+    body: "Something bought off the shopping list becomes the expense it was always going to be — one record, at the price you actually paid. Nothing to reconcile later.",
   },
   {
     title: "Money isn't the only thing that counts",
-    body: "“track my water, 3L a day.” Litres, gym visits, weigh-ins, pages — say what you want watched and it works out whether the thing should be summed, counted, or simply read off the latest number.",
+    body: "“track my water, 3L a day.” Litres, gym visits, weigh-ins, pages — say what you want watched and it figures out how to count it.",
   },
 ];
 
 export function Tracking() {
   return (
-    <section id="tracking" className="rails scroll-mt-24 pb-24 lg:pb-32">
+    <section id="tracking" className="scroll-mt-24 pb-24 lg:pb-32">
       <div className="shell">
-        <Reveal as="header" className="max-w-2xl pb-12">
-          <p className="eyebrow">Money and habits</p>
-          <h2 className="display display-fill mt-5 text-[clamp(2rem,4.2vw,3rem)]">
-            The expense tracker
-            <span className="block text-fg-muted">you never open.</span>
-          </h2>
-          <p className="mt-6 max-w-lg leading-relaxed text-fg-subtle">
-            No categories to configure, no receipts to photograph, no Sunday
-            spent reconciling. You say what you spent the way you&apos;d say it
-            out loud — two words and a number — and it files it, keeps the
-            running total, and answers when you ask.
+        <Reveal
+          as="header"
+          className="grid gap-6 pb-12 lg:grid-cols-2 lg:items-end lg:gap-16"
+        >
+          <div>
+            <p className="eyebrow">Money and habits</p>
+            <h2 className="display display-fill mt-5 text-[clamp(2rem,4.2vw,3rem)]">
+              The expense tracker
+              <span className="block text-fg-muted">you never open.</span>
+            </h2>
+          </div>
+          <p className="max-w-md leading-relaxed text-fg-subtle lg:justify-self-end">
+            No categories, no receipts, no Sunday spent reconciling. Say what
+            you spent — two words and a number — and it keeps the running
+            total.
           </p>
         </Reveal>
 
@@ -110,8 +114,8 @@ export function Tracking() {
           className="mt-3 rounded-xl border border-line border-dashed p-5 text-[0.875rem] leading-relaxed text-fg-subtle"
         >
           One word apart, and the difference is the whole feature — a shopping
-          list is not a ledger. When a message genuinely could go either way, it
-          asks, in one short line, and doesn&apos;t ask again about that thing.
+          list is not a ledger. When a message could go either way, it asks
+          once, in one short line.
         </Reveal>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-3">

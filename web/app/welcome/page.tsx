@@ -15,7 +15,7 @@ export const metadata: Metadata = {
  */
 export default function WelcomePage() {
   return (
-    <section className="rails relative isolate overflow-hidden px-5 pt-36 pb-24 sm:pt-40">
+    <section className="relative isolate overflow-hidden px-5 pt-36 pb-24 sm:pt-40">
       <div className="mx-auto w-full max-w-md text-center">
         <div className="resolve rounded-xl border border-line bg-s1 p-8 sm:p-10">
           <h1 className="display text-[2rem]">

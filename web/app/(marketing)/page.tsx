@@ -50,13 +50,27 @@ const JSON_LD = [
     })),
   },
 ];
+import { SectionHash } from "@/components/section-hash";
 import { Hero } from "@/components/sections/hero";
-import { Proof } from "@/components/sections/proof";
 import { How } from "@/components/sections/how";
 import { Features } from "@/components/sections/features";
 import { Manifesto } from "@/components/sections/manifesto";
 import { Moments } from "@/components/sections/moments";
 import { Tracking } from "@/components/sections/tracking";
+
+/** In page order — the scroll spy walks this to decide the current section. */
+const SECTIONS = [
+  "how-it-works",
+  "examples",
+  "tracking",
+  "approach",
+  "why",
+  "features",
+  "channels",
+  "pricing",
+  "faq",
+  "start",
+];
 
 export default async function HomePage() {
   // The home page carries the same live plan table as /pricing, so it needs
@@ -69,8 +83,8 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
       />
+      <SectionHash ids={SECTIONS} />
       <Hero />
-      <Proof />
       <How />
       <Moments />
       <Tracking />
@@ -79,7 +93,7 @@ export default async function HomePage() {
       <Features />
       <Channels />
 
-      <section id="pricing" className="rails scroll-mt-24 pb-24 lg:pb-32">
+      <section id="pricing" className="scroll-mt-24 pb-24 lg:pb-32">
         <div className="shell">
           <Reveal as="header" className="mx-auto max-w-xl text-center">
             <p className="eyebrow">Pricing</p>

@@ -11,8 +11,9 @@ import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/#how", label: "How it works" },
-  { href: "/#channels", label: "Channels" },
+  { href: "/#how-it-works", label: "How it works" },
+  { href: "/examples", label: "Examples" },
+  { href: "/#features", label: "Features" },
   { href: "/pricing", label: "Pricing" },
 ];
 

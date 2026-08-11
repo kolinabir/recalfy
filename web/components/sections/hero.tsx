@@ -10,7 +10,7 @@ import { ProductFrame } from "@/components/product-frame";
  */
 export function Hero() {
   return (
-    <section className="rails blueprint relative isolate pt-32 pb-16 sm:pt-40">
+    <section className="blueprint relative isolate pt-32 pb-16 sm:pt-40">
       <div aria-hidden className="wash" />
       <div className="shell">
         <div className="mx-auto max-w-3xl text-center">
@@ -51,7 +51,7 @@ export function Hero() {
               <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
             </Link>
             <Link
-              href="#how"
+              href="#how-it-works"
               className="btn-ghost inline-flex h-10 items-center px-5 text-[0.875rem]"
             >
               See how it remembers

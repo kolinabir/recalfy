@@ -15,7 +15,7 @@ export function Faq() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="rails scroll-mt-24 pb-24 lg:pb-32">
+    <section id="faq" className="scroll-mt-24 pb-24 lg:pb-32">
       <div className="shell grid gap-12 lg:grid-cols-[0.75fr_1.25fr] lg:gap-16">
         <Reveal as="header">
           <p className="eyebrow">Before you ask</p>

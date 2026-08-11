@@ -10,26 +10,33 @@ const USUAL = [
 const OURS = [
   "Hands the model your entire memory, on every single message",
   "Negations, corrections and contradictions get read, not matched",
-  "“What's coming up for Sara?” joins the birthday, the studio, the allergy and the reminder",
+  "“Anything I should know before Thursday's dinner?” joins the date, the guest's allergy and the dish you borrowed",
   "When it's wrong, you can read exactly what it saw",
 ];
 
 export function Against() {
   return (
-    <section className="rails relative isolate overflow-hidden py-24 lg:py-32">
+    <section
+      id="approach"
+      className="relative isolate scroll-mt-24 overflow-hidden py-24 lg:py-32"
+    >
 
       <div className="shell">
-        <Reveal as="header" className="max-w-2xl">
-          <p className="eyebrow">The decision underneath</p>
-          <h2 className="display display-fill mt-5 text-[clamp(2rem,4.2vw,3rem)]">
-            There&apos;s no search box —
-            <span className="block text-fg-muted">and no search either.</span>
-          </h2>
-          <p className="mt-6 text-[1.0625rem] leading-relaxed text-fg-muted">
-            Most memory tools retrieve the notes that resemble your question.
-            Resemblance is the wrong instrument for a life: it can&apos;t hear a
-            correction, and it can&apos;t tell &ldquo;don&apos;t&rdquo; from
-            &ldquo;do&rdquo;.
+        <Reveal
+          as="header"
+          className="grid gap-6 lg:grid-cols-2 lg:items-end lg:gap-16"
+        >
+          <div>
+            <p className="eyebrow">The decision underneath</p>
+            <h2 className="display display-fill mt-5 text-[clamp(2rem,4.2vw,3rem)]">
+              Other tools search.
+              <span className="block text-fg-muted">Recalfy reads.</span>
+            </h2>
+          </div>
+          <p className="max-w-md leading-relaxed text-fg-subtle lg:justify-self-end">
+            Most memory tools fetch the notes that resemble your question.
+            Resemblance can&apos;t hear a correction — and it can&apos;t tell
+            &ldquo;don&apos;t&rdquo; from &ldquo;do&rdquo;.
           </p>
         </Reveal>
 

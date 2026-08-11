@@ -6,16 +6,21 @@ const COLUMNS = [
   {
     title: "Product",
     links: [
-      { href: "/#how", label: "How it works" },
+      { href: "/#how-it-works", label: "How it works" },
+      { href: "/examples", label: "Examples" },
+      { href: "/#tracking", label: "Money and habits" },
+      { href: "/#features", label: "Features" },
       { href: "/#channels", label: "Channels" },
       { href: "/pricing", label: "Pricing" },
-      { href: "/login", label: "Sign in" },
     ],
   },
   {
     title: "Company",
     links: [
+      { href: "/#approach", label: "Why no search" },
+      { href: "/#why", label: "Why this exists" },
       { href: "/#faq", label: "FAQ" },
+      { href: "/login", label: "Sign in" },
       { href: "mailto:hello@recalfy.com", label: "hello@recalfy.com" },
     ],
   },
@@ -31,7 +36,7 @@ const COLUMNS = [
 
 export function SiteFooter() {
   return (
-    <footer className="rails border-t border-line">
+    <footer className="border-t border-line">
       <div className="shell grid gap-12 py-16 md:grid-cols-[1.5fr_repeat(3,1fr)]">
         <div className="max-w-xs">
           <Wordmark />

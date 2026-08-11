@@ -59,12 +59,12 @@ const FEATURES = [
   {
     icon: Wallet,
     title: "Spending, by sentence",
-    body: "“cucumber 250” is a logged expense, categorised, counted, no app opened.",
+    body: "“coffee 180” is a logged expense, categorised, counted, no app opened.",
   },
   {
     icon: ListChecks,
     title: "A list that becomes the ledger",
-    body: "“buy milk” waits on your list; buying it turns that same line into the expense.",
+    body: "“buy filters” waits on your list; buying them turns that same line into the expense.",
   },
   {
     icon: Target,
@@ -80,7 +80,7 @@ const FEATURES = [
 
 export function Features() {
   return (
-    <section className="rails pb-24 lg:pb-32">
+    <section id="features" className="scroll-mt-24 pb-24 lg:pb-32">
       <div className="shell">
         <Reveal as="header" className="max-w-2xl pb-12">
           <p className="eyebrow">Everything in it</p>
