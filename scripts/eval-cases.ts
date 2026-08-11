@@ -383,6 +383,37 @@ export const CASES: EvalCase[] = [
     ],
   },
   {
+    name: 'tracking: the total is not double-counted against the itemised list',
+    timezone: DHAKA,
+    turns: [
+      { say: 'cucumber 250' },
+      { say: 'rickshaw 100' },
+      {
+        say: 'how much have I spent this month?',
+        // The bug this pins: the digest lists recent entries under the total,
+        // and the model summed both — reporting 700 for 350 of spending.
+        replyMatch: /350/,
+      },
+      {
+        say: 'and what was the breakdown?',
+        replyMatch: /250[\s\S]*100|100[\s\S]*250/,
+      },
+    ],
+  },
+  {
+    name: 'tracking: a day summary stays plain text, no markdown',
+    timezone: DHAKA,
+    turns: [
+      { say: 'rice 900' },
+      { say: 'electric bill 1200' },
+      {
+        say: 'tell me about today',
+        // Telegram gets no parse_mode, so asterisks would render literally.
+        replyMatch: /^(?!.*\*\*)[\s\S]*$/,
+      },
+    ],
+  },
+  {
     name: 'tracking: last month needs the report tool',
     timezone: DHAKA,
     turns: [

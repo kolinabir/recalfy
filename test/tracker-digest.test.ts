@@ -104,8 +104,14 @@ test('a last tracker shows only the latest reading', () => {
 
 test('recent entries carry sids so corrections can cite them', () => {
   const digest = render([entry({ item: 'cucumber', value: 250, sid: 'e07' })]);
-  assert.match(digest, /Recent entries:/);
+  assert.match(digest, /Recent entries/);
   assert.match(digest, /cucumber 250 .*`e07`/);
+});
+
+test('the itemised list says it is already in the total', () => {
+  // Without this the model reads the list as extra money and doubles it.
+  const digest = render([entry({ item: 'cucumber', value: 250 })]);
+  assert.match(digest, /already counted in the totals above/);
 });
 
 test('deleted entries vanish from every section', () => {

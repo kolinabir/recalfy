@@ -4,6 +4,7 @@ import { UserStore } from '../memory/user.store';
 import { Channel, Handle, UserId } from '../mongo/collections';
 import { CHANNEL_ADAPTERS, ChannelAdapter } from './channel';
 import { LinkStore } from './link.store';
+import { toPlainText } from './plain-text';
 
 /**
  * WhatsApp's "customer service window". Meta allows free-form replies for 24
@@ -41,7 +42,7 @@ export class Outbox {
     if (!target) return;
 
     const { adapter, handle } = target;
-    for (const chunk of adapter.chunk(text)) {
+    for (const chunk of adapter.chunk(toPlainText(text))) {
       await adapter.send(handle, chunk);
     }
   }
@@ -57,9 +58,10 @@ export class Outbox {
     if (!target) return;
 
     const { adapter, handle, windowOpen } = target;
+    const plain = toPlainText(text);
 
     if (windowOpen) {
-      for (const chunk of adapter.chunk(text)) {
+      for (const chunk of adapter.chunk(plain)) {
         await adapter.send(handle, chunk);
       }
       return;
@@ -68,7 +70,7 @@ export class Outbox {
     // Templates take one body parameter and cannot be chunked — a reminder
     // that overflows is truncated rather than split, because two templates
     // would be billed twice and arrive out of order.
-    await adapter.notify(handle, text);
+    await adapter.notify(handle, plain);
   }
 
   async typing(userId: UserId): Promise<void> {

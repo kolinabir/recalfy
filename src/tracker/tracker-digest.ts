@@ -131,7 +131,9 @@ function renderRecent(live: EntryDoc[], input: TrackerDigestInput): string {
     return `- ${label} ${entry.value} (${entry.tracker}${category}) ${when} \`${entry.sid}\``;
   });
 
-  return `Recent entries:\n${lines.join('\n')}`;
+  // "Already counted" is load-bearing: without it the model reads this list
+  // as extra money and doubles every total it reports.
+  return `Recent entries (already counted in the totals above — ids for corrections):\n${lines.join('\n')}`;
 }
 
 function startOf(period: TargetPeriod, input: Pick<TrackerDigestInput, 'timezone' | 'now'>): Date {
