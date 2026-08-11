@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { ObjectId } from "mongodb";
 import QRCode from "qrcode";
 
+import { channelConfig } from "@/lib/channel-config";
 import { db } from "@/lib/mongo";
 
 export const CHANNELS = ["telegram", "whatsapp"] as const;
@@ -120,10 +121,13 @@ async function handshake(
 }
 
 /** The bot's own address on this channel, from the environment. */
+/**
+ * One source of truth with the pages, so "the button is shown" and "the button
+ * works" can never come apart. Reading the environment here as well is what
+ * let production advertise a bot it then refused to mint a link for.
+ */
 function chatTarget(channel: Channel): string | undefined {
-  return channel === "telegram"
-    ? process.env.TELEGRAM_BOT_USERNAME
-    : process.env.WHATSAPP_BUSINESS_NUMBER;
+  return channelConfig(channel).handle;
 }
 
 function linkFor(channel: Channel, token: string): string {
