@@ -8,7 +8,14 @@ export const auth = betterAuth({
   database: mongodbAdapter(db),
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
-  trustedOrigins: ["https://recalfy.com", "http://localhost:3000"],
+  // Both hosts: Vercel 308-redirects the apex to www, so www is the origin a
+  // browser actually posts from. Listing only the apex leaves every sign-in
+  // arriving from an origin Better Auth does not trust.
+  trustedOrigins: [
+    "https://www.recalfy.com",
+    "https://recalfy.com",
+    "http://localhost:3000",
+  ],
   // `channels` is deliberately not declared as an additionalField. The bot
   // owns it, nothing client-side may set it, and the dashboard reads it
   // straight from the collection — declaring it here would only widen the
