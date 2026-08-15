@@ -54,7 +54,7 @@ export const SECTIONS: Section[] = [
     id: "features",
     name: "Features",
     description:
-      "Atomic facts, supersession, unprompted reminders, timezone-aware scheduling, forget-on-request, plain-markdown export, and spending, budgets and trackers by sentence.",
+      "Atomic facts, supersession, unprompted reminders, timezone-aware scheduling, forget-on-request, plain-markdown export, spending, budgets and trackers by sentence, memory inside any chat, a tab per group, one-tap undo, and masked credentials.",
   },
   {
     id: "channels",

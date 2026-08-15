@@ -1,6 +1,7 @@
 import {
   Activity,
   ArrowLeftRight,
+  AtSign,
   BellRing,
   Clock,
   Download,
@@ -8,8 +9,11 @@ import {
   Globe,
   Layers,
   ListChecks,
+  PanelsTopLeft,
+  Asterisk,
   Target,
   Trash2,
+  Undo2,
   Wallet,
 } from "lucide-react";
 
@@ -29,7 +33,7 @@ const FEATURES = [
   {
     icon: BellRing,
     title: "Unprompted reminders",
-    body: "It messages you first, at the time you mentioned once, weeks ago.",
+    body: "It messages you first, at the time you mentioned once, weeks ago — and one tap moves it later.",
   },
   {
     icon: Clock,
@@ -75,6 +79,26 @@ const FEATURES = [
     icon: Activity,
     title: "Trackers it sets up itself",
     body: "Water, gym, weight, pages — it picks sum, count, or latest reading to fit the thing.",
+  },
+  {
+    icon: AtSign,
+    title: "Memory in any chat",
+    body: "Type @recalfy_bot mid-conversation and send a fact straight to whoever asked. They never see the bot.",
+  },
+  {
+    icon: PanelsTopLeft,
+    title: "A tab for each group",
+    body: "People, Home, Work — each becomes a tab in the chat, holding its current list rather than a history.",
+  },
+  {
+    icon: Undo2,
+    title: "One tap to take it back",
+    body: "Saved something you didn't mean to keep? Undo sits under the reply, no sentence required.",
+  },
+  {
+    icon: Asterisk,
+    title: "Passwords stay covered",
+    body: "Credentials are masked wherever memory is listed, and shown only when you ask for one.",
   },
 ];
 
