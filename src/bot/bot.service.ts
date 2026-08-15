@@ -44,6 +44,7 @@ export class BotService implements OnModuleInit {
     address,
     text,
     messageId,
+    threadId,
     receivedAt,
   }: InboundMessage): Promise<void> {
     // Before persistence and before the model, for the same reason the link
@@ -65,7 +66,9 @@ export class BotService implements OnModuleInit {
     // channels that cannot do it, and anyone who has not asked for it, fall
     // back to "typing…".
     const draft =
-      user.streaming === true ? await this.outbox.draft(userId, draftId(messageId)) : null;
+      user.streaming === true
+        ? await this.outbox.draft(userId, draftId(messageId), threadId)
+        : null;
     if (draft) draft.show('');
     else await this.outbox.typing(userId);
 
@@ -82,7 +85,8 @@ export class BotService implements OnModuleInit {
     // Before the real message, never after: the finished reply supersedes the
     // draft, and a frame landing behind it would repaint what it replaced.
     await draft?.settle();
-    await this.responder.reply(userId, reply.text, actionsFor(reply));
+    // Back into the thread it was asked in — see InboundMessage.threadId.
+    await this.responder.reply(userId, reply.text, { actions: actionsFor(reply), threadId });
 
     // After the reply, never before: redrawing tabs is bookkeeping, and the
     // person is waiting on the sentence. The mirror swallows its own failures.

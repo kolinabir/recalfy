@@ -10,10 +10,33 @@ export interface InboundMessage {
   text: string;
   /** The channel's own message id, as a string. For reply threading if ever needed. */
   messageId: string;
+  /**
+   * Which thread it arrived in, on the channels that have them. Absent for
+   * the main conversation, and absent entirely on channels without threads.
+   *
+   * Carried because a reply belongs where the question was asked. Without it
+   * someone typing inside one of their memory tabs gets the answer in the
+   * main thread, and the conversation quietly splits in two.
+   */
+  threadId?: number;
   receivedAt: Date;
 }
 
 export type InboundHandler = (msg: InboundMessage) => Promise<void>;
+
+/**
+ * One outbound message and everything a channel might do with it beyond
+ * printing the words.
+ *
+ * An object rather than a growing tail of optional arguments: `send(handle,
+ * text, actions, threadId)` is a call nobody can read, and the next thing a
+ * channel learns to do would make it worse.
+ */
+export interface Outgoing {
+  text: string;
+  actions?: readonly Action[];
+  threadId?: number;
+}
 
 /** A button drawn under a message. `data` is minted by whoever draws it. */
 export interface Action {
@@ -66,10 +89,11 @@ export abstract class ChannelAdapter {
    * On WhatsApp this is only legal within 24 hours of their last message.
    * The Outbox is what knows whether that holds; an adapter just sends.
    *
-   * `actions` are advisory: a channel that cannot draw buttons sends the text
-   * and drops them, which is always a legible message rather than a broken one.
+   * Everything on Outgoing beyond the text is advisory: a channel that cannot
+   * draw buttons, or has no threads, sends the words and drops the rest —
+   * always a legible message rather than a broken one.
    */
-  abstract send(handle: Handle, text: string, actions?: readonly Action[]): Promise<void>;
+  abstract send(handle: Handle, message: Outgoing): Promise<void>;
 
   /**
    * Reaching someone who did not just message us — a due reminder, the daily
@@ -77,7 +101,7 @@ export abstract class ChannelAdapter {
    * in degree: Telegram treats it as an ordinary message, while WhatsApp
    * requires a pre-approved template and bills for it.
    */
-  abstract notify(handle: Handle, text: string, actions?: readonly Action[]): Promise<void>;
+  abstract notify(handle: Handle, message: Outgoing): Promise<void>;
 
   /** Best-effort "typing…" indicator. Never throws. */
   abstract typing(handle: Handle): Promise<void>;
@@ -95,7 +119,12 @@ export abstract class ChannelAdapter {
    *
    * Best-effort by contract — see Draft, which is what actually calls this.
    */
-  async draft(_handle: Handle, _draftId: number, _text: string): Promise<void> {}
+  async draft(
+    _handle: Handle,
+    _draftId: number,
+    _text: string,
+    _threadId?: number,
+  ): Promise<void> {}
 
   /** Longest single message this channel accepts. */
   protected abstract readonly maxMessageLength: number;

@@ -38,7 +38,11 @@ export class Outbox {
    * construction — they messaged us moments ago — so this is always free-form,
    * and on WhatsApp always free.
    */
-  async reply(userId: UserId, text: string, actions?: readonly Action[]): Promise<void> {
+  async reply(
+    userId: UserId,
+    text: string,
+    options: { actions?: readonly Action[]; threadId?: number } = {},
+  ): Promise<void> {
     const target = await this.route(userId);
     if (!target) return;
 
@@ -47,10 +51,15 @@ export class Outbox {
 
     // Buttons ride on the last chunk only. Anywhere else and the user would
     // be asked to decide something while the rest of the answer is still
-    // arriving underneath it.
+    // arriving underneath it. The thread is on every chunk — they are one
+    // message that did not fit, not a conversation.
     for (const [index, chunk] of chunks.entries()) {
       const last = index === chunks.length - 1;
-      await adapter.send(handle, chunk, last ? actions : undefined);
+      await adapter.send(handle, {
+        text: chunk,
+        actions: last ? options.actions : undefined,
+        threadId: options.threadId,
+      });
     }
   }
 
@@ -61,12 +70,12 @@ export class Outbox {
    * Routed once and handed back bound, because the alternative is a Mongo
    * round trip per token.
    */
-  async draft(userId: UserId, draftId: number): Promise<Draft | null> {
+  async draft(userId: UserId, draftId: number, threadId?: number): Promise<Draft | null> {
     const target = await this.route(userId);
     if (!target?.adapter.streams) return null;
 
     const { adapter, handle } = target;
-    return new Draft((text) => adapter.draft(handle, draftId, toPlainText(text)));
+    return new Draft((text) => adapter.draft(handle, draftId, toPlainText(text), threadId));
   }
 
   /**
@@ -98,7 +107,7 @@ export class Outbox {
       const chunks = adapter.chunk(plain);
       for (const [index, chunk] of chunks.entries()) {
         const last = index === chunks.length - 1;
-        await adapter.send(handle, chunk, last ? actions : undefined);
+        await adapter.send(handle, { text: chunk, actions: last ? actions : undefined });
       }
       return;
     }
@@ -106,7 +115,7 @@ export class Outbox {
     // Templates take one body parameter and cannot be chunked — a reminder
     // that overflows is truncated rather than split, because two templates
     // would be billed twice and arrive out of order.
-    await adapter.notify(handle, plain);
+    await adapter.notify(handle, { text: plain });
   }
 
   async typing(userId: UserId): Promise<void> {

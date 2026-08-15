@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 
-import { ChannelAdapter, InboundHandler } from '../channels/channel';
+import { ChannelAdapter, InboundHandler, Outgoing } from '../channels/channel';
 import { LinkStore } from '../channels/link.store';
 import { formatPairingCode } from '../channels/pairing-code';
 import { ENV, Env } from '../config/env';
@@ -70,8 +70,15 @@ export class WhatsAppAdapter extends ChannelAdapter implements OnModuleInit {
     this.handlers.push(handler);
   }
 
-  async send(handle: Handle, text: string): Promise<void> {
+  async send(handle: Handle, { text }: Outgoing): Promise<void> {
+    // Buttons and threads both dropped: WhatsApp has neither, and a message
+    // that arrives as plain words is the right shape of "not supported".
     await this.graph.sendText(handle, text);
+  }
+
+  /** The adapter's own asides — a refusal, a pairing code. Words only. */
+  private async say(handle: Handle, text: string): Promise<void> {
+    await this.send(handle, { text });
   }
 
   /**
@@ -79,7 +86,7 @@ export class WhatsAppAdapter extends ChannelAdapter implements OnModuleInit {
    * the template's one body parameter, truncated rather than split: two
    * templates would be billed twice and could arrive out of order.
    */
-  async notify(handle: Handle, text: string): Promise<void> {
+  async notify(handle: Handle, { text }: Outgoing): Promise<void> {
     const body = text.length > MAX_TEMPLATE_BODY ? `${text.slice(0, MAX_TEMPLATE_BODY - 1)}…` : text;
 
     await this.graph.sendTemplate(
@@ -113,7 +120,7 @@ export class WhatsAppAdapter extends ChannelAdapter implements OnModuleInit {
       // voice note is an unsolicited message to a number we know nothing
       // about, which is exactly what Meta's quality rating penalises.
       if (!(await this.links.resolve(this.addressOf(from)))) continue;
-      await this.send(from, `I can only read text for now — a ${type} message won't reach me.`);
+      await this.say(from, `I can only read text for now — a ${type} message won't reach me.`);
     }
   }
 
@@ -140,7 +147,7 @@ export class WhatsAppAdapter extends ChannelAdapter implements OnModuleInit {
 
     if (UNLINK.test(text)) {
       const email = await this.links.unlink(address);
-      await this.send(
+      await this.say(
         address.handle,
         email
           ? `Disconnected from ${email}. I won't reply here until it's connected again.`
@@ -167,12 +174,12 @@ export class WhatsAppAdapter extends ChannelAdapter implements OnModuleInit {
     if (CODE.test(text)) {
       const wait = await this.links.pairingCooldown(address, PAIRING_COOLDOWN_MS);
       if (wait > 0) {
-        await this.send(address.handle, `Hold on ${wait}s before asking for another code.`);
+        await this.say(address.handle, `Hold on ${wait}s before asking for another code.`);
         return;
       }
 
       const code = await this.links.issuePairingCode(address, PAIRING_TTL_MS);
-      await this.send(
+      await this.say(
         address.handle,
         `Your pairing code is\n\n${formatPairingCode(code)}\n\n` +
           `Type it into the "Connect manually" box on recalfy.com. It lasts ${PAIRING_TTL_MS / 60_000} minutes.\n\n` +
@@ -182,7 +189,7 @@ export class WhatsAppAdapter extends ChannelAdapter implements OnModuleInit {
     }
 
     this.logger.warn(`Dropped message from unlinked sender ${address.handle}`);
-    await this.send(
+    await this.say(
       address.handle,
       "This number isn't connected to an account yet.\n\n" +
         'Sign in at recalfy.com and press "Connect WhatsApp".\n\n' +
@@ -192,7 +199,7 @@ export class WhatsAppAdapter extends ChannelAdapter implements OnModuleInit {
 
   private async completeLink(address: Address, token: string): Promise<void> {
     const result = await this.links.redeem(token, address);
-    const reply = (text: string) => this.send(address.handle, text);
+    const reply = (text: string) => this.say(address.handle, text);
 
     switch (result.status) {
       case 'linked':

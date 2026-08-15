@@ -8,6 +8,7 @@ import {
   ActionHandler,
   ChannelAdapter,
   InboundHandler,
+  Outgoing,
 } from '../channels/channel';
 import { LinkStore } from '../channels/link.store';
 import { formatPairingCode } from '../channels/pairing-code';
@@ -128,6 +129,7 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
         address,
         text: ctx.message.text,
         messageId: String(ctx.message.message_id),
+        threadId: ctx.message.message_thread_id,
         receivedAt: new Date(),
       });
     });
@@ -154,6 +156,7 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
         address,
         text: describeSharedLocation(ctx.message.location, ctx.message.venue),
         messageId: String(ctx.message.message_id),
+        threadId: ctx.message.message_thread_id,
         receivedAt: new Date(),
       });
     });
@@ -301,13 +304,18 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
     this.actionHandlers.push(handler);
   }
 
-  async send(handle: Handle, text: string, actions?: readonly Action[]): Promise<void> {
-    await this.bot.api.sendMessage(handle, text, this.keyboard(actions));
+  async send(handle: Handle, { text, actions, threadId }: Outgoing): Promise<void> {
+    await this.bot.api.sendMessage(handle, text, {
+      ...this.keyboard(actions),
+      // Replies land where the question was asked. Undefined is the main
+      // thread, which is where every reply went before topics existed.
+      ...(threadId !== undefined && { message_thread_id: threadId }),
+    });
   }
 
   /** Telegram draws no line between solicited and unsolicited messages. */
-  async notify(handle: Handle, text: string, actions?: readonly Action[]): Promise<void> {
-    await this.send(handle, text, actions);
+  async notify(handle: Handle, message: Outgoing): Promise<void> {
+    await this.send(handle, message);
   }
 
   async typing(handle: Handle): Promise<void> {
@@ -328,12 +336,21 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
    * frame that fails to paint is invisible, while a throw would take the
    * answer down with it.
    */
-  async draft(handle: Handle, draftId: number, text: string): Promise<void> {
+  async draft(
+    handle: Handle,
+    draftId: number,
+    text: string,
+    threadId?: number,
+  ): Promise<void> {
     const chatId = Number(handle);
     if (!Number.isSafeInteger(chatId)) return;
 
     try {
-      await this.bot.api.sendMessageDraft(chatId, draftId, text.slice(0, MAX_MESSAGE_LENGTH));
+      await this.bot.api.sendMessageDraft(chatId, draftId, text.slice(0, MAX_MESSAGE_LENGTH), {
+        // Painted in the thread it will land in, or it appears somewhere the
+        // person is not looking and then the answer arrives elsewhere.
+        ...(threadId !== undefined && { message_thread_id: threadId }),
+      });
     } catch (error) {
       this.logger.debug(`draft dropped: ${error instanceof Error ? error.message : error}`);
     }
