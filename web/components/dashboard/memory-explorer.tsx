@@ -92,8 +92,12 @@ export function MemoryExplorer({ memories }: { memories: MemoryItem[] }) {
           </p>
         ) : (
           <MemoryListShell>
+            {/* The page you came to on purpose — credentials mask, and the
+                eye on each row shows one. Search still reads the stored text,
+                masked or not: looking a password up by its value is exactly
+                what this box is for. */}
             {visible.map((memory) => (
-              <MemoryRow key={memory.id} memory={memory} />
+              <MemoryRow key={memory.id} memory={memory} revealable />
             ))}
           </MemoryListShell>
         )}

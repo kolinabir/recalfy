@@ -1,19 +1,16 @@
 /**
- * Hides a credential in the *preview* of an inline result.
+ * Hides a credential in a list of memories.
  *
- * The inline dropdown opens on top of whatever chat you are in, in a café or
- * on a train, and it is the one place memory appears without being asked for.
- * A password sitting in that list is readable by anyone glancing over — and
- * unlike the message you send on purpose, you never chose to show it.
+ * A dashboard is read in the places a laptop gets opened — a desk someone
+ * walks past, a café, a shared screen — and unlike the fact you went looking
+ * for, everything else on the page is showing itself without being asked.
+ * So the list masks, and revealing is a deliberate press.
  *
- * This only ever rewrites the title Telegram draws. The text that is sent when
- * a result is tapped comes from a different field and is always the fact as
- * stored — masking what gets sent would make the feature useless for exactly
- * the facts people reach for most.
- *
- * ⚠️ Copied verbatim in `web/lib/mask-secret.ts`, which masks the same facts on
- * the dashboard. Separate packages, so no import is possible; change one and
- * change the other, or `test/mask-secret-parity.test.ts` fails.
+ * ⚠️ This is a copy of `src/telegram/mask-secret.ts`, which does the same job
+ * for the inline dropdown. The two are separate npm packages and the web app
+ * deploys from `web/` alone, so it cannot import across — but the rule has to
+ * be the same rule, or a fact masked in Telegram would sit in the clear here.
+ * `test/mask-secret-parity.test.ts` fails if the two ever disagree.
  */
 
 /**
@@ -33,7 +30,7 @@ const CREDENTIAL =
 const SEPARATOR = /(?:\s+(?:is|are)\s+|\s*[:=]\s*)/gi;
 
 /** Fixed width: a mask that matched the real length would leak it. */
-const MASK = '••••••••';
+const MASK = "••••••••";
 
 export function maskSecret(text: string): string {
   const credential = CREDENTIAL.exec(text);
@@ -52,7 +49,12 @@ export function maskSecret(text: string): string {
   if (!value.trim()) return text;
 
   // Keep the full stop. Losing it makes the line read as truncated, which
-  // invites a second look at exactly the result we are trying to make boring.
-  const stop = /[.!?]$/.test(value) ? value.slice(-1) : '';
+  // invites a second look at exactly the row we are trying to make boring.
+  const stop = /[.!?]$/.test(value) ? value.slice(-1) : "";
   return `${text.slice(0, cut)}${MASK}${stop}`;
+}
+
+/** Whether this fact has anything worth hiding — i.e. whether to draw the eye. */
+export function hasSecret(text: string): boolean {
+  return maskSecret(text) !== text;
 }

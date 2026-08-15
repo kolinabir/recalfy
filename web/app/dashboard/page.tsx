@@ -18,6 +18,7 @@ import {
 } from "@/lib/dashboard-data";
 import { channelConfig } from "@/lib/channel-config";
 import { dueLabel, relativeDate, repeatLabel } from "@/lib/format";
+import { maskSecret } from "@/lib/mask-secret";
 import { type Plan, planForUser } from "@/lib/paddle/plan";
 
 export const metadata: Metadata = {
@@ -176,7 +177,11 @@ function Resurfaced({ memories }: { memories: MemoryItem[] }) {
     <section aria-label="From your memory" className="mt-8">
       <SectionHead title="From your memory" />
       <div className="rounded-xl border border-line bg-s1 px-5 py-5">
-        <p className="text-[0.9375rem] leading-relaxed text-fg">{pick.text}</p>
+        {/* Nobody asked for this one — it surfaced itself. All the more reason
+            it must not be the thing that puts a password on screen. */}
+        <p className="text-[0.9375rem] leading-relaxed text-fg">
+          {maskSecret(pick.text)}
+        </p>
         <p className="mt-2.5 font-mono text-[0.625rem] text-fg-faint">
           {pick.group} · saved {relativeDate(pick.createdAt)}
         </p>
