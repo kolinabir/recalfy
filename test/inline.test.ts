@@ -3,7 +3,13 @@ import { describe, it } from 'node:test';
 
 import { searchMemories } from '../src/memory/memory-search';
 import { Memory } from '../src/memory/memory.types';
-import { PRIVATE_ANSWER, toInlineResults } from '../src/telegram/inline';
+import {
+  INLINE_REFUSALS,
+  PRIVATE_ANSWER,
+  refusalButton,
+  refusalReply,
+  toInlineResults,
+} from '../src/telegram/inline';
 import { maskSecret } from '../src/telegram/mask-secret';
 
 /**
@@ -133,6 +139,36 @@ describe('toInlineResults', () => {
 
     assert.equal(result.title, "The WiFi password at Kolin's office is ••••••••.");
     assert.equal(sentText(result), secret);
+  });
+});
+
+describe('the refusal button', () => {
+  it('offers a different line for each reason, so the panel is never just empty', () => {
+    const texts = Object.values(INLINE_REFUSALS).map((refusal) => refusal.text);
+    assert.equal(new Set(texts).size, texts.length);
+    assert.ok(texts.every((text) => text.length > 0));
+  });
+
+  it('uses start parameters Telegram will accept', () => {
+    // 1-64 characters of A-Z, a-z, 0-9, _ and - — anything else and the
+    // button is rejected at answer time, which shows up as no panel at all.
+    for (const { start_parameter } of Object.values(INLINE_REFUSALS)) {
+      assert.match(start_parameter, /^[A-Za-z0-9_-]{1,64}$/);
+    }
+  });
+
+  it('answers the tap itself, rather than letting it be read as a pairing token', () => {
+    // Without this the person is told their link expired, which is both
+    // untrue and about something else entirely.
+    for (const { start_parameter, reply } of Object.values(INLINE_REFUSALS)) {
+      assert.equal(refusalReply(start_parameter), reply);
+    }
+    assert.equal(refusalReply('a-real-looking-link-token'), null);
+  });
+
+  it('tells someone who switched it off where the switch is', () => {
+    assert.match(refusalButton('off').text, /off/i);
+    assert.match(INLINE_REFUSALS.off.reply, /dashboard\/settings/);
   });
 });
 

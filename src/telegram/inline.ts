@@ -74,14 +74,65 @@ export function toInlineResults(memories: Memory[]): InlineQueryResultArticle[] 
 }
 
 /**
- * What an unlinked or lapsed person sees. Telegram renders this as a button
- * above the empty list, and tapping it opens a private chat with the bot.
+ * The strip above the results, and the only place Telegram lets a bot say
+ * anything that is not a result.
  *
- * An empty answer with no button is indistinguishable from a broken bot —
- * the panel just spins and then shows nothing.
+ * There is no read-only slot in an inline answer. A result is always tappable
+ * and always sends its text, so "inline is off" cannot be a greyed-out row —
+ * it would post that sentence into somebody else's chat. The button is the
+ * whole vocabulary: it renders as one line above an empty list and opens a
+ * private chat with the bot, which is where an explanation can actually be
+ * read.
+ *
+ * Saying nothing is worse than saying it here. An empty answer with no button
+ * is indistinguishable from a broken bot — the panel spins, shows nothing, and
+ * the person retypes it twice.
  */
-export function connectButton(text: string) {
-  return { text, start_parameter: 'inline' };
+export const INLINE_REFUSALS = {
+  unlinked: {
+    text: 'Connect your account to search your memory here',
+    start_parameter: 'inline',
+    /** What the bot says when the button is tapped and the chat opens. */
+    reply:
+      "This chat isn't connected yet, so there is nothing to search.\n\n" +
+      'Sign in at recalfy.com and press "Connect Telegram", then try typing @recalfy_bot in any chat again.',
+  },
+  lapsed: {
+    text: 'Your plan has expired — tap to fix it',
+    start_parameter: 'inline-plan',
+    reply:
+      'Your plan has expired, so inline results are empty for now.\n\n' +
+      'recalfy.com/dashboard/billing has the details. Nothing has been deleted — your memory is waiting.',
+  },
+  off: {
+    text: 'Inline results are turned off for your account',
+    start_parameter: 'inline-off',
+    reply:
+      'Inline results are switched off, so @recalfy_bot returns nothing in other chats.\n\n' +
+      'Turn them back on at recalfy.com/dashboard/settings, under "Inline results".',
+  },
+} as const;
+
+export type InlineRefusal = keyof typeof INLINE_REFUSALS;
+
+/** The button Telegram draws, without the reply text that is ours alone. */
+export function refusalButton(refusal: InlineRefusal) {
+  const { text, start_parameter } = INLINE_REFUSALS[refusal];
+  return { text, start_parameter };
+}
+
+/**
+ * The answer to `/start <parameter>` arriving back from one of those buttons.
+ *
+ * Without this the parameter falls through to the link handshake and is read
+ * as a pairing token, and the person who tapped "inline results are off" is
+ * told their link has expired — an answer to a question they did not ask.
+ */
+export function refusalReply(startParameter: string): string | null {
+  const match = Object.values(INLINE_REFUSALS).find(
+    (refusal) => refusal.start_parameter === startParameter,
+  );
+  return match?.reply ?? null;
 }
 
 function truncate(text: string, limit: number): string {

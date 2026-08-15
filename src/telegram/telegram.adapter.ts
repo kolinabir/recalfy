@@ -11,7 +11,13 @@ import { MemoryStore } from '../memory/memory.store';
 import { searchMemories } from '../memory/memory-search';
 import { UserStore } from '../memory/user.store';
 import { Address, Channel, Handle } from '../mongo/collections';
-import { PRIVATE_ANSWER, connectButton, toInlineResults } from './inline';
+import {
+  type InlineRefusal,
+  PRIVATE_ANSWER,
+  refusalButton,
+  refusalReply,
+  toInlineResults,
+} from './inline';
 import { linkedOnly, parseStartToken } from './linked-only.middleware';
 import { describeSharedLocation } from './location-text';
 
@@ -54,6 +60,17 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
     this.bot.on('message:text', async (ctx, next) => {
       const token = parseStartToken(ctx.message.text);
       if (!token) return next();
+
+      // The inline buttons come back through this same door. Left to the
+      // handshake, "inline-off" would be tried as a pairing token and the
+      // person told their link had expired — an answer to a question they
+      // never asked, about a feature they were trying to turn on.
+      const explanation = refusalReply(token);
+      if (explanation) {
+        await ctx.reply(explanation);
+        return;
+      }
+
       await this.completeLink(ctx, token);
     });
 
@@ -146,14 +163,14 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
       const startedAt = Date.now();
       const userId = await this.links.resolve(this.addressOf(ctx.from.id));
       if (!userId) {
-        await this.refuseInline(ctx, 'Connect your account');
+        await this.refuseInline(ctx, 'unlinked');
         return;
       }
 
       // Silent: a lapsed account gets an empty list and a way back, not a
       // sales pitch typed into their conversation with somebody else.
       if (!(await this.subscriptions.limitsFor(userId))) {
-        await this.refuseInline(ctx, 'Your plan has expired');
+        await this.refuseInline(ctx, 'lapsed');
         return;
       }
 
@@ -165,11 +182,11 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
         this.memories.facts(userId),
       ]);
 
-      // Switched off in the dashboard. An empty list and no button: they
-      // turned this off on purpose, and a prompt to turn it back on is an
-      // argument with someone who already decided.
+      // Switched off in the dashboard. Says so rather than returning silence:
+      // an empty panel is what a broken bot looks like, and someone who
+      // forgot they turned this off would go looking for the bug in us.
       if (!enabled) {
-        await ctx.answerInlineQuery([], PRIVATE_ANSWER);
+        await this.refuseInline(ctx, 'off');
         return;
       }
 
@@ -193,11 +210,8 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
    * as a real answer: an empty result is still an answer about a specific
    * person, and caching "no results" across users would be its own small leak.
    */
-  private async refuseInline(
-    ctx: Context,
-    prompt: string,
-  ): Promise<void> {
-    await ctx.answerInlineQuery([], { ...PRIVATE_ANSWER, button: connectButton(prompt) });
+  private async refuseInline(ctx: Context, refusal: InlineRefusal): Promise<void> {
+    await ctx.answerInlineQuery([], { ...PRIVATE_ANSWER, button: refusalButton(refusal) });
   }
 
   private addressOf(telegramUserId: number): Address {

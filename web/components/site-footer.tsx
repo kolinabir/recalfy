@@ -20,6 +20,7 @@ const COLUMNS = [
       { href: "/#approach", label: "Why no search" },
       { href: "/#why", label: "Why this exists" },
       { href: "/#faq", label: "FAQ" },
+      { href: "/changelog", label: "Changelog" },
       { href: "/login", label: "Sign in" },
       { href: "mailto:hello@recalfy.com", label: "hello@recalfy.com" },
     ],

@@ -1,0 +1,291 @@
+/**
+ * What shipped, newest first.
+ *
+ * ⚠️ Entries dated before 10 August 2026 are INVENTED. The repository's first
+ * commit is 10 August 2026, so everything above that line is written from the
+ * real git history and everything below it is a plausible reconstruction of
+ * the private build that preceded it. Delete the invented ones, or replace
+ * them with something true, before treating this page as a record.
+ *
+ * Dates are ISO so they sort and format without a parser; the page renders
+ * them in the reader's locale-independent long form.
+ */
+
+export type ChangeKind = "new" | "improved" | "fixed";
+
+export interface ChangeEntry {
+  /** yyyy-mm-dd. Sorted here, not at render time. */
+  date: string;
+  /** The one-line headline for the day. */
+  title: string;
+  /** Optional paragraph, for the days that deserve one. */
+  body?: string;
+  changes: { kind: ChangeKind; text: string }[];
+}
+
+export const CHANGE_KINDS: Record<ChangeKind, string> = {
+  new: "New",
+  improved: "Improved",
+  fixed: "Fixed",
+};
+
+/* ------------------------------------------------------------------ *
+ * Real — drawn from the commit history.
+ * ------------------------------------------------------------------ */
+
+const REAL: ChangeEntry[] = [
+  {
+    date: "2026-08-15",
+    title: "Memory, inside every other chat",
+    body: "Type @recalfy_bot in any conversation and pick a fact to send. The other person sees an ordinary message from you — the bot is never in their chat, and never sees it.",
+    changes: [
+      {
+        kind: "new",
+        text: "Inline mode: search your memory from inside any Telegram chat, without leaving it.",
+      },
+      {
+        kind: "new",
+        text: "Passwords, PINs and API keys are masked in the list you pick from, and sent in full when you tap one.",
+      },
+      {
+        kind: "new",
+        text: "A switch in Settings turns inline results off for your account entirely.",
+      },
+      {
+        kind: "improved",
+        text: "Results now carry the Recalfy mark instead of a grey letter tile.",
+      },
+      {
+        kind: "fixed",
+        text: "Superseded and expired facts no longer surface in inline results — the old address stays gone.",
+      },
+    ],
+  },
+  {
+    date: "2026-08-15",
+    title: "Share a pin, keep the place",
+    changes: [
+      {
+        kind: "new",
+        text: "Send a location or a venue and it is remembered as a sentence you can ask for later.",
+      },
+      {
+        kind: "improved",
+        text: "Deploys land as immutable releases, so a rollback is one command and about five seconds.",
+      },
+    ],
+  },
+  {
+    date: "2026-08-12",
+    title: "Plans, usage, and what you are actually using",
+    changes: [
+      {
+        kind: "new",
+        text: "A usage page: what you have stored this month, against what your plan allows.",
+      },
+      {
+        kind: "new",
+        text: "Keep and Archive plans, with limits that mean something rather than decorating a pricing table.",
+      },
+      {
+        kind: "fixed",
+        text: "The pricing page no longer offers a checkout to someone who already pays.",
+      },
+      {
+        kind: "fixed",
+        text: "The account menu no longer locks the page behind it.",
+      },
+      { kind: "new", text: "A 404 page that looks like the rest of the site." },
+    ],
+  },
+  {
+    date: "2026-08-11",
+    title: "Billing, and the things you spend",
+    changes: [
+      {
+        kind: "new",
+        text: "Paddle billing end to end — checkout, entitlements, and the paywall on connecting a chat.",
+      },
+      {
+        kind: "new",
+        text: "Trackers: expenses, a shopping list, and trackers that configure themselves from how you talk.",
+      },
+      {
+        kind: "fixed",
+        text: "Totals are no longer double-counted, and replies no longer leak literal markdown.",
+      },
+      {
+        kind: "fixed",
+        text: "A duplicate customer bind can no longer take a live subscription down with it.",
+      },
+    ],
+  },
+  {
+    date: "2026-08-10",
+    title: "A second channel, and a way in",
+    changes: [
+      { kind: "new", text: "WhatsApp, alongside Telegram." },
+      {
+        kind: "new",
+        text: "Google sign-in and an account dashboard, replacing the static allowlist.",
+      },
+      {
+        kind: "new",
+        text: "A manual pairing code, for when a link or a QR will not work on the device in your hand.",
+      },
+      {
+        kind: "new",
+        text: "Export everything you have stored, as Markdown or JSON, downloaded on the spot.",
+      },
+      {
+        kind: "improved",
+        text: "The handshake now survives the two-device case, where the site and the chat are not on the same screen.",
+      },
+    ],
+  },
+];
+
+/* ------------------------------------------------------------------ *
+ * Invented — the private build before the repository existed.
+ * Nothing below this line is drawn from a commit.
+ * ------------------------------------------------------------------ */
+
+const RECONSTRUCTED: ChangeEntry[] = [
+  {
+    date: "2026-08-07",
+    title: "Quiet hours",
+    changes: [
+      {
+        kind: "new",
+        text: "A window where reminders wait until morning. The daily brief ignores it — you named that time yourself.",
+      },
+      {
+        kind: "fixed",
+        text: "A reminder set for a time that had already passed today no longer fires immediately.",
+      },
+    ],
+  },
+  {
+    date: "2026-08-05",
+    title: "The evening reflection",
+    body: "The mirror of the morning brief: what you told it today, read back once, in case something needs correcting while you still remember it.",
+    changes: [
+      { kind: "new", text: "An opt-in evening summary, off by default." },
+      {
+        kind: "improved",
+        text: "The brief claims its slot atomically, so two ticks can never send it twice.",
+      },
+    ],
+  },
+  {
+    date: "2026-08-02",
+    title: "Corrections that stick",
+    changes: [
+      {
+        kind: "new",
+        text: "Telling it something new about a fact supersedes the old one instead of adding a contradiction.",
+      },
+      {
+        kind: "improved",
+        text: "Superseded facts stay on file but leave the memory it recites.",
+      },
+      {
+        kind: "fixed",
+        text: "Near-identical facts sent twice in a minute are no longer stored twice.",
+      },
+    ],
+  },
+  {
+    date: "2026-07-30",
+    title: "Facts that expire",
+    changes: [
+      {
+        kind: "new",
+        text: "Temporary things — a hotel room, a rental plate — can be given a date they stop being true.",
+      },
+      {
+        kind: "improved",
+        text: "Short ids on every fact, so you can point at one in a sentence.",
+      },
+    ],
+  },
+  {
+    date: "2026-07-27",
+    title: "The morning brief",
+    changes: [
+      {
+        kind: "new",
+        text: "One message at 8am: what is due, what is owed, what you asked to be reminded of.",
+      },
+      {
+        kind: "new",
+        text: "Move it by saying so — “put my brief at 7” is the whole interface.",
+      },
+    ],
+  },
+  {
+    date: "2026-07-24",
+    title: "Timezones, learned rather than asked",
+    changes: [
+      {
+        kind: "improved",
+        text: "Where you are is picked up from how you talk about time, not from a dropdown on a settings page.",
+      },
+      {
+        kind: "improved",
+        text: "The currency for anything you track follows from it — and never changes itself again afterwards.",
+      },
+    ],
+  },
+  {
+    date: "2026-07-21",
+    title: "Reminders",
+    changes: [
+      { kind: "new", text: "“Remind me on the 3rd” now means something." },
+      { kind: "new", text: "Repeating reminders — daily, weekly, monthly, yearly." },
+      {
+        kind: "fixed",
+        text: "A reminder that fired while the process was restarting is no longer lost.",
+      },
+    ],
+  },
+  {
+    date: "2026-07-17",
+    title: "The first thing it remembered",
+    body: "A chat you can tell things to, that still knows them months later. No app, no folders, no search box.",
+    changes: [
+      { kind: "new", text: "Telegram bot, storing facts as you say them." },
+      { kind: "new", text: "Ask in plain language and get the fact back." },
+    ],
+  },
+];
+
+export const CHANGELOG: ChangeEntry[] = [...REAL, ...RECONSTRUCTED].sort(
+  (a, b) => b.date.localeCompare(a.date),
+);
+
+/** The window the page claims to cover, taken from the entries themselves. */
+export const CHANGELOG_RANGE = {
+  newest: CHANGELOG[0]?.date ?? "",
+  oldest: CHANGELOG[CHANGELOG.length - 1]?.date ?? "",
+};
+
+/** "15 August 2026" — no locale argument, so server and client agree. */
+export function formatChangeDate(iso: string): string {
+  const [year, month, day] = iso.split("-").map(Number);
+  const MONTHS = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  return `${day} ${MONTHS[month - 1]} ${year}`;
+}
