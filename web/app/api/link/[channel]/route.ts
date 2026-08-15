@@ -48,8 +48,14 @@ export async function POST(_request: Request, params: Params) {
   }
 
   const result = await mintLink(resolved.channel, resolved.user);
+
+  // Both branches forward everything the result carries rather than naming
+  // fields. Picking them out by hand is how a failure that had learned to say
+  // "another 14 minutes" reached the screen as "another undefined minutes".
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    const { ok, status, ...failure } = result;
+    void ok;
+    return NextResponse.json(failure, { status });
   }
 
   const { ok, ...handshake } = result;

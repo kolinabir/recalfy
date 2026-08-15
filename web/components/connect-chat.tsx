@@ -68,12 +68,23 @@ export function ConnectChat({
     }
   }, [handshake]);
 
+  /**
+   * Moving between routes clears the last complaint. The error belongs to the
+   * attempt that produced it — leaving it up while the manual form raises its
+   * own is how the same refusal ends up on screen twice, with two different
+   * countdowns.
+   */
+  const goTo = (next: View) => {
+    setError(null);
+    setView(next);
+  };
+
   const choose = async (next: View) => {
     if (next === "manual") {
-      setView("manual");
+      goTo("manual");
       return;
     }
-    if (await ensureHandshake()) setView(next);
+    if (await ensureHandshake()) goTo(next);
   };
 
   // Poll while the dialog is open, whichever route is on screen — the link may
@@ -164,7 +175,7 @@ export function ConnectChat({
             ) : (
               <button
                 type="button"
-                onClick={() => setView("choose")}
+                onClick={() => goTo("choose")}
                 className="font-mono text-[0.6875rem] text-fg-subtle underline-offset-4 transition-colors hover:text-fg hover:underline"
               >
                 ← All options
