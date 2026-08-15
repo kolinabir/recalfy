@@ -83,6 +83,19 @@ export class UserStore {
     await this.mongo.users.updateOne({ _id: userId }, { $set: { currency } });
   }
 
+  /**
+   * Whether inline queries may be answered for this account. Runs on every
+   * keystroke of an inline query, so it reads one field and nothing else.
+   *
+   * Missing user, missing field: both mean yes. The document is created on
+   * first contact and the setting is opt-*out*, so the only reading that would
+   * surprise anybody is a silent no.
+   */
+  async inlineEnabled(userId: UserId): Promise<boolean> {
+    const user = await this.mongo.users.findOne({ _id: userId }, { projection: { inline: 1 } });
+    return user?.inline !== false;
+  }
+
   async setBrief(userId: UserId, brief: BriefConfig): Promise<void> {
     await this.mongo.users.updateOne({ _id: userId }, { $set: { brief } });
   }

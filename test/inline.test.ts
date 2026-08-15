@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import { searchMemories } from '../src/memory/memory-search';
 import { Memory } from '../src/memory/memory.types';
 import { PRIVATE_ANSWER, toInlineResults } from '../src/telegram/inline';
+import { maskSecret } from '../src/telegram/mask-secret';
 
 /**
  * Narrows the result's content union, and asserts the narrowing: a result
@@ -122,5 +123,55 @@ describe('toInlineResults', () => {
   it('shows the group as the subtitle, so two similar facts are tellable apart', () => {
     const [result] = toInlineResults([fact('c3', 'Rahim is the landlord', 'People')]);
     assert.equal(result.description, 'People');
+  });
+
+  it('hides a credential in the dropdown while still sending it in full', () => {
+    // The dropdown opens over whatever chat you are in, in front of whoever
+    // is next to you. The message you send is a choice; the preview is not.
+    const secret = "The WiFi password at Kolin's office is Th!s_is*complex.";
+    const [result] = toInlineResults([fact('c4', secret, 'Work')]);
+
+    assert.equal(result.title, "The WiFi password at Kolin's office is ••••••••.");
+    assert.equal(sentText(result), secret);
+  });
+});
+
+describe('maskSecret', () => {
+  it('masks the value, not the sentence that explains it', () => {
+    assert.equal(maskSecret('Kolin has a new PIN for the safe: 4821'), 'Kolin has a new PIN for the safe: ••••••••');
+  });
+
+  it('leaves an ordinary fact completely alone', () => {
+    const plain = 'The WiFi network at Kolin’s studio is duckpond42.';
+    assert.equal(maskSecret(plain), plain);
+  });
+
+  it('does not mask a spare key, which is a place and not a secret', () => {
+    // The word "key" alone is in half the useful facts a person stores.
+    const fact = 'Kolin’s spare key is with the neighbour in flat 4B (blue door).';
+    assert.equal(maskSecret(fact), fact);
+  });
+
+  it('masks an api key, where the word is qualified', () => {
+    assert.equal(maskSecret('The Stripe api key is sk_live_9f2b'), 'The Stripe api key is ••••••••');
+  });
+
+  it('masks from the credential onward, not from the last "is" in the line', () => {
+    // Masking the later separator would hide the email and print the password.
+    assert.equal(
+      maskSecret('The Netflix password is hunter2 and the login is kolin@recalfy.com'),
+      'The Netflix password is ••••••••',
+    );
+  });
+
+  it('never leaks the length of what it hid', () => {
+    const short = maskSecret('Wifi password is a1');
+    const long = maskSecret('Wifi password is a1b2c3d4e5f6g7h8i9');
+    assert.equal(short, long);
+  });
+
+  it('leaves a credential word with nothing after it as it found it', () => {
+    const noValue = 'Kolin changed the password today';
+    assert.equal(maskSecret(noValue), noValue);
   });
 });

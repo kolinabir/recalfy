@@ -9,6 +9,7 @@ import { formatPairingCode } from '../channels/pairing-code';
 import { ENV, Env } from '../config/env';
 import { MemoryStore } from '../memory/memory.store';
 import { searchMemories } from '../memory/memory-search';
+import { UserStore } from '../memory/user.store';
 import { Address, Channel, Handle } from '../mongo/collections';
 import { PRIVATE_ANSWER, connectButton, toInlineResults } from './inline';
 import { linkedOnly, parseStartToken } from './linked-only.middleware';
@@ -38,6 +39,7 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
     @Inject(ENV) env: Env,
     private readonly links: LinkStore,
     private readonly memories: MemoryStore,
+    private readonly users: UserStore,
     private readonly subscriptions: Subscriptions,
   ) {
     super();
@@ -141,6 +143,7 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
       tool call, no model call, and nothing here can change an account.
     */
     this.bot.on('inline_query', async (ctx) => {
+      const startedAt = Date.now();
       const userId = await this.links.resolve(this.addressOf(ctx.from.id));
       if (!userId) {
         await this.refuseInline(ctx, 'Connect your account');
@@ -154,8 +157,28 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
         return;
       }
 
-      const hits = searchMemories(await this.memories.facts(userId), ctx.inlineQuery.query);
+      // Answered together: this runs on every keystroke, and two Mongo round
+      // trips in sequence is the difference between a list that keeps up with
+      // typing and one that arrives after the person has given up.
+      const [enabled, facts] = await Promise.all([
+        this.users.inlineEnabled(userId),
+        this.memories.facts(userId),
+      ]);
+
+      // Switched off in the dashboard. An empty list and no button: they
+      // turned this off on purpose, and a prompt to turn it back on is an
+      // argument with someone who already decided.
+      if (!enabled) {
+        await ctx.answerInlineQuery([], PRIVATE_ANSWER);
+        return;
+      }
+
+      const hits = searchMemories(facts, ctx.inlineQuery.query);
       await ctx.answerInlineQuery(toInlineResults(hits), PRIVATE_ANSWER);
+      // The only trace an inline query leaves. Never the query itself or what
+      // matched: this is a lookup of someone's memory, and the timing is the
+      // part worth keeping — a slow answer is an empty dropdown.
+      this.logger.debug(`inline → ${hits.length} hit(s) in ${Date.now() - startedAt}ms`);
     });
 
     this.bot.catch((error) => this.logger.error(`Unhandled bot error: ${error.message}`));

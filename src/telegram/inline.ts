@@ -1,6 +1,7 @@
 import type { InlineQueryResultArticle } from 'grammy/types';
 
 import { Memory } from '../memory/memory.types';
+import { maskSecret } from './mask-secret';
 
 /**
  * Turns matched facts into the list Telegram shows above the keyboard.
@@ -13,6 +14,19 @@ import { Memory } from '../memory/memory.types';
 
 /** Telegram truncates far longer than this, but a dropdown is not a document. */
 const TITLE_LIMIT = 90;
+
+/**
+ * The mark drawn beside every result, in place of the grey letter tile
+ * Telegram generates from the title.
+ *
+ * A fixed, absolute URL on purpose: Telegram fetches it from its own servers,
+ * so a relative path or a localhost URL means no image at all, and it caches
+ * per URL — a path that changes with each deploy would refetch the same image
+ * forever. `www` because that is the canonical host; the apex redirects, and
+ * a fetcher is not obliged to follow.
+ */
+const THUMBNAIL = 'https://www.recalfy.com/inline.png';
+const THUMBNAIL_SIZE = 128;
 
 /**
  * The two settings that keep one person's memory out of another person's
@@ -40,11 +54,20 @@ export function toInlineResults(memories: Memory[]): InlineQueryResultArticle[] 
     // The sid is unique per user and already short. Telegram caps ids at 64
     // bytes and only requires uniqueness within one answer.
     id: memory.sid,
-    title: truncate(memory.text, TITLE_LIMIT),
+    // Masked and then truncated, never the other way round: truncation must
+    // not be what decides whether a password is on screen.
+    title: truncate(maskSecret(memory.text), TITLE_LIMIT),
     description: memory.group,
+    thumbnail_url: THUMBNAIL,
+    thumbnail_width: THUMBNAIL_SIZE,
+    thumbnail_height: THUMBNAIL_SIZE,
     input_message_content: {
       // Sent verbatim, with no parse_mode: a fact containing an underscore or
       // an asterisk would otherwise fail to send, or send half-formatted.
+      //
+      // Verbatim also means unmasked. The title above may hide a credential
+      // from the room; tapping the result is a deliberate act, and a message
+      // reading "the password is ••••••••" would help nobody.
       message_text: memory.text,
     },
   }));
