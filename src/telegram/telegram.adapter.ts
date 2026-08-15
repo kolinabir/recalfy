@@ -25,6 +25,7 @@ import {
   toInlineResults,
 } from './inline';
 import { linkedOnly, parseStartToken } from './linked-only.middleware';
+import { maskSecret } from './mask-secret';
 import { describeSharedLocation } from './location-text';
 
 /** Short: there is no walk-to-another-device delay in the manual flow. */
@@ -33,6 +34,15 @@ const PAIRING_COOLDOWN_MS = 30 * 1000;
 
 /** Telegram rejects messages over 4096 characters; a rendered memory will pass that. */
 const MAX_MESSAGE_LENGTH = 4000;
+
+/**
+ * How long a credential stays legible after the bot says it.
+ *
+ * Long enough to read a password across to another device and type it in;
+ * short enough that it is not still sitting in the scrollback next week, when
+ * the phone is unlocked on a table. Asking again is one sentence.
+ */
+const REDACT_AFTER_MS = 60_000;
 
 /**
  * grammY, wrapped. Used raw rather than through a decorator module: those add
@@ -305,12 +315,42 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
   }
 
   async send(handle: Handle, { text, actions, threadId }: Outgoing): Promise<void> {
-    await this.bot.api.sendMessage(handle, text, {
+    const sent = await this.bot.api.sendMessage(handle, text, {
       ...this.keyboard(actions),
       // Replies land where the question was asked. Undefined is the main
       // thread, which is where every reply went before topics existed.
       ...(threadId !== undefined && { message_thread_id: threadId }),
     });
+
+    this.scheduleRedaction(handle, sent.message_id, text);
+  }
+
+  /**
+   * A password the bot has just said, taken back off the screen a minute later.
+   *
+   * The message is edited rather than deleted: deleting an answer leaves the
+   * question hanging over nothing, and someone scrolling back should be able
+   * to see that they did ask and did get told.
+   *
+   * Held in memory, not in the database. A restart inside that minute loses
+   * the timer and the message stays legible — the honest tradeoff for not
+   * putting every credential the bot utters into a second collection. Asking
+   * again re-arms it.
+   */
+  private scheduleRedaction(handle: Handle, messageId: number, text: string): void {
+    const masked = maskSecret(text);
+    if (masked === text) return;
+
+    const timer = setTimeout(() => {
+      void this.bot.api.editMessageText(handle, messageId, masked).catch((error: unknown) => {
+        // Edited by hand, deleted, or too old. All fine — the point was to
+        // stop it being readable, and someone who deleted it agrees.
+        this.logger.debug(`redaction skipped: ${error instanceof Error ? error.message : error}`);
+      });
+    }, REDACT_AFTER_MS);
+
+    // A pending redaction must never be the reason the process stays alive.
+    timer.unref?.();
   }
 
   /** Telegram draws no line between solicited and unsolicited messages. */

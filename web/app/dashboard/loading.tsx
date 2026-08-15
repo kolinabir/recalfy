@@ -1,8 +1,13 @@
 import { LoadingMark } from "@/components/wordmark";
 
 /**
- * In-shell loading state for dashboard pages — the sidebar stays put, the
- * content column shows the mark tying itself while the page streams in.
+ * Arriving at the dashboard. The sidebar stays put and the content column
+ * shows the mark tying itself while the overview streams in.
+ *
+ * This is the only page that gets the mark. Every other route has its own
+ * `loading.tsx` with a skeleton of the shape it is about to be — once you are
+ * inside, you asked for a specific page, and a spinner in place of it throws
+ * away the one thing we already know: what it will look like.
  */
 export default function Loading() {
   return (

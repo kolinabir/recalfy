@@ -1,15 +1,16 @@
 import { createHash } from 'node:crypto';
 
 import { Memory } from '../memory/memory.types';
+import { maskSecret } from '../telegram/mask-secret';
 
 /**
  * A memory group, rendered as the one message its topic holds.
  *
- * Not masked, unlike the inline dropdown and the dashboard. Both of those have
- * somewhere to put the reveal — a tap that sends the real text, an eye on the
- * row. A topic has neither, so masking here would not hide a password from
- * anyone, it would just make the tab useless for the facts people open it for.
- * This is the user's own chat with the bot, which has never masked anything.
+ * Credentials are masked, like everywhere else memory is *listed* rather than
+ * asked for. A tab has no reveal of its own — but it does not need one now
+ * that the conversation is the reveal: ask for the password and the bot says
+ * it, legibly, for a minute. What a tab must not be is the place a password
+ * sits in the open for months because it happens to be in the Home group.
  */
 
 /** Telegram's limit is 4096; the margin covers the footer and a long group. */
@@ -29,7 +30,7 @@ export function renderTopic(group: string, facts: readonly Memory[], now: Date):
   // message is rare, and when it happens the recent end is the half worth
   // keeping — the rest is one tap away on the dashboard.
   for (const fact of facts) {
-    const line = `\n• ${fact.text}`;
+    const line = `\n• ${maskSecret(fact.text)}`;
     if (length + line.length > MAX_BODY) break;
     lines.push(line);
     length += line.length;

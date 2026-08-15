@@ -36,6 +36,21 @@ export const CHANGE_KINDS: Record<ChangeKind, string> = {
 const REAL: ChangeEntry[] = [
   {
     date: "2026-08-15",
+    title: "Passwords stop lingering",
+    body: "A password you ask for is readable for a minute, then covers itself over. It is still in your memory — ask again and it comes back for another minute.",
+    changes: [
+      {
+        kind: "new",
+        text: "Anything the bot says that is a credential turns to dots sixty seconds later, so it is not sitting in the chat next week.",
+      },
+      {
+        kind: "improved",
+        text: "Loading a dashboard page now shows the shape of the page instead of a spinner.",
+      },
+    ],
+  },
+  {
+    date: "2026-08-15",
     title: "A tab for each part of your memory",
     body: "Every group the bot keeps — People, Home, Work — can now have its own tab in the chat, holding the current list for that group rather than a log of when it learned things.",
     changes: [

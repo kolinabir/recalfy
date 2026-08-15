@@ -56,3 +56,8 @@ export function maskSecret(text: string): string {
   const stop = /[.!?]$/.test(value) ? value.slice(-1) : '';
   return `${text.slice(0, cut)}${MASK}${stop}`;
 }
+
+/** Whether this text has anything worth hiding once you have finished reading it. */
+export function hasSecret(text: string): boolean {
+  return maskSecret(text) !== text;
+}

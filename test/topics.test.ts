@@ -98,3 +98,22 @@ describe('needsTopicSync', () => {
 function entry() {
   return { threadId: 2, messageId: 3, hash: 'abc' };
 }
+
+/*
+  A tab is a list you scroll past, not an answer you asked for — the same
+  argument that masks the inline dropdown and the dashboard. The reveal is the
+  conversation: ask the bot and it says the password, legibly, for a minute.
+*/
+describe('topic credentials', () => {
+  it('masks a password in the list', () => {
+    const body = renderTopic('Home', [fact('Kolin’s laptop password is xeers34.')], NOW);
+
+    assert.doesNotMatch(body, /xeers34/);
+    assert.match(body, /• Kolin’s laptop password is ••••••••\./);
+  });
+
+  it('leaves an ordinary fact alone', () => {
+    const body = renderTopic('Home', [fact('Rent is due on the 3rd.')], NOW);
+    assert.match(body, /• Rent is due on the 3rd\./);
+  });
+});
