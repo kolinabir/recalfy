@@ -8,6 +8,7 @@ import { formatPairingCode } from '../channels/pairing-code';
 import { ENV, Env } from '../config/env';
 import { Address, Channel, Handle } from '../mongo/collections';
 import { linkedOnly, parseStartToken } from './linked-only.middleware';
+import { describeSharedLocation } from './location-text';
 
 /** Short: there is no walk-to-another-device delay in the manual flow. */
 const PAIRING_TTL_MS = 5 * 60 * 1000;
@@ -90,6 +91,32 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
         userId,
         address,
         text: ctx.message.text,
+        messageId: String(ctx.message.message_id),
+        receivedAt: new Date(),
+      });
+    });
+
+    /*
+      A shared pin, turned into a sentence and sent down the ordinary path.
+
+      Venue messages carry a `location` too, so this one filter catches both
+      and the title is read off the message when Telegram supplied one — a
+      second `message:venue` handler would double-file the same pin.
+
+      Live locations arrive here as their first fix and then update through
+      `edited_message`, which nothing subscribes to. That is deliberate: a
+      fact that rewrites itself every thirty seconds is not a memory, so we
+      keep the snapshot of where they were when they pressed send.
+    */
+    this.bot.on('message:location', async (ctx) => {
+      const address = this.addressOf(ctx.from.id);
+      const userId = await this.links.resolve(address);
+      if (!userId) return;
+
+      await this.fanOut({
+        userId,
+        address,
+        text: describeSharedLocation(ctx.message.location, ctx.message.venue),
         messageId: String(ctx.message.message_id),
         receivedAt: new Date(),
       });

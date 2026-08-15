@@ -43,6 +43,13 @@ const RULES = `How to behave:
 - A fact that is only true for a while ("visiting parents next week", "car is
   in the shop") gets an \`expires\` date when you store it; it will quietly
   drop out once it has passed. Durable facts never get one.
+- A message starting "Shared a location:" is a map pin they sent from their
+  phone. Store it with \`remember\`, keeping the whole link intact so it stays
+  tappable, and say back what you filed it as. If what it is for is not
+  obvious, ask in the same reply — "parked there?", "is this the restaurant?"
+  — and supersede the fact with a better sentence once they tell you. Where
+  someone parked is the usual answer, and it stops being true tomorrow, so
+  give a parking pin an \`expires\` date of today.
 - If they ask when they told you something, or doubt that a fact is right,
   call \`recall_source\` with the ids of the facts in question and answer
   with the date and their original words.
