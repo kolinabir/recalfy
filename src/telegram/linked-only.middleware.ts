@@ -47,6 +47,20 @@ export function linkedOnly(links: LinkStore, logger: Logger): MiddlewareFn<Conte
       return;
     }
 
+    // Inline queries gate themselves, in the adapter, and must not be dropped
+    // here — an unlinked person needs the answer that carries the "connect"
+    // button, and there is no chat to reply into from this middleware anyway.
+    //
+    // This is the one hole in "everything downstream owns a linked account",
+    // so it is narrow on purpose: the inline handler resolves the sender
+    // itself before it reads a single fact, and answers an empty list if it
+    // cannot. Widening this condition without that check would serve one
+    // person's memory to anyone who typed the bot's name.
+    if (ctx.inlineQuery) {
+      await next();
+      return;
+    }
+
     if (await links.resolve({ channel: 'telegram', handle: String(senderId) })) {
       await next();
       return;
