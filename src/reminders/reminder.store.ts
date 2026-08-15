@@ -49,6 +49,17 @@ export class ReminderStore {
       .toArray();
   }
 
+  /**
+   * One reminder, whatever state it is in — including `sent`, which is where
+   * snooze finds it: the scheduler closes the row out the moment delivery
+   * returns, so by the time the user presses a button the original is history
+   * and only its text is still wanted.
+   */
+  async find(userId: UserId, id: string): Promise<ReminderDoc | null> {
+    if (!ObjectId.isValid(id)) return null;
+    return this.mongo.reminders.findOne({ _id: new ObjectId(id), userId });
+  }
+
   async cancel(userId: UserId, id: string): Promise<ReminderDoc | null> {
     if (!ObjectId.isValid(id)) return null;
     return this.mongo.reminders.findOneAndUpdate(

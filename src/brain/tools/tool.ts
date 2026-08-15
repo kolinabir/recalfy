@@ -20,6 +20,12 @@ export interface ToolContext {
   /** Passed in rather than read from the clock, so every path is testable. */
   now: Date;
   sourceMessageId: ObjectId;
+  /**
+   * Ids of facts stored during this turn. A tool that writes appends here, and
+   * the reply turns them into an Undo button — which is the only way the user
+   * gets to disagree with a save without composing a sentence about it.
+   */
+  saved: string[];
 }
 
 /**

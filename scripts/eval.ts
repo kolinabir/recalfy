@@ -83,7 +83,7 @@ async function runCase(
     captured.length = 0;
 
     const sourceMessageId = await log.record(userId, 'user', turn.say);
-    const reply = await app
+    const { text: reply } = await app
       .get(BrainService)
       .handle(userId, turn.say, new Date(), sourceMessageId);
     await log.record(userId, 'assistant', reply);

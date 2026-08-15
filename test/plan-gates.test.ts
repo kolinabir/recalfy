@@ -28,6 +28,7 @@ function contextFor(limits = LIMITS.keep): ToolContext {
     onboarded: true,
     limits,
     now: new Date('2026-08-12T06:00:00Z'),
+    saved: [],
     sourceMessageId: new ObjectId(),
   };
 }
@@ -231,9 +232,17 @@ describe('the channel gate', () => {
         void sent.push({ text, allowed }),
     };
 
-    const delivery = new ReminderDelivery({ onDue: () => {} } as never, outbox as never);
+    const delivery = new ReminderDelivery(
+      [],
+      { onDue: () => {} } as never,
+      {} as never,
+      outbox as never,
+    );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (delivery as any).send({ userId: 'u1', text: 'bins' }, LIMITS.keep);
+    await (delivery as any).send(
+      { userId: 'u1', text: 'bins', _id: { toHexString: () => 'r1' } },
+      LIMITS.keep,
+    );
 
     assert.deepEqual(sent[0].allowed, ['telegram']);
     assert.equal(sent[0].allowed?.includes('whatsapp'), false);

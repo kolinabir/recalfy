@@ -21,6 +21,18 @@ const FALLBACK_REPLY = 'Something went wrong on my end — try me again in a mom
 const BUSY_REPLY = "I'm being rate-limited right now — give me a minute and say that again.";
 
 /**
+ * What to say, and what just happened while deciding to say it.
+ *
+ * `saved` exists so the reply can offer to take it back. It is the turn's
+ * own record rather than a query afterwards: "the facts stored a moment ago"
+ * is not a thing the store can be asked for without guessing at a time window.
+ */
+export interface Reply {
+  text: string;
+  saved: string[];
+}
+
+/**
  * The assistant. One method: a message in, a reply out.
  *
  * Behind it: the memory document, the conversation window, the tool loop, and
@@ -40,20 +52,29 @@ export class BrainService {
     private readonly tools: ToolExecutor,
   ) {}
 
+  /**
+   * `onText` is handed the answer as it is written, when the channel can show
+   * it. Optional everywhere: the reply is identical without it.
+   */
   async handle(
     userId: UserId,
     text: string,
     now: Date,
     sourceMessageId: ObjectId,
     limits: Limits = LIMITS.archive,
-  ): Promise<string> {
+    onText?: (partial: string) => void,
+  ): Promise<Reply> {
+    const saved: string[] = [];
     try {
-      return await this.converse(userId, text, now, sourceMessageId, limits);
+      const reply = await this.converse(userId, text, now, sourceMessageId, limits, saved, onText);
+      return { text: reply, saved };
     } catch (error) {
       this.logger.error(
         `Brain failed for ${userId}: ${error instanceof Error ? error.message : String(error)}`,
       );
-      return isRateLimit(error) ? BUSY_REPLY : FALLBACK_REPLY;
+      // `saved` is returned as it stands rather than emptied: a tool that ran
+      // before the failure really did write, and the undo has to reach it.
+      return { text: isRateLimit(error) ? BUSY_REPLY : FALLBACK_REPLY, saved };
     }
   }
 
@@ -63,8 +84,10 @@ export class BrainService {
     now: Date,
     sourceMessageId: ObjectId,
     limits: Limits,
+    saved: string[],
+    onText?: (partial: string) => void,
   ): Promise<string> {
-    let context = await this.contextFor(userId, now, sourceMessageId, limits);
+    let context = await this.contextFor(userId, now, sourceMessageId, limits, saved);
     const turns: Turn[] = [
       { role: 'system', content: await this.systemPrompt(context) },
       // The window already ends with this message — BotService logs it first.
@@ -77,7 +100,10 @@ export class BrainService {
     let challenged = false;
 
     for (let round = 0; round < MAX_ROUNDS; round++) {
-      const { text: reply, toolCalls } = await this.glm.complete(turns, specs);
+      // Each round streams over the last: a round that opens with "let me
+      // check…" and then calls a tool is replaced by the answer it produces,
+      // rather than accumulating in front of the user.
+      const { text: reply, toolCalls } = await this.glm.complete(turns, specs, onText);
 
       if (toolCalls.length === 0) {
         // Models reliably say "done" while calling nothing. Trusting that would
@@ -107,7 +133,7 @@ export class BrainService {
       // A tool may have changed the memory or the timezone — "I'm from
       // Bangladesh, remind me at 5" sets the zone and then depends on it in
       // the same turn, so both are re-read before the next round.
-      context = await this.contextFor(userId, now, sourceMessageId, limits);
+      context = await this.contextFor(userId, now, sourceMessageId, limits, saved);
       turns[0] = { role: 'system', content: await this.systemPrompt(context) };
     }
 
@@ -120,6 +146,7 @@ export class BrainService {
     now: Date,
     sourceMessageId: ObjectId,
     limits: Limits,
+    saved: string[],
   ): Promise<ToolContext> {
     const user = await this.users.ensure(userId);
     return {
@@ -129,6 +156,9 @@ export class BrainService {
       limits,
       now,
       sourceMessageId,
+      // The same array across every round — the context is rebuilt each time a
+      // tool runs, and a fresh one here would forget what the last round wrote.
+      saved,
     };
   }
 

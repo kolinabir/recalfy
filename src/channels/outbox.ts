@@ -2,7 +2,8 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { UserStore } from '../memory/user.store';
 import { Channel, Handle, UserId } from '../mongo/collections';
-import { CHANNEL_ADAPTERS, ChannelAdapter } from './channel';
+import { Action, CHANNEL_ADAPTERS, ChannelAdapter } from './channel';
+import { Draft } from './draft';
 import { LinkStore } from './link.store';
 import { toPlainText } from './plain-text';
 
@@ -37,14 +38,35 @@ export class Outbox {
    * construction — they messaged us moments ago — so this is always free-form,
    * and on WhatsApp always free.
    */
-  async reply(userId: UserId, text: string): Promise<void> {
+  async reply(userId: UserId, text: string, actions?: readonly Action[]): Promise<void> {
     const target = await this.route(userId);
     if (!target) return;
 
     const { adapter, handle } = target;
-    for (const chunk of adapter.chunk(toPlainText(text))) {
-      await adapter.send(handle, chunk);
+    const chunks = adapter.chunk(toPlainText(text));
+
+    // Buttons ride on the last chunk only. Anywhere else and the user would
+    // be asked to decide something while the rest of the answer is still
+    // arriving underneath it.
+    for (const [index, chunk] of chunks.entries()) {
+      const last = index === chunks.length - 1;
+      await adapter.send(handle, chunk, last ? actions : undefined);
     }
+  }
+
+  /**
+   * A place to paint the reply while it is being written, or null when this
+   * user's channel cannot — which every caller must treat as ordinary.
+   *
+   * Routed once and handed back bound, because the alternative is a Mongo
+   * round trip per token.
+   */
+  async draft(userId: UserId, draftId: number): Promise<Draft | null> {
+    const target = await this.route(userId);
+    if (!target?.adapter.streams) return null;
+
+    const { adapter, handle } = target;
+    return new Draft((text) => adapter.draft(handle, draftId, toPlainText(text)));
   }
 
   /**
@@ -60,7 +82,12 @@ export class Outbox {
    * and then moved to Keep would keep receiving billed templates there
    * forever — us paying Meta to message someone who stopped paying for it.
    */
-  async notify(userId: UserId, text: string, allowed?: readonly Channel[]): Promise<void> {
+  async notify(
+    userId: UserId,
+    text: string,
+    allowed?: readonly Channel[],
+    actions?: readonly Action[],
+  ): Promise<void> {
     const target = await this.route(userId, allowed);
     if (!target) return;
 
@@ -68,8 +95,10 @@ export class Outbox {
     const plain = toPlainText(text);
 
     if (windowOpen) {
-      for (const chunk of adapter.chunk(plain)) {
-        await adapter.send(handle, chunk);
+      const chunks = adapter.chunk(plain);
+      for (const [index, chunk] of chunks.entries()) {
+        const last = index === chunks.length - 1;
+        await adapter.send(handle, chunk, last ? actions : undefined);
       }
       return;
     }

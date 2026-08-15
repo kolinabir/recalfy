@@ -36,20 +36,31 @@ export const CHANGE_KINDS: Record<ChangeKind, string> = {
 const REAL: ChangeEntry[] = [
   {
     date: "2026-08-15",
+    title: "Watch it think, and take it back",
+    body: "Replies now appear as they are written, and the things worth changing your mind about come with a button instead of a second sentence.",
+    changes: [
+      {
+        kind: "new",
+        text: "Answers arrive a word at a time instead of all at once at the end.",
+      },
+      {
+        kind: "new",
+        text: "Undo sits under anything I just remembered, and a reminder can be snoozed 10 minutes, an hour or three.",
+      },
+    ],
+  },
+  {
+    date: "2026-08-15",
     title: "Memory, inside every other chat",
     body: "Type @recalfy_bot in any conversation and pick a fact to send. The other person sees an ordinary message from you — the bot is never in their chat, and never sees it.",
     changes: [
       {
         kind: "new",
-        text: "Inline mode: search your memory from inside any Telegram chat, without leaving it.",
+        text: "Inline mode: search your memory from inside any Telegram chat — or turn it off in Settings.",
       },
       {
         kind: "new",
         text: "Passwords, PINs and API keys are masked in the list you pick from, and sent in full when you tap one.",
-      },
-      {
-        kind: "new",
-        text: "A switch in Settings turns inline results off for your account entirely.",
       },
       {
         kind: "improved",

@@ -40,7 +40,9 @@ async function main(): Promise<void> {
     const sourceMessageId = await log.record(userId, 'user', text);
 
     const started = Date.now();
-    const reply = await app.get(BrainService).handle(userId, text, new Date(), sourceMessageId);
+    const { text: reply } = await app
+      .get(BrainService)
+      .handle(userId, text, new Date(), sourceMessageId);
     await log.record(userId, 'assistant', reply);
 
     console.log(`\nyou › ${text}`);

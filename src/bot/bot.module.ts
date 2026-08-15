@@ -7,10 +7,11 @@ import { ChannelsModule } from '../channels/channels.module';
 import { BotService } from './bot.service';
 import { ConversationLog } from './conversation-log';
 import { Responder } from './responder';
+import { UndoService } from './undo.service';
 
 @Module({
   imports: [ChannelsModule, MemoryModule, BrainModule, BillingModule],
-  providers: [ConversationLog, Responder, BotService],
+  providers: [ConversationLog, Responder, BotService, UndoService],
   exports: [ConversationLog],
 })
 export class BotModule {}

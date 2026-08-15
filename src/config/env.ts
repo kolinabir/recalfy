@@ -23,6 +23,30 @@ export class Env {
   }
 
   /**
+   * Show the reply while it is being written (`sendMessageDraft`), and draw
+   * buttons under messages that offer one.
+   *
+   * Both default on and both exist to be turned off from the VPS without a
+   * deploy — they lean on parts of the Bot API newer than anything else here,
+   * and the failure mode of a newer API is usually "works until it doesn't".
+   * Set either to 0/false/off and the bot falls back to what it did before:
+   * a typing indicator, and messages with no keyboard.
+   */
+  get telegramStreaming(): boolean {
+    return this.flag('TELEGRAM_STREAMING', true);
+  }
+
+  get telegramButtons(): boolean {
+    return this.flag('TELEGRAM_BUTTONS', true);
+  }
+
+  private flag(key: string, fallback: boolean): boolean {
+    const value = this.config.get<string>(key)?.trim().toLowerCase();
+    if (value === undefined || value === '') return fallback;
+    return !['0', 'false', 'off', 'no'].includes(value);
+  }
+
+  /**
    * WhatsApp is optional: the bot runs on Telegram alone if these are unset,
    * which is what keeps a half-configured deploy from failing to boot. The
    * adapter checks `whatsappEnabled` and stays dormant otherwise.

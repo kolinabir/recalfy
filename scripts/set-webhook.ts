@@ -22,10 +22,11 @@ async function main(): Promise<void> {
       await bot.api.setWebhook(url, {
         secret_token: required('TELEGRAM_WEBHOOK_SECRET'),
         // Only what the bot actually consumes; anything else is wasted traffic.
-        // `inline_query` is not implied by `message` — omit it and Telegram
-        // silently never delivers one, which looks exactly like a broken
-        // handler.
-        allowed_updates: ['message', 'inline_query'],
+        // `inline_query` and `callback_query` are not implied by `message` —
+        // omit either and Telegram silently never delivers one, which looks
+        // exactly like a broken handler. Adding a kind here means re-running
+        // `npm run webhook:set`; deploying alone will not do it.
+        allowed_updates: ['message', 'inline_query', 'callback_query'],
         // Queued updates are delivered by default — after fixing a broken
         // webhook you usually want them. Pass --drop to discard instead.
         drop_pending_updates: process.argv.includes('--drop'),

@@ -56,7 +56,13 @@ export function linkedOnly(links: LinkStore, logger: Logger): MiddlewareFn<Conte
     // itself before it reads a single fact, and answers an empty list if it
     // cannot. Widening this condition without that check would serve one
     // person's memory to anyone who typed the bot's name.
-    if (ctx.inlineQuery) {
+    //
+    // Button presses ride along for the same reason and under the same terms.
+    // Telegram spins the button until the press is acknowledged, so dropping
+    // one silently would leave someone who unlinked staring at a button that
+    // never comes back — and the handler resolves the sender before it acts,
+    // so an unlinked press acknowledges and does nothing.
+    if (ctx.inlineQuery || ctx.callbackQuery) {
       await next();
       return;
     }

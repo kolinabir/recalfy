@@ -1,9 +1,14 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { Bot, type Context } from 'grammy';
+import { Bot, InlineKeyboard, type Context } from 'grammy';
 import type { Update } from 'grammy/types';
 
 import { Subscriptions } from '../billing/subscriptions';
-import { ChannelAdapter, InboundHandler } from '../channels/channel';
+import {
+  Action,
+  ActionHandler,
+  ChannelAdapter,
+  InboundHandler,
+} from '../channels/channel';
 import { LinkStore } from '../channels/link.store';
 import { formatPairingCode } from '../channels/pairing-code';
 import { ENV, Env } from '../config/env';
@@ -37,9 +42,13 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
   readonly channel: Channel = 'telegram';
   protected readonly maxMessageLength = MAX_MESSAGE_LENGTH;
 
+  readonly streams: boolean;
+
   private readonly logger = new Logger(TelegramAdapter.name);
   private readonly bot: Bot;
   private readonly handlers: InboundHandler[] = [];
+  private readonly actionHandlers: ActionHandler[] = [];
+  private readonly buttons: boolean;
 
   constructor(
     @Inject(ENV) env: Env,
@@ -50,6 +59,8 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
   ) {
     super();
     this.bot = new Bot(env.botToken);
+    this.streams = env.telegramStreaming;
+    this.buttons = env.telegramButtons;
   }
 
   async onModuleInit(): Promise<void> {
@@ -198,6 +209,43 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
       this.logger.debug(`inline → ${hits.length} hit(s) in ${Date.now() - startedAt}ms`);
     });
 
+    /*
+      A button press.
+
+      Telegram spins the button until `answerCallbackQuery` comes back, so
+      that is done first and unconditionally — an unanswered press looks
+      broken for a full minute, whatever the outcome underneath.
+
+      The payload names a row and nothing else. Who is allowed to touch that
+      row is resolved here, from the linked account the press arrived on, and
+      handed to the handler as a userId — the same identity a message would
+      have carried.
+    */
+    this.bot.on('callback_query:data', async (ctx) => {
+      await ctx.answerCallbackQuery().catch(() => {});
+
+      const address = this.addressOf(ctx.from.id);
+      const userId = await this.links.resolve(address);
+      if (!userId) return;
+
+      const action = {
+        userId,
+        address,
+        data: ctx.callbackQuery.data,
+        settle: (text: string) => this.settle(ctx, text),
+      };
+
+      for (const handler of this.actionHandlers) {
+        if (await handler(action)) return;
+      }
+
+      // Nothing owned it: a button from a build that no longer exists. Take
+      // the keyboard away rather than leave something tappable that does
+      // nothing at all.
+      this.logger.warn(`Unclaimed action: ${ctx.callbackQuery.data.slice(0, 32)}`);
+      await this.settle(ctx, 'That button is from an older version and no longer works.');
+    });
+
     this.bot.catch((error) => this.logger.error(`Unhandled bot error: ${error.message}`));
 
     // Populates bot.botInfo; required before handleUpdate in webhook mode.
@@ -249,13 +297,17 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
     this.handlers.push(handler);
   }
 
-  async send(handle: Handle, text: string): Promise<void> {
-    await this.bot.api.sendMessage(handle, text);
+  onAction(handler: ActionHandler): void {
+    this.actionHandlers.push(handler);
+  }
+
+  async send(handle: Handle, text: string, actions?: readonly Action[]): Promise<void> {
+    await this.bot.api.sendMessage(handle, text, this.keyboard(actions));
   }
 
   /** Telegram draws no line between solicited and unsolicited messages. */
-  async notify(handle: Handle, text: string): Promise<void> {
-    await this.send(handle, text);
+  async notify(handle: Handle, text: string, actions?: readonly Action[]): Promise<void> {
+    await this.send(handle, text, actions);
   }
 
   async typing(handle: Handle): Promise<void> {
@@ -263,6 +315,54 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
       await this.bot.api.sendChatAction(handle, 'typing');
     } catch {
       // Cosmetic only — never let it fail a real reply.
+    }
+  }
+
+  /**
+   * The reply as it is being written. Empty text is not a no-op — Telegram
+   * renders it as "Thinking…", which is what opens the frame before the model
+   * has produced a word.
+   *
+   * A draft lives about thirty seconds and is superseded by the real message,
+   * so nothing here needs cleaning up. Swallowing the error is the point: a
+   * frame that fails to paint is invisible, while a throw would take the
+   * answer down with it.
+   */
+  async draft(handle: Handle, draftId: number, text: string): Promise<void> {
+    const chatId = Number(handle);
+    if (!Number.isSafeInteger(chatId)) return;
+
+    try {
+      await this.bot.api.sendMessageDraft(chatId, draftId, text.slice(0, MAX_MESSAGE_LENGTH));
+    } catch (error) {
+      this.logger.debug(`draft dropped: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  /** Undefined rather than an empty keyboard: Telegram rejects the latter. */
+  private keyboard(actions?: readonly Action[]) {
+    if (!this.buttons || !actions?.length) return undefined;
+
+    const keyboard = new InlineKeyboard();
+    for (const action of actions) keyboard.text(action.label, action.data);
+    return { reply_markup: keyboard };
+  }
+
+  /**
+   * Answers a press on the message it came from: buttons off, one line added
+   * saying what happened. Best-effort — the press has already been acted on,
+   * and failing to redraw it must not undo that.
+   */
+  private async settle(ctx: Context, line: string): Promise<void> {
+    const original = ctx.callbackQuery?.message?.text;
+    try {
+      if (original === undefined) {
+        await ctx.editMessageReplyMarkup();
+        return;
+      }
+      await ctx.editMessageText(`${original}\n\n${line}`);
+    } catch (error) {
+      this.logger.debug(`settle failed: ${error instanceof Error ? error.message : error}`);
     }
   }
 
