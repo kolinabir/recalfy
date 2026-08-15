@@ -63,6 +63,10 @@ const REAL: ChangeEntry[] = [
         text: "Passwords, PINs and API keys are masked in the list you pick from, and sent in full when you tap one.",
       },
       {
+        kind: "new",
+        text: "They are masked on the dashboard too — the eye on the memories page shows one when you want it.",
+      },
+      {
         kind: "improved",
         text: "Results now carry the Recalfy mark instead of a grey letter tile.",
       },
