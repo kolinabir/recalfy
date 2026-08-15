@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import { Cooldown } from '../channels/cooldown';
 import { Outbox } from '../channels/outbox';
 import { Channel, UserId } from '../mongo/collections';
 import { Limits } from './entitlements';
@@ -8,12 +9,8 @@ import { Subscriptions } from './subscriptions';
 /**
  * How often a turned-away account is told why nothing is happening. Once a
  * day: often enough that the answer is never more than a message away, rare
- * enough that someone typing into a dead bot is not answered by a wall of the
- * same paragraph.
- *
- * Held in memory, so a restart re-arms it. That is the harmless direction —
- * one extra explanation — and it saves a collection whose only job would be
- * remembering that we already apologised.
+ * enough that someone typing into a dead bot is answered by a wall of the same
+ * paragraph.
  */
 const NOTICE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
@@ -45,8 +42,7 @@ const WRONG_CHANNEL_NOTICE =
 @Injectable()
 export class Paywall {
   private readonly logger = new Logger(Paywall.name);
-  /** userId → instant the next notice may be sent. */
-  private readonly noticed = new Map<UserId, number>();
+  private readonly noticed = new Cooldown(NOTICE_COOLDOWN_MS);
 
   constructor(
     private readonly subscriptions: Subscriptions,
@@ -98,11 +94,8 @@ export class Paywall {
    * address, so a message from an unlinked stranger can never be answered here.
    */
   private async notice(userId: UserId, text: string, why: string): Promise<void> {
-    const now = Date.now();
-    const next = this.noticed.get(userId);
-    if (next !== undefined && next > now) return;
+    if (!this.noticed.allow(userId)) return;
 
-    this.noticed.set(userId, now + NOTICE_COOLDOWN_MS);
     this.logger.log(`Turned away ${userId}: ${why}`);
     await this.outbox.reply(userId, text);
   }

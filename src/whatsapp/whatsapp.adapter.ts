@@ -3,6 +3,7 @@ import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ChannelAdapter, InboundHandler, Outgoing } from '../channels/channel';
 import { LinkStore } from '../channels/link.store';
 import { formatPairingCode } from '../channels/pairing-code';
+import { strangerWelcome } from '../channels/stranger';
 import { ENV, Env } from '../config/env';
 import { Address, Channel, Handle } from '../mongo/collections';
 import { GraphClient } from './graph.client';
@@ -189,12 +190,7 @@ export class WhatsAppAdapter extends ChannelAdapter implements OnModuleInit {
     }
 
     this.logger.warn(`Dropped message from unlinked sender ${address.handle}`);
-    await this.say(
-      address.handle,
-      "This number isn't connected to an account yet.\n\n" +
-        'Sign in at recalfy.com and press "Connect WhatsApp".\n\n' +
-        'If that link won\'t open on this device, send "code" here and type the code into the site instead.',
-    );
+    await this.say(address.handle, strangerWelcome('whatsapp'));
   }
 
   private async completeLink(address: Address, token: string): Promise<void> {

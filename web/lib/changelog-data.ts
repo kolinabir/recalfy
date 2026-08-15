@@ -47,6 +47,10 @@ const REAL: ChangeEntry[] = [
         kind: "new",
         text: "Lost a phone? One button detaches every chat, stops inline answers, ends every signed-in session and holds off reconnection for fifteen minutes. Your memory stays.",
       },
+      {
+        kind: "fixed",
+        text: "Message the bot before you have an account and it answers with where to sign in, instead of saying nothing at all.",
+      },
     ],
   },
   {
