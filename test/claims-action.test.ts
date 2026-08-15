@@ -39,3 +39,20 @@ test('leaves a question or a refusal alone', () => {
   assert.equal(claimsAction("What's your name, and which city are you in?"), false);
   assert.equal(claimsAction("I don't know that yet — tell me and I'll keep it."), false);
 });
+
+/*
+  Seen in production: "Yep, still got it — laptop password is xeers34. All
+  good!" was challenged as an unbacked claim, and the model answered the
+  challenge by storing the fact a second time. A true answer about what memory
+  holds became a duplicate row.
+*/
+test('leaves a statement about what memory already holds alone', () => {
+  assert.equal(claimsAction('Yep, still got it — laptop password is xeers34.'), false);
+  assert.equal(claimsAction('Already got it, from last week.'), false);
+});
+
+test('still catches the acknowledgements it was written for', () => {
+  assert.equal(claimsAction('Got it — saved.'), true);
+  assert.equal(claimsAction('Done.'), true);
+  assert.equal(claimsAction('All set!'), true);
+});

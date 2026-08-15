@@ -61,16 +61,16 @@ export class BotService implements OnModuleInit {
     // measured from the message we just received.
     await this.users.noteInbound(userId, address.channel, receivedAt);
 
-    // Where the reply can be watched being written, that *is* the indicator —
-    // it opens as a "thinking" placeholder before a single token exists. Only
-    // channels that cannot do it, and anyone who has not asked for it, fall
-    // back to "typing…".
+    // "typing…" covers the wait either way. It used to be skipped when
+    // streaming, on the theory that a half-written sentence says more — but
+    // the first token can be seconds away, and a draft painted before there
+    // are any words is a placeholder that cannot be taken back down.
+    await this.outbox.typing(userId);
+
     const draft =
       user.streaming === true
         ? await this.outbox.draft(userId, draftId(messageId), threadId)
         : null;
-    if (draft) draft.show('');
-    else await this.outbox.typing(userId);
 
     const sourceMessageId = await this.log.record(userId, 'user', text);
     const reply = await this.brain.handle(

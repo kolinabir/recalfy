@@ -27,8 +27,17 @@ export class Draft {
     private readonly minGapMs: number = MIN_GAP_MS,
   ) {}
 
-  /** Replaces what the user is looking at. Returns immediately. */
+  /**
+   * Replaces what the user is looking at. Returns immediately.
+   *
+   * Empty text is ignored rather than painted. Telegram draws it as a
+   * "Thinking…" placeholder, and a draft cannot be deleted — there is no
+   * draft_id on sendMessage and no method to clear one — so a placeholder
+   * painted for a reply that turns out to be short just sits next to the
+   * answer until it expires. Nothing is better than a stuck nothing.
+   */
   show(text: string): void {
+    if (text === '') return;
     this.pending = text;
     if (this.timer) return;
 

@@ -45,3 +45,23 @@ describe('draft', () => {
     await draft.settle();
   });
 });
+
+/*
+  Seen in production: a nine-token reply painted the empty "Thinking…" frame
+  and nothing else, because the answer finished inside the throttle window.
+  A draft cannot be deleted — sendMessage has no draft_id and there is no
+  method to clear one — so the placeholder sat next to the finished answer
+  until it expired.
+*/
+describe('draft placeholders', () => {
+  it('never paints an empty frame', async () => {
+    const written: string[] = [];
+    const draft = new Draft(async (text) => void written.push(text), 0);
+
+    draft.show('');
+    await sleep(10);
+    await draft.settle();
+
+    assert.deepEqual(written, []);
+  });
+});

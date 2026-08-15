@@ -93,7 +93,15 @@ export class RememberTool extends Tool {
 
     context.turn.saved.push(...stored.map((m) => m.sid));
     context.turn.memoryChanged = true;
-    return `Stored ${stored.length}: ${stored.map((m) => `${m.text} [${m.sid}]`).join(' | ')}`;
+    // Spelled out because the memory document is re-rendered before the next
+    // round, so the fact just stored is sitting in it looking exactly like one
+    // held for months. Without this the model reads its own work back and
+    // tells the user it already knew.
+    return (
+      `Stored ${stored.length} just now — these did not exist before this turn: ` +
+      `${stored.map((m) => `${m.text} [${m.sid}]`).join(' | ')}. ` +
+      'Confirm you have saved it. Do not say you already knew it.'
+    );
   }
 }
 

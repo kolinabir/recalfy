@@ -12,7 +12,12 @@ const CLAIMS = [
   /\b(?:i(?:'ve| have)?\s+)?(?:logged|tracked|recorded)\b/i,
   /\b(?:added|put) (?:it|that|this)?\s*(?:on|to) (?:your|the) (?:shopping\s+)?list\b/i,
   /\bmarked (?:it|that|this)?\s*(?:as\s+)?bought\b/i,
-  /\b(?:got it|done|all set|consider it done)\b/i,
+  // "still got it" and "already got it" are statements about what memory
+  // holds, not claims of having just changed it. Without the lookbehinds,
+  // answering "yep, still got it" is challenged as an unbacked claim — and
+  // the model satisfies the challenge by storing the fact a second time,
+  // which is how a true answer turns into a duplicate row.
+  /(?<!\bstill\s)(?<!\balready\s)\b(?:got it|done|all set|consider it done)\b/i,
 ];
 
 /**
