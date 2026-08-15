@@ -113,6 +113,30 @@ export class MemoryStore {
   }
 
   /**
+   * The live facts as rows, for callers that need to search or list them
+   * rather than read the document — inline lookups, mainly.
+   *
+   * Filtered in the query rather than after the fact, so a superseded or
+   * expired memory can never surface somewhere the rendered document would
+   * not show it. That matters most here: inline results are inserted into
+   * other people's chats, and "the old address" resurfacing there is a worse
+   * failure than it would be in a reply.
+   */
+  async facts(userId: UserId, now: Date = new Date()): Promise<Memory[]> {
+    const rows = await this.mongo.memories
+      .find({
+        userId,
+        deletedAt: { $exists: false },
+        supersededBy: { $exists: false },
+        $or: [{ staleAfter: { $exists: false } }, { staleAfter: { $gt: now } }],
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return rows.map(toMemory);
+  }
+
+  /**
    * How many facts the live memory holds — the same set `render` returns,
    * counted in the database rather than by rendering and re-parsing it.
    */

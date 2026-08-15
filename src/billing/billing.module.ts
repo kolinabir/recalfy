@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { ChannelsModule } from '../channels/channels.module';
 import { Paywall } from './paywall';
-import { Subscriptions } from './subscriptions';
+import { SubscriptionsModule } from './subscriptions.module';
 
 /**
  * Reads the billing state the web app mirrors from Paddle, and answers the one
@@ -12,8 +12,9 @@ import { Subscriptions } from './subscriptions';
  * only process that should ever author a subscription row.
  */
 @Module({
-  imports: [ChannelsModule],
-  providers: [Subscriptions, Paywall],
-  exports: [Paywall, Subscriptions],
+  imports: [ChannelsModule, SubscriptionsModule],
+  providers: [Paywall],
+  // Re-exported so existing importers keep getting both from one module.
+  exports: [Paywall, SubscriptionsModule],
 })
 export class BillingModule {}

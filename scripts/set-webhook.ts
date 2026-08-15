@@ -22,7 +22,10 @@ async function main(): Promise<void> {
       await bot.api.setWebhook(url, {
         secret_token: required('TELEGRAM_WEBHOOK_SECRET'),
         // Only what the bot actually consumes; anything else is wasted traffic.
-        allowed_updates: ['message'],
+        // `inline_query` is not implied by `message` — omit it and Telegram
+        // silently never delivers one, which looks exactly like a broken
+        // handler.
+        allowed_updates: ['message', 'inline_query'],
         // Queued updates are delivered by default — after fixing a broken
         // webhook you usually want them. Pass --drop to discard instead.
         drop_pending_updates: process.argv.includes('--drop'),

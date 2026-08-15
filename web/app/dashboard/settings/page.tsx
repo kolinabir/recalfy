@@ -2,7 +2,9 @@ import { Download } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { InlineToggle } from "@/components/dashboard/inline-toggle";
 import { SignOutButton } from "@/components/sign-out-button";
+import type { BotProfile } from "@/lib/dashboard-data";
 import { getBotProfile, isConnected, requireViewer } from "@/lib/dashboard-data";
 
 export const metadata: Metadata = {
@@ -13,7 +15,9 @@ export const metadata: Metadata = {
 export default async function SettingsPage() {
   const viewer = await requireViewer();
   const linked = isConnected(viewer);
-  const profile = linked ? await getBotProfile(viewer.id) : {};
+  const profile = linked
+    ? await getBotProfile(viewer.id)
+    : ({ inline: true } satisfies BotProfile);
 
   return (
     <div>
@@ -64,6 +68,25 @@ export default async function SettingsPage() {
             ) : null}
           </p>
         </section>
+
+        {linked ? (
+          <section className="rounded-xl border border-line px-6 py-6">
+            <h2 className="eyebrow">Inline results</h2>
+            <p className="mt-3 max-w-prose text-[0.875rem] leading-relaxed text-fg-subtle">
+              Type{" "}
+              <span className="font-mono text-[0.8125rem] text-fg">
+                @recalfy_bot wifi
+              </span>{" "}
+              in any conversation and pick a fact to send. The other person sees
+              an ordinary message from you — the bot is never in their chat.
+              Passwords are hidden in the list you pick from and sent in full.
+            </p>
+
+            <div className="mt-5">
+              <InlineToggle enabled={profile.inline} />
+            </div>
+          </section>
+        ) : null}
 
         <section className="rounded-xl border border-line px-6 py-6">
           <h2 className="eyebrow">Your data</h2>

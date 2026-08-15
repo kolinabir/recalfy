@@ -1,7 +1,7 @@
 {
   "name": "recalfy",
   "version": "0.1.0",
-  "description": "Recalfy — a personal AI memory assistant that lives in Telegram",
+  "description": "Recalfy \u2014 a personal AI memory assistant that lives in Telegram",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -29,7 +29,10 @@
     "paddle:token": "ts-node -T scripts/paddle-client-token.ts",
     "paddle:destination": "ts-node -T scripts/paddle-destination.ts",
     "paddle:simulate": "ts-node -T scripts/paddle-simulate.ts",
-    "paddle:mirror": "ts-node -T scripts/paddle-mirror.ts"
+    "paddle:mirror": "ts-node -T scripts/paddle-mirror.ts",
+    "deploy": "bash deploy/release.sh",
+    "rollback": "bash deploy/rollback.sh",
+    "releases": "bash deploy/releases.sh"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",

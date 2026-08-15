@@ -234,6 +234,8 @@ export interface BotProfile {
   tz?: string;
   brief?: { enabled: boolean; hour: number; minute: number };
   memberSince?: string;
+  /** Whether `@recalfy_bot …` answers in other chats. Absent in Mongo means on. */
+  inline: boolean;
 }
 
 /** The bot's own record of this person — timezone and brief schedule. */
@@ -244,12 +246,14 @@ export async function getBotProfile(userId: string): Promise<BotProfile> {
       // The bot keys `users` by the account id as a plain string, not an
       // ObjectId — see the channels migration.
       { _id: userId as unknown as import("mongodb").ObjectId },
-      { projection: { tz: 1, brief: 1, createdAt: 1 } },
+      { projection: { tz: 1, brief: 1, createdAt: 1, inline: 1 } },
     );
 
-  if (!row) return {};
+  if (!row) return { inline: true };
 
   return {
+    // Opt-out, so anything other than an explicit false reads as on.
+    inline: row.inline !== false,
     tz: row.tz as string | undefined,
     brief: row.brief as BotProfile["brief"],
     memberSince:

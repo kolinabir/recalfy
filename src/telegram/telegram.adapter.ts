@@ -2,11 +2,16 @@ import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Bot, type Context } from 'grammy';
 import type { Update } from 'grammy/types';
 
+import { Subscriptions } from '../billing/subscriptions';
 import { ChannelAdapter, InboundHandler } from '../channels/channel';
 import { LinkStore } from '../channels/link.store';
 import { formatPairingCode } from '../channels/pairing-code';
 import { ENV, Env } from '../config/env';
+import { MemoryStore } from '../memory/memory.store';
+import { searchMemories } from '../memory/memory-search';
+import { UserStore } from '../memory/user.store';
 import { Address, Channel, Handle } from '../mongo/collections';
+import { PRIVATE_ANSWER, connectButton, toInlineResults } from './inline';
 import { linkedOnly, parseStartToken } from './linked-only.middleware';
 import { describeSharedLocation } from './location-text';
 
@@ -33,6 +38,9 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
   constructor(
     @Inject(ENV) env: Env,
     private readonly links: LinkStore,
+    private readonly memories: MemoryStore,
+    private readonly users: UserStore,
+    private readonly subscriptions: Subscriptions,
   ) {
     super();
     this.bot = new Bot(env.botToken);
@@ -122,11 +130,74 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
       });
     });
 
+    /*
+      Inline mode: `@recalfy_bot rent` typed inside someone else's chat.
+
+      This is the only path that answers without the user being in a chat with
+      us, so it gates itself rather than relying on the middleware — see the
+      note in linked-only.middleware.ts about why inline queries pass through
+      it untouched.
+
+      It is read-only by construction. The answer is a list of the person's own
+      facts as plain text; tapping one sends it as their message. There is no
+      tool call, no model call, and nothing here can change an account.
+    */
+    this.bot.on('inline_query', async (ctx) => {
+      const startedAt = Date.now();
+      const userId = await this.links.resolve(this.addressOf(ctx.from.id));
+      if (!userId) {
+        await this.refuseInline(ctx, 'Connect your account');
+        return;
+      }
+
+      // Silent: a lapsed account gets an empty list and a way back, not a
+      // sales pitch typed into their conversation with somebody else.
+      if (!(await this.subscriptions.limitsFor(userId))) {
+        await this.refuseInline(ctx, 'Your plan has expired');
+        return;
+      }
+
+      // Answered together: this runs on every keystroke, and two Mongo round
+      // trips in sequence is the difference between a list that keeps up with
+      // typing and one that arrives after the person has given up.
+      const [enabled, facts] = await Promise.all([
+        this.users.inlineEnabled(userId),
+        this.memories.facts(userId),
+      ]);
+
+      // Switched off in the dashboard. An empty list and no button: they
+      // turned this off on purpose, and a prompt to turn it back on is an
+      // argument with someone who already decided.
+      if (!enabled) {
+        await ctx.answerInlineQuery([], PRIVATE_ANSWER);
+        return;
+      }
+
+      const hits = searchMemories(facts, ctx.inlineQuery.query);
+      await ctx.answerInlineQuery(toInlineResults(hits), PRIVATE_ANSWER);
+      // The only trace an inline query leaves. Never the query itself or what
+      // matched: this is a lookup of someone's memory, and the timing is the
+      // part worth keeping — a slow answer is an empty dropdown.
+      this.logger.debug(`inline → ${hits.length} hit(s) in ${Date.now() - startedAt}ms`);
+    });
+
     this.bot.catch((error) => this.logger.error(`Unhandled bot error: ${error.message}`));
 
     // Populates bot.botInfo; required before handleUpdate in webhook mode.
     await this.bot.init();
     this.logger.log(`@${this.bot.botInfo.username} ready — access is by linked account`);
+  }
+
+  /**
+   * An empty list plus a button into the bot. Carries the same privacy flags
+   * as a real answer: an empty result is still an answer about a specific
+   * person, and caching "no results" across users would be its own small leak.
+   */
+  private async refuseInline(
+    ctx: Context,
+    prompt: string,
+  ): Promise<void> {
+    await ctx.answerInlineQuery([], { ...PRIVATE_ANSWER, button: connectButton(prompt) });
   }
 
   private addressOf(telegramUserId: number): Address {

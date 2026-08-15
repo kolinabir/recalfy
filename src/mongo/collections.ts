@@ -80,6 +80,14 @@ export interface UserDoc {
    * never diagnose.
    */
   quiet?: QuietHours;
+  /**
+   * Whether `@recalfy_bot …` may answer inside other people's chats. Absent
+   * means on: inline mode does nothing until it is typed, so it costs a person
+   * who never uses it nothing, and a feature that arrived switched off would
+   * be discovered by nobody. Set from the dashboard, and the only way to make
+   * the bot ignore an inline query it could otherwise answer.
+   */
+  inline?: boolean;
   /** The evening mirror of the brief. Absent means off — it is opt-in. */
   reflection?: BriefConfig;
   lastReflectionDay?: string;
