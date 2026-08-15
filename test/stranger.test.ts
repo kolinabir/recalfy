@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { Cooldown } from '../src/channels/cooldown';
 import { strangerWelcome } from '../src/channels/stranger';
 
 /**
  * Someone who found the bot before the website. They cannot be identified, so
- * the only thing this has to get right is that they are answered at all, once,
- * and told the two steps in the order they happen.
+ * the only thing this has to get right is that they are answered — every time,
+ * because a second silence is what teaches them the bot is broken — and told
+ * the two steps in the order they happen.
  */
 
 describe('the welcome for a stranger', () => {
@@ -32,33 +32,5 @@ describe('the welcome for a stranger', () => {
      about anyone. */
   it('is the same paragraph for everyone', () => {
     assert.equal(strangerWelcome('telegram'), strangerWelcome('telegram'));
-  });
-});
-
-describe('cooldown', () => {
-  const MINUTE = 60_000;
-
-  it('lets the first one through and holds the rest', () => {
-    const cooldown = new Cooldown(MINUTE);
-
-    assert.equal(cooldown.allow('a', 0), true);
-    assert.equal(cooldown.allow('a', 1), false);
-    assert.equal(cooldown.allow('a', MINUTE - 1), false);
-  });
-
-  it('opens again once the window has passed', () => {
-    const cooldown = new Cooldown(MINUTE);
-
-    cooldown.allow('a', 0);
-    assert.equal(cooldown.allow('a', MINUTE), true);
-  });
-
-  /* Or one lapsed account would mute the notice for everyone else. */
-  it('keeps its own window per key', () => {
-    const cooldown = new Cooldown(MINUTE);
-
-    assert.equal(cooldown.allow('a', 0), true);
-    assert.equal(cooldown.allow('b', 0), true);
-    assert.equal(cooldown.allow('a', 0), false);
   });
 });

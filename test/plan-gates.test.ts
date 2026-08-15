@@ -212,14 +212,30 @@ describe('the channel gate', () => {
     assert.equal(sent.length, 0);
   });
 
-  it('explains itself once a day, not once a message', async () => {
+  /* Answering only the first message of the day looks like the bot answering
+     once and then breaking. Someone who types again is asking because nothing
+     came back, and the second silence is the one that loses them. */
+  it('explains itself every time, not once', async () => {
     const sent: string[] = [];
     const paywall = paywallFor(null, sent);
 
     for (let i = 0; i < 5; i++) await paywall.admit('u1', 'telegram');
 
-    assert.equal(sent.length, 1);
+    assert.equal(sent.length, 5);
     assert.match(sent[0], /Nothing has been deleted/);
+  });
+
+  /* Also the second lapsed account: the notice was once shared state keyed by
+     user, and getting that wrong would mute one person because another had
+     already been told. */
+  it('answers each account on its own terms', async () => {
+    const sent: string[] = [];
+    const paywall = paywallFor(null, sent);
+
+    await paywall.admit('u1', 'telegram');
+    await paywall.admit('u2', 'telegram');
+
+    assert.equal(sent.length, 2);
   });
 
   it('never sends an unprompted message over a chat the plan does not cover', async () => {

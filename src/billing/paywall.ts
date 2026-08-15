@@ -1,18 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { Cooldown } from '../channels/cooldown';
 import { Outbox } from '../channels/outbox';
 import { Channel, UserId } from '../mongo/collections';
 import { Limits } from './entitlements';
 import { Subscriptions } from './subscriptions';
-
-/**
- * How often a turned-away account is told why nothing is happening. Once a
- * day: often enough that the answer is never more than a message away, rare
- * enough that someone typing into a dead bot is answered by a wall of the same
- * paragraph.
- */
-const NOTICE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 const LAPSED_NOTICE =
   "Your Recalfy plan isn't active, so I've stopped picking up messages.\n\n" +
@@ -42,7 +33,6 @@ const WRONG_CHANNEL_NOTICE =
 @Injectable()
 export class Paywall {
   private readonly logger = new Logger(Paywall.name);
-  private readonly noticed = new Cooldown(NOTICE_COOLDOWN_MS);
 
   constructor(
     private readonly subscriptions: Subscriptions,
@@ -89,13 +79,16 @@ export class Paywall {
   }
 
   /**
-   * One explanation per day, whatever the reason. Sent through `reply`, which
-   * routes to a handle this account owns — never back to the raw inbound
-   * address, so a message from an unlinked stranger can never be answered here.
+   * Every turned-away message gets the explanation, not the first one of the
+   * day. Someone whose plan lapsed and who keeps typing is not being nagged —
+   * they are asking again because nothing came back, and the second silence
+   * teaches them the product is broken rather than unpaid.
+   *
+   * Sent through `reply`, which routes to a handle this account owns — never
+   * back to the raw inbound address, so a message from an unlinked stranger
+   * can never be answered here.
    */
   private async notice(userId: UserId, text: string, why: string): Promise<void> {
-    if (!this.noticed.allow(userId)) return;
-
     this.logger.log(`Turned away ${userId}: ${why}`);
     await this.outbox.reply(userId, text);
   }

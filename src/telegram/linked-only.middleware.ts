@@ -1,12 +1,8 @@
 import { Logger } from '@nestjs/common';
 import type { Context, MiddlewareFn } from 'grammy';
 
-import { Cooldown } from '../channels/cooldown';
 import { LinkStore } from '../channels/link.store';
 import { strangerWelcome } from '../channels/stranger';
-
-/** One explanation a day is plenty; the second one is nagging. */
-const WELCOME_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 /** `/start <token>` — a deep link arriving back from the website. */
 const START_WITH_TOKEN = /^\/start(?:@\w+)?\s+(\S+)$/;
@@ -40,13 +36,11 @@ function isHandshake(text: string | undefined): boolean {
  * The exception is the handshake itself: a person connecting for the first
  * time is by definition not linked yet, so `/start <token>` passes through and
  * the token is the credential. Every other message from an unlinked sender is
- * dropped — but answered once a day with a pointer to the site, because
- * silence is indistinguishable from a broken bot to the one person here who
- * has done nothing wrong.
+ * dropped — but answered, every time, with a pointer to the site. Silence is
+ * indistinguishable from a broken bot, and someone who tries twice because the
+ * first message went nowhere has learned exactly the wrong thing about it.
  */
 export function linkedOnly(links: LinkStore, logger: Logger): MiddlewareFn<Context> {
-  const welcomed = new Cooldown(WELCOME_COOLDOWN_MS);
-
   return async (ctx, next) => {
     const senderId = ctx.from?.id;
     if (senderId === undefined) return;
@@ -85,13 +79,7 @@ export function linkedOnly(links: LinkStore, logger: Logger): MiddlewareFn<Conte
 
     // Only messages. A stranger's button press or edited message is not a
     // question, and answering one would be talking to nobody.
-    if (!ctx.message) return;
-
-    // Rate-limited by sender, so someone typing five lines into what they
-    // think is a broken bot gets one explanation rather than five.
-    if (welcomed.allow(String(senderId))) {
-      await ctx.reply(strangerWelcome('telegram'));
-    }
+    if (ctx.message) await ctx.reply(strangerWelcome('telegram'));
   };
 }
 
