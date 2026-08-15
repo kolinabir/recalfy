@@ -57,7 +57,7 @@ const REAL: ChangeEntry[] = [
       },
       {
         kind: "fixed",
-        text: "Superseded and expired facts no longer surface in inline results — the old address stays gone.",
+        text: "Facts you have corrected, or that have run out, no longer turn up in that list — the old address stays gone.",
       },
     ],
   },
@@ -71,7 +71,7 @@ const REAL: ChangeEntry[] = [
       },
       {
         kind: "improved",
-        text: "Deploys land as immutable releases, so a rollback is one command and about five seconds.",
+        text: "Ask where somewhere is and you get the place back in words, not a pin you have to open.",
       },
     ],
   },
@@ -104,19 +104,19 @@ const REAL: ChangeEntry[] = [
     changes: [
       {
         kind: "new",
-        text: "Paddle billing end to end — checkout, entitlements, and the paywall on connecting a chat.",
+        text: "Payments: plans you can pay for, a free trial before you do, and a card you can change or cancel yourself.",
       },
       {
         kind: "new",
-        text: "Trackers: expenses, a shopping list, and trackers that configure themselves from how you talk.",
+        text: "Trackers: expenses, a shopping list, and trackers that set themselves up from how you talk.",
       },
       {
         kind: "fixed",
-        text: "Totals are no longer double-counted, and replies no longer leak literal markdown.",
+        text: "Totals are no longer counted twice, and replies no longer show stray formatting characters.",
       },
       {
         kind: "fixed",
-        text: "A duplicate customer bind can no longer take a live subscription down with it.",
+        text: "Paying twice by accident can no longer disturb a subscription you already have.",
       },
     ],
   },
@@ -139,7 +139,7 @@ const REAL: ChangeEntry[] = [
       },
       {
         kind: "improved",
-        text: "The handshake now survives the two-device case, where the site and the chat are not on the same screen.",
+        text: "Connecting works when the site and the chat are on different screens — sign in on a laptop, connect on a phone.",
       },
     ],
   },
@@ -173,7 +173,7 @@ const RECONSTRUCTED: ChangeEntry[] = [
       { kind: "new", text: "An opt-in evening summary, off by default." },
       {
         kind: "improved",
-        text: "The brief claims its slot atomically, so two ticks can never send it twice.",
+        text: "The morning brief can never arrive twice in one day.",
       },
     ],
   },
@@ -183,11 +183,11 @@ const RECONSTRUCTED: ChangeEntry[] = [
     changes: [
       {
         kind: "new",
-        text: "Telling it something new about a fact supersedes the old one instead of adding a contradiction.",
+        text: "Telling it something new about a fact replaces the old one instead of leaving you with two answers.",
       },
       {
         kind: "improved",
-        text: "Superseded facts stay on file but leave the memory it recites.",
+        text: "The version you corrected stays on file, and stops being what it tells you.",
       },
       {
         kind: "fixed",
@@ -245,7 +245,7 @@ const RECONSTRUCTED: ChangeEntry[] = [
       { kind: "new", text: "Repeating reminders — daily, weekly, monthly, yearly." },
       {
         kind: "fixed",
-        text: "A reminder that fired while the process was restarting is no longer lost.",
+        text: "A reminder due at an awkward moment is no longer quietly lost.",
       },
     ],
   },
@@ -263,6 +263,21 @@ const RECONSTRUCTED: ChangeEntry[] = [
 export const CHANGELOG: ChangeEntry[] = [...REAL, ...RECONSTRUCTED].sort(
   (a, b) => b.date.localeCompare(a.date),
 );
+
+/**
+ * A stable anchor per entry, so a single change can be linked to directly —
+ * the thing people actually want from a changelog ("this was fixed, here").
+ *
+ * Date *and* title: two things can ship on one day, and an id that was just
+ * the date would point at whichever one rendered first.
+ */
+export function entryId(entry: ChangeEntry): string {
+  const slug = entry.title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `${entry.date}-${slug}`;
+}
 
 /** The window the page claims to cover, taken from the entries themselves. */
 export const CHANGELOG_RANGE = {

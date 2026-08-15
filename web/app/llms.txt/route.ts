@@ -38,6 +38,7 @@ ${plans}
 - [Home](https://www.recalfy.com): what Recalfy is, how it remembers, and how it tracks spending and habits
 - [Examples](https://www.recalfy.com/examples): ${EXAMPLE_COUNT} worked examples across dates, people, places, codes, money, lists, habits, reminders, corrections and recall
 - [Pricing](https://www.recalfy.com/pricing): plans, limits, and what each one includes
+- [Changelog](https://www.recalfy.com/changelog): what shipped and when, newest first — also available as a feed at /changelog/rss.xml
 - [Privacy](https://www.recalfy.com/privacy): what Recalfy collects, why, and how to remove it
 - [Terms](https://www.recalfy.com/terms): the terms that govern using Recalfy
 
