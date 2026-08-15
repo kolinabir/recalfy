@@ -50,7 +50,7 @@ const REAL: ChangeEntry[] = [
     ],
   },
   {
-    date: "2026-08-15",
+    date: "2026-08-14",
     title: "Watch it think, and take it back",
     body: "Replies now appear as they are written, and the things worth changing your mind about come with a button instead of a second sentence.",
     changes: [
@@ -65,7 +65,7 @@ const REAL: ChangeEntry[] = [
     ],
   },
   {
-    date: "2026-08-15",
+    date: "2026-08-14",
     title: "Memory, inside every other chat",
     body: "Type @recalfy_bot in any conversation and pick a fact to send. The other person sees an ordinary message from you — the bot is never in their chat, and never sees it.",
     changes: [
@@ -75,11 +75,7 @@ const REAL: ChangeEntry[] = [
       },
       {
         kind: "new",
-        text: "Passwords, PINs and API keys are masked in the list you pick from, and sent in full when you tap one.",
-      },
-      {
-        kind: "new",
-        text: "They are masked on the dashboard too — the eye on the memories page shows one when you want it.",
+        text: "Passwords, PINs and API keys are masked wherever memory is listed — that dropdown and the dashboard — and shown in full when you ask for one.",
       },
       {
         kind: "improved",
@@ -92,7 +88,7 @@ const REAL: ChangeEntry[] = [
     ],
   },
   {
-    date: "2026-08-15",
+    date: "2026-08-13",
     title: "Share a pin, keep the place",
     changes: [
       {
