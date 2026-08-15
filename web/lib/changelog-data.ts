@@ -36,6 +36,21 @@ export const CHANGE_KINDS: Record<ChangeKind, string> = {
 const REAL: ChangeEntry[] = [
   {
     date: "2026-08-15",
+    title: "A tab for each part of your memory",
+    body: "Every group the bot keeps — People, Home, Work — can now have its own tab in the chat, holding the current list for that group rather than a log of when it learned things.",
+    changes: [
+      {
+        kind: "new",
+        text: "Topics: switch it on in Settings and each group becomes a tab, rewritten as things change.",
+      },
+      {
+        kind: "improved",
+        text: "Streaming replies are a setting now, and start off — they need a recent Telegram, and older apps were showing nothing at all until the answer landed.",
+      },
+    ],
+  },
+  {
+    date: "2026-08-15",
     title: "Watch it think, and take it back",
     body: "Replies now appear as they are written, and the things worth changing your mind about come with a button instead of a second sentence.",
     changes: [

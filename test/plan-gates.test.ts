@@ -8,7 +8,7 @@ import { BadArguments } from '../src/brain/tools/args';
 import { RememberTool } from '../src/brain/tools/remember.tool';
 import { RemindTool } from '../src/brain/tools/remind.tool';
 import { SetQuietHoursTool } from '../src/brain/tools/set-quiet-hours.tool';
-import { ToolContext } from '../src/brain/tools/tool';
+import { ToolContext, newTurnRecord } from '../src/brain/tools/tool';
 import { MemoryFull } from '../src/memory/memory.store';
 import { ReminderDelivery } from '../src/reminders/reminder-delivery';
 
@@ -28,7 +28,7 @@ function contextFor(limits = LIMITS.keep): ToolContext {
     onboarded: true,
     limits,
     now: new Date('2026-08-12T06:00:00Z'),
-    saved: [],
+    turn: newTurnRecord(),
     sourceMessageId: new ObjectId(),
   };
 }

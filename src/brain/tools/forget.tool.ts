@@ -36,6 +36,8 @@ export class ForgetTool extends Tool {
     const dropped = await this.memories.forget(context.userId, ids);
 
     if (dropped.length === 0) return 'No facts matched those ids — nothing was deleted.';
+
+    context.turn.memoryChanged = true;
     return `Deleted ${dropped.length}: ${dropped.map((m) => m.text).join(' | ')}`;
   }
 }

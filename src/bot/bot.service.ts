@@ -6,6 +6,8 @@ import { Action } from '../channels/channel';
 import { CHANNEL_ADAPTERS, ChannelAdapter, InboundMessage } from '../channels/channel';
 import { Outbox } from '../channels/outbox';
 import { UserStore } from '../memory/user.store';
+import { needsTopicSync } from '../topics/needs-sync';
+import { TopicMirror } from '../topics/topic-mirror';
 import { ConversationLog } from './conversation-log';
 import { Responder } from './responder';
 import { undoAction } from './undo';
@@ -28,6 +30,7 @@ export class BotService implements OnModuleInit {
     private readonly log: ConversationLog,
     private readonly brain: BrainService,
     private readonly responder: Responder,
+    private readonly topics: TopicMirror,
   ) {}
 
   onModuleInit(): void {
@@ -50,7 +53,7 @@ export class BotService implements OnModuleInit {
     const limits = await this.paywall.admit(userId, address.channel);
     if (!limits) return;
 
-    await this.users.ensure(userId);
+    const user = await this.users.ensure(userId);
 
     // Before anything slow, so a reminder that fires mid-conversation goes to
     // the chat they are actually in — and so WhatsApp's 24-hour window is
@@ -59,8 +62,10 @@ export class BotService implements OnModuleInit {
 
     // Where the reply can be watched being written, that *is* the indicator —
     // it opens as a "thinking" placeholder before a single token exists. Only
-    // channels that cannot do it fall back to "typing…".
-    const draft = await this.outbox.draft(userId, draftId(messageId));
+    // channels that cannot do it, and anyone who has not asked for it, fall
+    // back to "typing…".
+    const draft =
+      user.streaming === true ? await this.outbox.draft(userId, draftId(messageId)) : null;
     if (draft) draft.show('');
     else await this.outbox.typing(userId);
 
@@ -78,6 +83,12 @@ export class BotService implements OnModuleInit {
     // draft, and a frame landing behind it would repaint what it replaced.
     await draft?.settle();
     await this.responder.reply(userId, reply.text, actionsFor(reply));
+
+    // After the reply, never before: redrawing tabs is bookkeeping, and the
+    // person is waiting on the sentence. The mirror swallows its own failures.
+    if (needsTopicSync(user, reply.memoryChanged)) {
+      await this.topics.sync(userId, receivedAt);
+    }
   }
 }
 

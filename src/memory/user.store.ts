@@ -2,7 +2,14 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
 
 import { ENV, Env } from '../config/env';
-import { BriefConfig, Channel, QuietHours, UserDoc, UserId } from '../mongo/collections';
+import {
+  BriefConfig,
+  Channel,
+  QuietHours,
+  TopicEntry,
+  UserDoc,
+  UserId,
+} from '../mongo/collections';
 import { MongoService } from '../mongo/mongo.service';
 import { currencyForZone } from '../tracker/currency';
 
@@ -94,6 +101,27 @@ export class UserStore {
   async inlineEnabled(userId: UserId): Promise<boolean> {
     const user = await this.mongo.users.findOne({ _id: userId }, { projection: { inline: 1 } });
     return user?.inline !== false;
+  }
+
+  /**
+   * Records where a group's topic and its message ended up. Written per group
+   * rather than as a whole map, so two groups syncing in the same pass cannot
+   * overwrite each other's entry.
+   */
+  async saveTopic(userId: UserId, key: string, entry: TopicEntry): Promise<void> {
+    await this.mongo.users.updateOne(
+      { _id: userId },
+      { $set: { [`topicIndex.${key}`]: entry } },
+    );
+  }
+
+  async dropTopic(userId: UserId, key: string): Promise<void> {
+    await this.mongo.users.updateOne({ _id: userId }, { $unset: { [`topicIndex.${key}`]: '' } });
+  }
+
+  /** Forgets every topic without touching the setting — used when rebuilding. */
+  async clearTopics(userId: UserId): Promise<void> {
+    await this.mongo.users.updateOne({ _id: userId }, { $unset: { topicIndex: '' } });
   }
 
   async setBrief(userId: UserId, brief: BriefConfig): Promise<void> {

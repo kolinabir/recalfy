@@ -236,6 +236,13 @@ export interface BotProfile {
   memberSince?: string;
   /** Whether `@recalfy_bot …` answers in other chats. Absent in Mongo means on. */
   inline: boolean;
+  /**
+   * The two opt-*in* settings, where absent means off. They lean on parts of
+   * Telegram older apps do not draw, so switching them on for everyone would
+   * mean a chat that looks broken to whoever has not updated.
+   */
+  streaming: boolean;
+  topics: boolean;
 }
 
 /** The bot's own record of this person — timezone and brief schedule. */
@@ -246,14 +253,26 @@ export async function getBotProfile(userId: string): Promise<BotProfile> {
       // The bot keys `users` by the account id as a plain string, not an
       // ObjectId — see the channels migration.
       { _id: userId as unknown as import("mongodb").ObjectId },
-      { projection: { tz: 1, brief: 1, createdAt: 1, inline: 1 } },
+      {
+        projection: {
+          tz: 1,
+          brief: 1,
+          createdAt: 1,
+          inline: 1,
+          streaming: 1,
+          topics: 1,
+        },
+      },
     );
 
-  if (!row) return { inline: true };
+  if (!row) return { inline: true, streaming: false, topics: false };
 
   return {
     // Opt-out, so anything other than an explicit false reads as on.
     inline: row.inline !== false,
+    // Opt-in, so anything other than an explicit true reads as off.
+    streaming: row.streaming === true,
+    topics: row.topics === true,
     tz: row.tz as string | undefined,
     brief: row.brief as BotProfile["brief"],
     memberSince:

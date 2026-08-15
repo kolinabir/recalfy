@@ -91,7 +91,8 @@ export class RememberTool extends Tool {
       return 'Already knew all of that — nothing new stored. Just reply naturally.';
     }
 
-    context.saved.push(...stored.map((m) => m.sid));
+    context.turn.saved.push(...stored.map((m) => m.sid));
+    context.turn.memoryChanged = true;
     return `Stored ${stored.length}: ${stored.map((m) => `${m.text} [${m.sid}]`).join(' | ')}`;
   }
 }

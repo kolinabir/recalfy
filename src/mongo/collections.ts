@@ -51,6 +51,25 @@ export interface QuietHours {
   to: number;
 }
 
+/**
+ * One memory group, as it exists inside the chat: a topic, and the single
+ * message in it that holds the group's current list.
+ *
+ * One message per group rather than one per fact. A fact per message would
+ * mean a flood the first time it is switched on, a deletion to chase every
+ * time something is forgotten, and a topic that reads as a log of edits
+ * rather than as the list it is meant to be.
+ *
+ * `hash` is of the text last written, and exists so an unchanged group costs
+ * no API call — the bot re-renders after every turn that touched memory, and
+ * most of those touch one group out of nine.
+ */
+export interface TopicEntry {
+  threadId: number;
+  messageId: number;
+  hash: string;
+}
+
 export interface UserDoc {
   _id: UserId;
   /** IANA zone, e.g. "Asia/Kolkata". Every reminder resolution depends on it. */
@@ -88,6 +107,24 @@ export interface UserDoc {
    * the bot ignore an inline query it could otherwise answer.
    */
   inline?: boolean;
+  /**
+   * Whether the reply is shown while it is being written. Absent means off,
+   * the opposite of `inline` above and for the opposite reason: this one is
+   * invisible on a Telegram older than 9.3, and because it replaces the
+   * "typing…" indicator, a client that cannot draw it shows *nothing* until
+   * the answer lands. A feature that arrives switched on and looks like a
+   * hang on somebody's two-year-old phone is worse than one they turn on.
+   */
+  streaming?: boolean;
+  /**
+   * Whether each memory group gets its own topic in the chat. Absent means
+   * off — it rearranges the chat window, which is not something to do to
+   * someone who did not ask. Also needs topic mode on the bot itself, which
+   * is a BotFather setting and not per-user; see topics/topic-mirror.ts.
+   */
+  topics?: boolean;
+  /** Where each group's topic and its one message live. Keyed by group. */
+  topicIndex?: Record<string, TopicEntry>;
   /** The evening mirror of the brief. Absent means off — it is opt-in. */
   reflection?: BriefConfig;
   lastReflectionDay?: string;

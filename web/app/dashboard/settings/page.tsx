@@ -2,10 +2,15 @@ import { Download } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { InlineToggle } from "@/components/dashboard/inline-toggle";
+import { SettingToggle } from "@/components/dashboard/setting-toggle";
 import { SignOutButton } from "@/components/sign-out-button";
 import type { BotProfile } from "@/lib/dashboard-data";
 import { getBotProfile, isConnected, requireViewer } from "@/lib/dashboard-data";
+import {
+  setInlineResults,
+  setStreaming,
+  setTopics,
+} from "@/app/dashboard/settings/actions";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -17,7 +22,7 @@ export default async function SettingsPage() {
   const linked = isConnected(viewer);
   const profile = linked
     ? await getBotProfile(viewer.id)
-    : ({ inline: true } satisfies BotProfile);
+    : ({ inline: true, streaming: false, topics: false } satisfies BotProfile);
 
   return (
     <div>
@@ -70,22 +75,71 @@ export default async function SettingsPage() {
         </section>
 
         {linked ? (
-          <section className="rounded-xl border border-line px-6 py-6">
-            <h2 className="eyebrow">Inline results</h2>
-            <p className="mt-3 max-w-prose text-[0.875rem] leading-relaxed text-fg-subtle">
-              Type{" "}
-              <span className="font-mono text-[0.8125rem] text-fg">
-                @recalfy_bot wifi
-              </span>{" "}
-              in any conversation and pick a fact to send. The other person sees
-              an ordinary message from you — the bot is never in their chat.
-              Passwords are hidden in the list you pick from and sent in full.
-            </p>
+          <>
+            <section className="rounded-xl border border-line px-6 py-6">
+              <h2 className="eyebrow">Inline results</h2>
+              <p className="mt-3 max-w-prose text-[0.875rem] leading-relaxed text-fg-subtle">
+                Type{" "}
+                <span className="font-mono text-[0.8125rem] text-fg">
+                  @recalfy_bot wifi
+                </span>{" "}
+                in any conversation and pick a fact to send. The other person
+                sees an ordinary message from you — the bot is never in their
+                chat. Passwords are hidden in the list you pick from and sent in
+                full.
+              </p>
 
-            <div className="mt-5">
-              <InlineToggle enabled={profile.inline} />
-            </div>
-          </section>
+              <div className="mt-5">
+                <SettingToggle
+                  enabled={profile.inline}
+                  label="Answer inline queries in other chats"
+                  on="On — typing @recalfy_bot in any chat searches your memory."
+                  off="Off — @recalfy_bot returns nothing in other chats."
+                  action={setInlineResults}
+                />
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-line px-6 py-6">
+              <h2 className="eyebrow">Streaming replies</h2>
+              <p className="mt-3 max-w-prose text-[0.875rem] leading-relaxed text-fg-subtle">
+                Watch the answer being written instead of waiting for it to
+                land. It needs a recent Telegram — on an older app the reply
+                simply arrives all at once, which is why this starts off.
+              </p>
+
+              <div className="mt-5">
+                <SettingToggle
+                  enabled={profile.streaming}
+                  label="Stream replies as they are written"
+                  on="On — replies appear a word at a time."
+                  off="Off — replies arrive complete, after a “typing…” pause."
+                  action={setStreaming}
+                />
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-line px-6 py-6">
+              <h2 className="eyebrow">Topics</h2>
+              <p className="mt-3 max-w-prose text-[0.875rem] leading-relaxed text-fg-subtle">
+                Give each group in your memory — People, Home, Work — its own
+                tab in the chat, each holding the current list for that group.
+                The bot keeps them up to date; you keep talking to it as
+                normal. Tabs appear the next time you message it, and switching
+                this off takes them away again.
+              </p>
+
+              <div className="mt-5">
+                <SettingToggle
+                  enabled={profile.topics}
+                  label="Keep a tab per memory group"
+                  on="On — each group has a tab, rewritten when it changes."
+                  off="Off — no tabs; everything stays in the one conversation."
+                  action={setTopics}
+                />
+              </div>
+            </section>
+          </>
         ) : null}
 
         <section className="rounded-xl border border-line px-6 py-6">

@@ -3,6 +3,7 @@ import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { parseAction } from '../channels/action-data';
 import { CHANNEL_ADAPTERS, ChannelAdapter, InboundAction } from '../channels/channel';
 import { MemoryStore } from '../memory/memory.store';
+import { TopicMirror } from '../topics/topic-mirror';
 import { UNDO, undoneIds, undoneLine } from './undo';
 
 /**
@@ -24,6 +25,7 @@ export class UndoService implements OnModuleInit {
   constructor(
     @Inject(CHANNEL_ADAPTERS) private readonly adapters: ChannelAdapter[],
     private readonly memories: MemoryStore,
+    private readonly topics: TopicMirror,
   ) {}
 
   onModuleInit(): void {
@@ -43,6 +45,10 @@ export class UndoService implements OnModuleInit {
     // ours to answer, and the answer is the same either way: it isn't there.
     await settle(undoneLine(dropped.length || ids.length));
     this.logger.log(`undo → dropped ${dropped.length} of ${ids.length} for ${userId}`);
+
+    // The tabs said those facts were there a second ago. Undo has to reach
+    // them too, or the chat disagrees with itself.
+    if (dropped.length > 0) await this.topics.sync(userId);
     return true;
   }
 }

@@ -339,6 +339,81 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
     }
   }
 
+  /*
+    Topics, in the private chat.
+
+    Kept off ChannelAdapter on purpose. A topic is a Telegram idea with no
+    counterpart on WhatsApp, and four abstract methods that one adapter will
+    never implement is a worse seam than one caller reaching for the adapter
+    it actually means. TopicMirror is that caller, and the only one.
+  */
+
+  /**
+   * Whether topics in private chats are switched on for this bot at all.
+   *
+   * It is a @BotFather setting, not an API call and not per-user: either every
+   * chat with @recalfy_bot has topics or none does. When it is off, every
+   * method below fails, so the mirror checks this first and does nothing.
+   */
+  get topicsAvailable(): boolean {
+    return this.bot.botInfo?.has_topics_enabled === true;
+  }
+
+  /** The new topic's thread id, or null if Telegram refused. */
+  async createTopic(handle: Handle, name: string): Promise<number | null> {
+    return this.tryTopic('create', async () => {
+      const topic = await this.bot.api.createForumTopic(handle, name.slice(0, 128));
+      return topic.message_thread_id;
+    });
+  }
+
+  /** The id of the message now holding the group's list, or null. */
+  async postToTopic(handle: Handle, threadId: number, text: string): Promise<number | null> {
+    return this.tryTopic('post', async () => {
+      const message = await this.bot.api.sendMessage(handle, text, {
+        message_thread_id: threadId,
+        // The list is a reference, not news. A notification per edit would
+        // make a quiet feature into a reason to mute the bot.
+        disable_notification: true,
+      });
+      return message.message_id;
+    });
+  }
+
+  /**
+   * False when the edit did not land — including "message to edit not found",
+   * which is what a topic deleted by hand looks like. The caller's answer to
+   * that is to rebuild, so it needs to be told rather than reassured.
+   */
+  async editInTopic(handle: Handle, messageId: number, text: string): Promise<boolean> {
+    const result = await this.tryTopic('edit', async () => {
+      await this.bot.api.editMessageText(handle, messageId, text);
+      return true;
+    });
+    return result === true;
+  }
+
+  async deleteTopic(handle: Handle, threadId: number): Promise<void> {
+    await this.tryTopic('delete', async () => {
+      await this.bot.api.deleteForumTopic(handle, threadId);
+      return true;
+    });
+  }
+
+  /**
+   * Every topic call is best-effort. They run after the reply has already been
+   * sent, so the worst honest outcome is a tab that is briefly out of date —
+   * never a turn that fails because a tab could not be redrawn.
+   */
+  private async tryTopic<T>(what: string, run: () => Promise<T>): Promise<T | null> {
+    try {
+      return await run();
+    } catch (error) {
+      this.logger.warn(`topic ${what} failed: ${error instanceof Error ? error.message : error}`);
+      return null;
+    }
+  }
+
   /** Undefined rather than an empty keyboard: Telegram rejects the latter. */
   private keyboard(actions?: readonly Action[]) {
     if (!this.buttons || !actions?.length) return undefined;

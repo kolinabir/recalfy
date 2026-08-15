@@ -21,11 +21,31 @@ export interface ToolContext {
   now: Date;
   sourceMessageId: ObjectId;
   /**
-   * Ids of facts stored during this turn. A tool that writes appends here, and
-   * the reply turns them into an Undo button — which is the only way the user
-   * gets to disagree with a save without composing a sentence about it.
+   * What this turn did, written by the tools as they run.
+   *
+   * The same object across every round — the context is rebuilt each time a
+   * tool runs, and a fresh record would forget what the last round wrote.
+   */
+  turn: TurnRecord;
+}
+
+export interface TurnRecord {
+  /**
+   * Ids of facts stored during this turn. The reply turns them into an Undo
+   * button, which is the only way the user gets to disagree with a save
+   * without composing a sentence about it.
    */
   saved: string[];
+  /**
+   * Whether the memory document is now different — a store, a deletion, a
+   * supersession. Drives the topic mirror, which has nine groups to consider
+   * and no reason to consider any of them after "what time is it in Berlin".
+   */
+  memoryChanged: boolean;
+}
+
+export function newTurnRecord(): TurnRecord {
+  return { saved: [], memoryChanged: false };
 }
 
 /**
