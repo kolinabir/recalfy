@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
+import { minutesUntilRelink } from "@/lib/disconnect";
 import { Channel, isChannel } from "@/lib/linking";
 import { db } from "@/lib/mongo";
 import { channelVerdict } from "@/lib/paddle/plan";
@@ -37,6 +38,13 @@ export async function POST(request: Request, params: { params: Promise<{ channel
   if (verdict !== "ok") {
     const status = verdict === "payment-required" ? 402 : 403;
     return NextResponse.json({ error: verdict }, { status });
+  }
+
+  // Checked here as well as in mintLink: this route writes the link itself,
+  // so the lock has to be read on every path that can attach a chat.
+  const locked = await minutesUntilRelink(session.user.id);
+  if (locked > 0) {
+    return NextResponse.json({ error: "locked", minutes: locked }, { status: 423 });
   }
 
   const body = await request.json().catch(() => null);

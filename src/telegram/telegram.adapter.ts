@@ -299,6 +299,12 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
           'That account is already connected to a different Telegram account. Disconnect it there first.',
         );
         return;
+      case 'locked':
+        await ctx.reply(
+          'That account was locked down from the dashboard. Nothing can connect to it for ' +
+            `another ${result.minutes} minute${result.minutes === 1 ? '' : 's'} — if that was you, try again then.`,
+        );
+        return;
       case 'invalid':
         await ctx.reply(
           'That link has expired or was already used. Open recalfy.com and press "Connect Telegram" for a fresh one.',

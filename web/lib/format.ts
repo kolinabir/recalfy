@@ -19,6 +19,18 @@ export function relativeDate(iso: string, now = new Date()): string {
 }
 
 /**
+ * "3 Aug 2026" — for the facts you check rather than skim, where "3h ago"
+ * answers the wrong question.
+ */
+export function absoluteDate(iso: string | Date): string {
+  return new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+/**
  * A reminder's due time, rendered in the timezone the bot resolved it in —
  * the browser's zone may be a different place entirely.
  */

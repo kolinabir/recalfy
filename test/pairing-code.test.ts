@@ -6,6 +6,7 @@ import {
   generatePairingCode,
   normalisePairingCode,
 } from '../src/channels/pairing-code';
+import { minutesLocked } from '../src/channels/relink-lock';
 
 // The code is read off one screen and typed into another, so normalisation is
 // the difference between "wrong code" and "you typed an O instead of a zero".
@@ -58,4 +59,20 @@ test('a generated code survives a round trip through display and typing', () => 
     const code = generatePairingCode();
     assert.equal(normalisePairingCode(formatPairingCode(code).toLowerCase()), code);
   }
+});
+
+// The pause after a lock-down. Without it the button is a race: the owner
+// presses it, and whoever still holds the phone re-links from the same chat
+// before they have finished reading the confirmation.
+
+const LOCKED_AT = new Date('2026-08-16T12:00:00Z');
+
+test('the lock reports whole minutes left, rounded up', () => {
+  assert.equal(minutesLocked(new Date('2026-08-16T12:14:30Z'), LOCKED_AT), 15);
+  assert.equal(minutesLocked(new Date('2026-08-16T12:00:01Z'), LOCKED_AT), 1);
+});
+
+test('the lock is over once it has passed, and never applied to an unlocked account', () => {
+  assert.equal(minutesLocked(new Date('2026-08-16T11:59:59Z'), LOCKED_AT), 0);
+  assert.equal(minutesLocked(undefined, LOCKED_AT), 0);
 });

@@ -5,7 +5,10 @@ import { SITE as BASE } from "@/lib/sections";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
-    { url: BASE, changeFrequency: "weekly", priority: 1 },
+    // With a trailing slash, so the entry is byte-identical to where the apex
+    // 308 lands. The two forms are the same URL to a crawler, but matching the
+    // redirect target exactly leaves nothing for anyone to normalise.
+    { url: `${BASE}/`, changeFrequency: "weekly", priority: 1 },
     { url: `${BASE}/examples`, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/pricing`, changeFrequency: "monthly", priority: 0.8 },
     {

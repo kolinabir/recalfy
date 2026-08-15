@@ -4,6 +4,7 @@ import { ObjectId } from 'mongodb';
 import { Address, Channel, Handle, UserId } from '../mongo/collections';
 import { MongoService } from '../mongo/mongo.service';
 import { generatePairingCode } from './pairing-code';
+import { minutesLocked } from './relink-lock';
 
 export type RedeemResult =
   | { status: 'linked'; email: string }
@@ -12,7 +13,9 @@ export type RedeemResult =
   /** This chat account already belongs to a different web account. */
   | { status: 'taken'; email: string }
   /** The token's web account already connected a different chat account here. */
-  | { status: 'account-linked' };
+  | { status: 'account-linked' }
+  /** The account was locked down from the dashboard; connecting waits. */
+  | { status: 'locked'; minutes: number };
 
 /** Mongo path for one channel's handle. Dotted keys are also the index keys. */
 function handlePath(channel: Channel): string {
@@ -72,6 +75,12 @@ export class LinkStore {
 
     if (!claimed) return { status: 'invalid' };
 
+    const locked = await this.relinkLock(claimed.webUserId);
+    if (locked > 0) {
+      await this.releaseToken(token);
+      return { status: 'locked', minutes: locked };
+    }
+
     // Better Auth keys users by ObjectId; the token carries its hex form.
     if (!ObjectId.isValid(claimed.webUserId)) {
       this.logger.warn(`Token ${token} carries an unusable webUserId`);
@@ -87,17 +96,31 @@ export class LinkStore {
     );
 
     if (!linked) {
-      // The token was spent above; release it so a genuine retry isn't burnt
-      // by a state we rejected.
-      await this.mongo.linkTokens.updateOne(
-        { _id: token },
-        { $unset: { consumedAt: '', consumedBy: '' } },
-      );
+      await this.releaseToken(token);
       return { status: 'account-linked' };
     }
 
     this.logger.log(`Linked ${channel} ${handle} to ${linked.email}`);
     return { status: 'linked', email: linked.email };
+  }
+
+  /** Minutes before this account may take a new chat link, or 0 if it may now. */
+  private async relinkLock(webUserId: string): Promise<number> {
+    if (!ObjectId.isValid(webUserId)) return 0;
+
+    const account = await this.mongo.webUsers.findOne(
+      { _id: new ObjectId(webUserId) },
+      { projection: { relinkLockedUntil: 1 } },
+    );
+    return minutesLocked(account?.relinkLockedUntil, new Date());
+  }
+
+  /** Un-spends a token we claimed and then declined to use, so a real retry works. */
+  private releaseToken(token: string): Promise<unknown> {
+    return this.mongo.linkTokens.updateOne(
+      { _id: token },
+      { $unset: { consumedAt: '', consumedBy: '' } },
+    );
   }
 
   /**

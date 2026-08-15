@@ -1,10 +1,12 @@
 import Link from "next/link";
 
 import { ConnectChat } from "@/components/connect-chat";
+import { DisconnectButton } from "@/components/dashboard/disconnect-button";
+import { LockDown } from "@/components/dashboard/lock-down";
 import { CHANNEL_COPY } from "@/lib/channels";
 import { type Channel, channelConfig } from "@/lib/channel-config";
 import { getMemories, requireViewer } from "@/lib/dashboard-data";
-import { relativeDate } from "@/lib/format";
+import { absoluteDate, relativeDate } from "@/lib/format";
 import { channelVerdict, planForUser } from "@/lib/paddle/plan";
 
 /**
@@ -19,6 +21,9 @@ export async function ChannelPage({ channel }: { channel: Channel }) {
   const copy = CHANNEL_COPY[channel];
 
   const memories = linked ? await getMemories(viewer.id) : [];
+  const link = viewer.channels[channel];
+  const connectedAt = link?.linkedAt ? absoluteDate(link.linkedAt) : "—";
+  const lastHeard = memories[0] ? relativeDate(memories[0].createdAt) : "—";
   // Connecting is what a plan buys, and which chat depends on the tier. The
   // API enforces both independently — this only saves the person a click into
   // a 402 or a 403.
@@ -69,16 +74,25 @@ export async function ChannelPage({ channel }: { channel: Channel }) {
               ) : null}
               .
             </p>
+            <dl className="mt-6 grid gap-x-10 gap-y-3 border-t border-line pt-6 sm:grid-cols-3">
+              <Fact label="Connected" value={connectedAt} />
+              <Fact label="Last message" value={lastHeard} />
+              <Fact label="Account" value={viewer.email} />
+            </dl>
+
             <div className="mt-6 border-t border-line pt-6">
               <h2 className="text-[0.9375rem] font-medium">Detach it</h2>
               <p className="mt-2 max-w-prose text-[0.875rem] leading-relaxed text-fg-subtle">
-                Send{" "}
+                From here, or by sending{" "}
                 <code className="rounded border border-line bg-s2 px-1.5 py-0.5 font-mono text-[0.8125rem] text-fg">
                   {copy.unlinkCommand}
                 </code>{" "}
-                in the chat. Detaching happens where the account can prove
-                itself — the same reason connecting does.
+                in the chat itself. Use this page if the chat is the part you
+                no longer trust.
               </p>
+              <div className="mt-5">
+                <DisconnectButton channel={channel} name={copy.name} />
+              </div>
             </div>
           </>
         ) : (
@@ -136,6 +150,8 @@ export async function ChannelPage({ channel }: { channel: Channel }) {
         )}
       </div>
 
+      {linked ? <LockDown /> : null}
+
       <div className="mt-4 rounded-xl border border-line px-6 py-5">
         <h2 className="eyebrow">Good to know</h2>
         <ul className="mt-3 grid gap-2.5 text-[0.875rem] leading-relaxed text-fg-subtle">
@@ -149,6 +165,20 @@ export async function ChannelPage({ channel }: { channel: Channel }) {
           </li>
         </ul>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The three things someone checks when they are not sure whether to worry:
+ * when this chat attached, whether it has been used since, and which account
+ * it answers for.
+ */
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="eyebrow">{label}</dt>
+      <dd className="mt-1.5 truncate text-[0.875rem]">{value}</dd>
     </div>
   );
 }

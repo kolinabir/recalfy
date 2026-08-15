@@ -45,7 +45,9 @@ export function ConnectChat({
 
       if (!res.ok) {
         setError(
-          body.error === "already-linked"
+          body.error === "locked"
+            ? `This account was locked down. Nothing can connect for another ${body.minutes} minute${body.minutes === 1 ? "" : "s"}.`
+            : body.error === "already-linked"
             ? "This account is already connected."
             : body.error === "payment-required"
               ? "Connecting a chat needs an active plan. Pick one on the pricing page."
@@ -365,7 +367,9 @@ function Manual({
       }
 
       setError(
-        body.error === "already-linked"
+        body.error === "locked"
+          ? `This account was locked down. Nothing can connect for another ${body.minutes} minute${body.minutes === 1 ? "" : "s"}.`
+          : body.error === "already-linked"
           ? "This account is already connected."
           : body.error === "payment-required"
             ? "Connecting a chat needs an active plan."

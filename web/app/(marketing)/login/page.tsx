@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-type Search = { plan?: string; cycle?: string };
+type Search = { plan?: string; cycle?: string; locked?: string };
 
 const REASSURANCE = [
   "Nothing to install — it lives in the chat app you already have",
@@ -23,7 +23,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<Search>;
 }) {
-  const { plan: planId, cycle } = await searchParams;
+  const { plan: planId, cycle, locked } = await searchParams;
   const plan = PLANS.find((p) => p.id === planId);
   const billing = cycle === "yearly" ? "yearly" : "monthly";
   const price = plan ? priceFor(plan, billing) : null;
@@ -32,6 +32,8 @@ export default async function LoginPage({
     <section className="relative isolate overflow-hidden px-5 pt-36 pb-24 sm:pt-40">
 
       <div className="mx-auto w-full max-w-md">
+        {locked ? <LockedNotice /> : null}
+
         <div className="resolve rounded-xl border border-line bg-s1 p-8  sm:p-10">
           <h1 className="display text-[2rem]">
             {plan ? (
@@ -109,5 +111,27 @@ export default async function LoginPage({
         </p>
       </div>
     </section>
+  );
+}
+
+/**
+ * Where a lock-down lands. The person has just been signed out of the page
+ * they pressed the button on, and without a word here that is indistinguishable
+ * from the session expiring — which is the one reading that would make them
+ * doubt it worked.
+ */
+function LockedNotice() {
+  return (
+    <div className="mb-4 rounded-xl border border-destructive/30 px-5 py-4">
+      <p className="text-[0.9375rem] font-medium text-destructive">
+        Everything is disconnected.
+      </p>
+      <p className="mt-2 text-[0.875rem] leading-relaxed text-fg-muted">
+        Every chat is detached and every session is signed out. Nothing can
+        reconnect for fifteen minutes. Your memory is untouched — sign back in
+        when you are on a device you trust, and change your Google password
+        while you are at it.
+      </p>
+    </div>
   );
 }

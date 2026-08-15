@@ -338,6 +338,12 @@ export interface WebUserDoc {
   /** Keyed by channel. A unique partial index per key enforces "one owner". */
   channels?: Partial<Record<Channel, ChannelLink>>;
   /**
+   * Set by a lock-down on the dashboard: no chat may attach to this account
+   * until it passes. See channels/relink-lock.ts for why there is a pause at
+   * all rather than an immediate re-link.
+   */
+  relinkLockedUntil?: Date;
+  /**
    * Where the Telegram link lived before channels existed. Read by the
    * migration in scripts/migrate-channels.ts and by nothing else.
    *

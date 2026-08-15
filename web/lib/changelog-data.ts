@@ -35,6 +35,21 @@ export const CHANGE_KINDS: Record<ChangeKind, string> = {
 
 const REAL: ChangeEntry[] = [
   {
+    date: "2026-08-16",
+    title: "A way to pull the plug",
+    body: "Until now the only way to detach a chat was from inside that chat — which is no use at all if the chat is the part you no longer trust.",
+    changes: [
+      {
+        kind: "new",
+        text: "Disconnect Telegram or WhatsApp from the dashboard, and see when each was connected and last used.",
+      },
+      {
+        kind: "new",
+        text: "Lost a phone? One button detaches every chat, stops inline answers, ends every signed-in session and holds off reconnection for fifteen minutes. Your memory stays.",
+      },
+    ],
+  },
+  {
     date: "2026-08-15",
     title: "Passwords stop lingering",
     body: "A password you ask for is readable for a minute, then covers itself over. It is still in your memory — ask again and it comes back for another minute.",

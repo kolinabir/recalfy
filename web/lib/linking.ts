@@ -5,6 +5,7 @@ import { ObjectId } from "mongodb";
 import QRCode from "qrcode";
 
 import { channelConfig } from "@/lib/channel-config";
+import { minutesUntilRelink } from "@/lib/disconnect";
 import { db } from "@/lib/mongo";
 
 export const CHANNELS = ["telegram", "whatsapp"] as const;
@@ -22,7 +23,8 @@ const MINT_COOLDOWN_MS = 2000;
 
 export type MintResult =
   | { ok: true; url: string; qr: string; expiresAt: string }
-  | { ok: false; error: "already-linked" | "channel-not-configured"; status: number };
+  | { ok: false; error: "already-linked" | "channel-not-configured"; status: number }
+  | { ok: false; error: "locked"; status: 423; minutes: number };
 
 /**
  * Mints a one-time token and wraps it in whatever link the channel needs.
@@ -49,6 +51,9 @@ export async function mintLink(
   if (current?.channels?.[channel]) {
     return { ok: false, error: "already-linked", status: 409 };
   }
+
+  const minutes = await minutesUntilRelink(user.id);
+  if (minutes > 0) return { ok: false, error: "locked", status: 423, minutes };
 
   const tokens = db.collection("linkTokens");
 
