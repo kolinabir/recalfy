@@ -35,6 +35,17 @@ export const CHANGE_KINDS: Record<ChangeKind, string> = {
 
 const REAL: ChangeEntry[] = [
   {
+    date: "2026-08-20",
+    title: "Forward it instead of retyping it",
+    body: "Somebody sends you the wifi password, the gate code, the time they're arriving. Forward that message to Recalfy and it's filed under their name, not yours.",
+    changes: [
+      {
+        kind: "improved",
+        text: "A forwarded message is now kept as what somebody else said and when they said it — so \"I'll be there at six\" is remembered as their plan, and \"tomorrow\" means the day after they sent it.",
+      },
+    ],
+  },
+  {
     date: "2026-08-16",
     title: "A way to pull the plug",
     body: "Until now the only way to detach a chat was from inside that chat — which is no use at all if the chat is the part you no longer trust.",

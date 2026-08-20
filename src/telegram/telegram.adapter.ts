@@ -26,6 +26,7 @@ import {
 } from './inline';
 import { linkedOnly, parseStartToken } from './linked-only.middleware';
 import { maskSecret } from './mask-secret';
+import { withForwardOrigin } from './forward-text';
 import { describeSharedLocation } from './location-text';
 
 /** Short: there is no walk-to-another-device delay in the manual flow. */
@@ -137,7 +138,9 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
       await this.fanOut({
         userId,
         address,
-        text: ctx.message.text,
+        // A forward is an ordinary text message with an origin attached. Left
+        // alone it reads as something they said themselves — see forward-text.
+        text: withForwardOrigin(ctx.message.forward_origin, ctx.message.text),
         messageId: String(ctx.message.message_id),
         threadId: ctx.message.message_thread_id,
         receivedAt: new Date(),
