@@ -43,6 +43,14 @@ const REAL: ChangeEntry[] = [
         kind: "improved",
         text: "A forwarded message is now kept as what somebody else said and when they said it — so \"I'll be there at six\" is remembered as their plan, and \"tomorrow\" means the day after they sent it.",
       },
+      {
+        kind: "fixed",
+        text: "Fire off several messages in a row and you get one answer to all of them, instead of one reply — and sometimes one reminder — per message.",
+      },
+      {
+        kind: "fixed",
+        text: "\"Interview tomorrow\" with no time now gets you a question rather than a guessed 8am.",
+      },
     ],
   },
   {

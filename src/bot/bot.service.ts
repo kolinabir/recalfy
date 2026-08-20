@@ -1,4 +1,4 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 
 import { Paywall } from '../billing/paywall';
 import { BrainService, Reply } from '../brain/brain.service';
@@ -9,12 +9,19 @@ import { UserStore } from '../memory/user.store';
 import { needsTopicSync } from '../topics/needs-sync';
 import { TopicMirror } from '../topics/topic-mirror';
 import { ConversationLog } from './conversation-log';
+import { mergeTurn, turnKey } from './merge-turn';
 import { Responder } from './responder';
+import { TurnQueue } from './turn-queue';
 import { undoAction } from './undo';
 
 /**
  * The one place inbound messages become outbound ones. Reads as the shape of
  * a turn: identify, acknowledge, log, think, reply.
+ *
+ * Messages do not go straight in. They pass through a TurnQueue, which holds
+ * them for a moment so a burst becomes one turn, and which keeps two turns for
+ * the same conversation from running at once — see turn-queue.ts for the bug
+ * that bought both.
  *
  * There are no commands. Everything the user types is ordinary conversation,
  * and the model decides whether that means answering, remembering, forgetting,
@@ -33,9 +40,18 @@ export class BotService implements OnModuleInit {
     private readonly topics: TopicMirror,
   ) {}
 
+  private readonly logger = new Logger(BotService.name);
+
+  private readonly turns = new TurnQueue<InboundMessage>(
+    (messages) => this.handle(mergeTurn(messages)),
+    (error: unknown) => this.logger.error(`Turn failed: ${message(error)}`),
+  );
+
   onModuleInit(): void {
     for (const adapter of this.adapters) {
-      adapter.onMessage((message) => this.handle(message));
+      adapter.onMessage(async (inbound) => {
+        this.turns.add(turnKey(inbound), inbound);
+      });
     }
   }
 
@@ -94,6 +110,10 @@ export class BotService implements OnModuleInit {
       await this.topics.sync(userId, receivedAt);
     }
   }
+}
+
+function message(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function actionsFor(reply: Reply): Action[] {

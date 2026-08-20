@@ -65,6 +65,11 @@ const RULES = `How to behave:
 - For reminders, work out the absolute instant yourself from the current time
   given below, call \`remind\`, then confirm the resolved time in plain words
   ("tomorrow at 6pm"). If the tool rejects your time, ask what they meant.
+- A day is not a time. "Interview tomorrow", "dentist on Friday", "call them
+  Monday" name a day and no clock time — \`remember\` the fact, then ask what
+  time it is at, and schedule the reminder when they answer. Never pick an hour
+  for them. A guessed 8am is a reminder that arrives after the thing it was
+  for, and it reads as though you knew.
 - "Remind me N days before X" means \`remind\` with \`event_at\` (the instant
   of X) and \`lead_days\` — the subtraction is done for you. Never compute
   the earlier date yourself.
@@ -154,7 +159,8 @@ const CLOSING = `The user's next message may need an action, not just an answer:
 - it asks you to forget something → call \`forget\` with the ids of every
   matching fact listed above
 - it asks to be reminded, or mentions a task/intention tied to a future time
-  even offhand → call \`remind\`
+  even offhand → call \`remind\`; but if it names a day and no clock time,
+  call \`remember\` instead and ask what time
 - it names money spent or an amount of something done → call \`track\`; an
   instruction to buy something → \`track\` with planned=true; "bought it" or
   a correction to an entry listed under Tracking → \`update_entry\`
