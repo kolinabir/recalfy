@@ -42,10 +42,16 @@ export interface TurnRecord {
    * and no reason to consider any of them after "what time is it in Berlin".
    */
   memoryChanged: boolean;
+  /**
+   * Ids of reminders scheduled during this turn, so Undo can take them back
+   * too. Without this the button forgot the fact and left the reminder to fire
+   * anyway — an undone interview still pinging at 8am the next morning.
+   */
+  scheduled: string[];
 }
 
 export function newTurnRecord(): TurnRecord {
-  return { saved: [], memoryChanged: false };
+  return { saved: [], memoryChanged: false, scheduled: [] };
 }
 
 /**

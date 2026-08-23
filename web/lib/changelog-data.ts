@@ -51,6 +51,10 @@ const REAL: ChangeEntry[] = [
         kind: "fixed",
         text: "\"Interview tomorrow\" with no time now gets you a question rather than a guessed 8am.",
       },
+      {
+        kind: "fixed",
+        text: "Undo now takes back the reminder it set, not just the fact it saved.",
+      },
     ],
   },
   {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { ACTION_DATA_LIMIT, encodeAction, parseAction } from '../src/channels/action-data';
-import { undoAction, undoneIds } from '../src/bot/undo';
+import { undoAction, undone, undoneLine } from '../src/bot/undo';
 import { SNOOZE, snoozeActions, snoozedTo } from '../src/reminders/snooze';
 
 /**
@@ -31,20 +31,65 @@ describe('action payloads', () => {
 });
 
 describe('undo', () => {
-  it('offers nothing when the turn stored nothing', () => {
-    assert.equal(undoAction([]), null);
+  const REMINDER = '68a0e2f1c4b5a6d7e8f90123';
+  const nothing = { saved: [], scheduled: [] };
+
+  it('offers nothing when the turn changed nothing', () => {
+    assert.equal(undoAction(nothing), null);
   });
 
   it('names every fact it would take back', () => {
-    const action = undoAction(['04', '05', '06']);
+    const action = undoAction({ saved: ['04', '05', '06'], scheduled: [] });
     assert.equal(action?.label, 'Undo all 3');
-    assert.deepEqual(undoneIds(parseAction(action!.data)!.parts), ['04', '05', '06']);
+    assert.deepEqual(undone(parseAction(action!.data)!.parts).saved, ['04', '05', '06']);
+  });
+
+  /*
+    The bug this half exists for: "interview Friday at 3" stores a fact and
+    schedules a reminder, and an undo that took back only the fact left the
+    reminder to fire the next morning anyway.
+  */
+  it('takes back the reminders the same turn scheduled', () => {
+    const action = undoAction({ saved: ['04'], scheduled: [REMINDER] });
+
+    assert.equal(action?.label, 'Undo all 2');
+    assert.deepEqual(undone(parseAction(action!.data)!.parts), {
+      saved: ['04'],
+      scheduled: [REMINDER],
+    });
+  });
+
+  it('undoes a bare reminder, from a turn that stored no facts', () => {
+    const action = undoAction({ saved: [], scheduled: [REMINDER] });
+
+    assert.equal(action?.label, 'Undo');
+    assert.deepEqual(undone(parseAction(action!.data)!.parts).scheduled, [REMINDER]);
+  });
+
+  it('spells a reminder id short enough that a real turn still fits', () => {
+    // Two facts and two reminders in hex would be 70 bytes — over the limit,
+    // and the button would vanish exactly when it is most needed.
+    const action = undoAction({ saved: ['04', '05'], scheduled: [REMINDER, REMINDER] });
+
+    assert.ok(action, 'a two-fact two-reminder turn must still get a button');
+    assert.ok(Buffer.byteLength(action.data) <= ACTION_DATA_LIMIT);
   });
 
   /* Half an undo is worse than none — the user would believe all of it went. */
   it('offers nothing rather than a partial undo when the ids will not fit', () => {
     const many = Array.from({ length: 40 }, (_, index) => `m${index}`);
-    assert.equal(undoAction(many), null);
+    assert.equal(undoAction({ saved: many, scheduled: [] }), null);
+  });
+
+  it('ignores a reminder id it never minted', () => {
+    // Old buttons outlive deploys, and a payload can be hand-made.
+    assert.deepEqual(undone(['04;notbase64!!']).scheduled, []);
+  });
+
+  it('says both halves out loud, so an invisible cancellation is checkable', () => {
+    assert.equal(undoneLine(1, 0), '↩︎ Undone — forgotten.');
+    assert.equal(undoneLine(0, 1), '↩︎ Undone — reminder cancelled.');
+    assert.equal(undoneLine(2, 1), '↩︎ Undone — 2 facts forgotten, reminder cancelled.');
   });
 });
 

@@ -117,7 +117,7 @@ function message(error: unknown): string {
 }
 
 function actionsFor(reply: Reply): Action[] {
-  const undo = undoAction(reply.saved);
+  const undo = undoAction(reply);
   return undo ? [undo] : [];
 }
 

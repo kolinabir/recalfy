@@ -107,6 +107,8 @@ export class RemindTool extends Tool {
       resolved.at,
       repeat && { repeat, tz: context.timezone },
     );
+    context.turn.scheduled.push(reminder._id.toHexString());
+
     const cadence = repeat ? `, repeating ${describeRepeat(repeat)}` : '';
     const scheduled =
       `Scheduled "${text}" for ${resolved.spoken}${cadence} ` +
