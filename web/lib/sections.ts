@@ -51,18 +51,6 @@ export const SECTIONS: Section[] = [
       "Every other tool asks you to file things first — open the app, pick a folder, tag the note. That work is why the note never gets written.",
   },
   {
-    id: "features",
-    name: "Features",
-    description:
-      "Atomic facts, supersession, unprompted reminders, timezone-aware scheduling, forget-on-request, plain-markdown export, spending, budgets and trackers by sentence, memory inside any chat, a tab per group, one-tap undo, and masked credentials.",
-  },
-  {
-    id: "channels",
-    name: "Chat apps it works in",
-    description:
-      "Live on Telegram and WhatsApp, with one memory shared across both. Slack, Discord, iMessage and Signal are on the way.",
-  },
-  {
     id: "pricing",
     name: "Pricing",
     description:
@@ -94,7 +82,6 @@ export const SECTION_TABS = SECTIONS.map(({ id, name }) => ({
       tracking: "Money and habits",
       approach: "Why no search",
       why: "Why it exists",
-      channels: "Channels",
       start: "Start free",
     }[id] ?? name,
 }));

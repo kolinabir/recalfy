@@ -16,6 +16,10 @@ type Moment = {
  * Breadth, shown honestly: no invented testimonials, just the product doing its
  * job across unrelated corners of a life. The time gap between the two lines is
  * the whole demonstration — anything can remember for five minutes.
+ *
+ * Three, not six: one wide card and two narrow ones fill the four-column grid
+ * exactly, and the other eighty-two live on /examples, linked beside them. A
+ * home page shows the shape of a thing; the catalogue is a different page.
  */
 const MOMENTS: Moment[] = [
   {
@@ -33,22 +37,6 @@ const MOMENTS: Moment[] = [
     said: "boiler pressure should sit at 1.5",
     gap: "next winter, when it cuts out",
     payoff: "1.5 bar — top it up until the needle's there.",
-  },
-  {
-    said: "raj's wife defends her PhD in june, he's nervous for her",
-    gap: "when you next run into him",
-    payoff: "Ask about Nadia's defence — it was June. He was nervous for her.",
-    wide: true,
-  },
-  {
-    said: "client only takes calls after 2pm her time",
-    gap: "as you go to dial",
-    payoff: "It's 1:15 in Denver — give it 45 minutes.",
-  },
-  {
-    said: "tonight's rioja was great, muga something?",
-    gap: "at the wine shop",
-    payoff: "Muga Reserva. You loved it on 14 March.",
   },
 ];
 

@@ -47,21 +47,6 @@ function Tell({ children }: { children: React.ReactNode }) {
   );
 }
 
-const CONSEQUENCES = [
-  {
-    title: "A budget you set by saying it",
-    body: "“keep me under 15000 a month.” That's the entire setup. Every total tells you where you stand while you can still do something about it — not on the 31st.",
-  },
-  {
-    title: "The list closes its own loop",
-    body: "Something bought off the shopping list becomes the expense it was always going to be — one record, at the price you actually paid. Nothing to reconcile later.",
-  },
-  {
-    title: "Money isn't the only thing that counts",
-    body: "“track my water, 3L a day.” Litres, gym visits, weigh-ins, pages — say what you want watched and it figures out how to count it.",
-  },
-];
-
 export function Tracking() {
   return (
     <section id="tracking" className="scroll-mt-24 pb-24 lg:pb-32">
@@ -117,21 +102,6 @@ export function Tracking() {
           list is not a ledger. When a message could go either way, it asks
           once, in one short line.
         </Reveal>
-
-        <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          {CONSEQUENCES.map((item, i) => (
-            <Reveal
-              key={item.title}
-              delay={0.14 + i * 0.05}
-              className="rounded-xl border border-line bg-s1 p-5"
-            >
-              <h3 className="text-[0.9375rem] font-medium">{item.title}</h3>
-              <p className="mt-2.5 text-[0.8125rem] leading-relaxed text-fg-subtle">
-                {item.body}
-              </p>
-            </Reveal>
-          ))}
-        </div>
       </div>
     </section>
   );

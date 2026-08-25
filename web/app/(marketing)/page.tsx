@@ -1,7 +1,6 @@
 import { Reveal } from "@/components/motion/reveal";
 import { PlanTable } from "@/components/plan-table";
 import { Against } from "@/components/sections/against";
-import { Channels } from "@/components/sections/channels";
 import { Closing } from "@/components/sections/closing";
 import { Faq } from "@/components/sections/faq";
 import { QUESTIONS } from "@/lib/faq-data";
@@ -78,7 +77,6 @@ const JSON_LD = [
 import { SectionHash } from "@/components/section-hash";
 import { Hero } from "@/components/sections/hero";
 import { How } from "@/components/sections/how";
-import { Features } from "@/components/sections/features";
 import { Manifesto } from "@/components/sections/manifesto";
 import { Moments } from "@/components/sections/moments";
 import { Tracking } from "@/components/sections/tracking";
@@ -106,8 +104,6 @@ export default async function HomePage() {
       <Tracking />
       <Against />
       <Manifesto />
-      <Features />
-      <Channels />
 
       <section id="pricing" className="scroll-mt-24 pb-24 lg:pb-32">
         <div className="shell">
