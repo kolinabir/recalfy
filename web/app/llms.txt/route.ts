@@ -1,4 +1,5 @@
 import { EXAMPLE_COUNT } from "@/lib/examples-data";
+import { FEATURE_COUNT } from "@/lib/features-data";
 import { QUESTIONS } from "@/lib/faq-data";
 import { PLANS } from "@/lib/pricing";
 
@@ -37,6 +38,7 @@ ${plans}
 
 - [Home](https://www.recalfy.com): what Recalfy is, how it remembers, and how it tracks spending and habits
 - [Examples](https://www.recalfy.com/examples): ${EXAMPLE_COUNT} worked examples across dates, people, places, codes, money, lists, habits, reminders, corrections and recall
+- [Features](https://www.recalfy.com/features): all ${FEATURE_COUNT} capabilities — atomic facts, supersession, unprompted reminders, spending by sentence, export and forget-on-request
 - [Pricing](https://www.recalfy.com/pricing): plans, limits, and what each one includes
 - [Changelog](https://www.recalfy.com/changelog): what shipped and when, newest first — also available as a feed at /changelog/rss.xml
 - [Privacy](https://www.recalfy.com/privacy): what Recalfy collects, why, and how to remove it

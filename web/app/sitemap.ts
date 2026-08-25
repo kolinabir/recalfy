@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // redirect target exactly leaves nothing for anyone to normalise.
     { url: `${BASE}/`, changeFrequency: "weekly", priority: 1 },
     { url: `${BASE}/examples`, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/features`, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/pricing`, changeFrequency: "monthly", priority: 0.8 },
     {
       url: `${BASE}/changelog`,
