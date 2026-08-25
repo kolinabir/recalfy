@@ -20,7 +20,12 @@ HOST="${RECALFY_HOST:-knkolin9@136.66.250.175}"
 KEY="${RECALFY_SSH_KEY:-$HOME/.ssh/gcp_recalfy}"
 APP="${RECALFY_APP_DIR:-/home/knkolin9/recalfy}"
 KEEP="${RECALFY_KEEP_RELEASES:-5}"
-HEALTH_TRIES=10
+# A cold release is slow: its files are not in page cache yet, and this box has
+# 955MB of RAM and a swapfile. A deploy on 25 Aug 2026 was rolled back after
+# ten seconds while the app was still booting normally — Nest had not even
+# finished starting. The window is generous now because the loop below exits
+# the moment the unit actually dies, so a real failure still fails fast.
+HEALTH_TRIES=45
 
 SSH=(ssh -o ConnectTimeout=15 -o BatchMode=yes -i "$KEY" "$HOST")
 STAMP="$(date -u +%Y%m%d-%H%M%S)"
@@ -64,6 +69,12 @@ for i in \$(seq 1 $HEALTH_TRIES); do
   if curl -fsS --max-time 2 localhost:3117/health >/dev/null 2>&1; then
     echo "  healthy after \${i}s"
     ok=1
+    break
+  fi
+  # A unit that has stopped is never going to answer. Waiting out the rest of
+  # the window would turn a crash into a minute of silence.
+  if ! systemctl is-active --quiet recalfy; then
+    echo "  ✗ service died during startup"
     break
   fi
 done
