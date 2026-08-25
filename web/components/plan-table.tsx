@@ -100,7 +100,14 @@ export function PlanTable({ tiers, country, viewer, current, defer }: Props) {
     return () => clearTimeout(id);
   }, [defer]);
   const ready = !defer || near || waited;
-  const [cycle, setCycle] = useState<Cycle>("month");
+  /*
+    Yearly by default. It is the cheaper number per month, the one worth
+    anchoring on, and the commitment that suits a memory people expect to keep
+    — someone shopping for a place to put the next five years of small facts is
+    not looking for a rolling month. Monthly is one tap away for anyone who
+    wants it.
+  */
+  const [cycle, setCycle] = useState<Cycle>("year");
   const [paddle, setPaddle] = useState<Paddle | null>(null);
   /** priceId -> the string Paddle says to show. Never computed here. */
   const [totals, setTotals] = useState<Record<string, string>>({});
