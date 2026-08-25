@@ -18,7 +18,7 @@ export function Hero() {
             <span className="rounded-full bg-s2 px-2 py-0.5 font-mono text-[0.625rem] tracking-wide text-accent">
               LIVE
             </span>
-            now on Telegram and WhatsApp
+            now on Telegram
           </p>
 
           <h1

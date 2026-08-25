@@ -69,8 +69,8 @@ export const FEATURES: Feature[] = [
   },
   {
     icon: Globe,
-    title: "Channel-portable",
-    body: "Add a second chat app and the whole memory is already there.",
+    title: "Not tied to one chat app",
+    body: "Your memory belongs to your account, not the chat — so a new chat app inherits all of it the day it lands.",
   },
   {
     icon: Wallet,

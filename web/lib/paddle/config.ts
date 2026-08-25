@@ -140,11 +140,11 @@ export function tiers(): Tier[] {
       limits: [
         { label: "Memories", value: "Unlimited" },
         { label: "Reminders", value: "Unlimited" },
-        { label: "Channels", value: "All of them" },
+        { label: "Channels", value: "Telegram" },
       ],
       features: [
         "Everything in Keep",
-        "Telegram and WhatsApp at once, one memory across both — and every new channel the day it ships",
+        "Every new chat app the day it ships, with one memory across all of them",
         "Recurring reminders, and quiet hours so nothing wakes you",
         "Answers from a human, usually the one who wrote it",
       ],

@@ -172,13 +172,6 @@ export default async function SettingsPage() {
             >
               Telegram
             </Link>{" "}
-            or{" "}
-            <Link
-              href="/dashboard/whatsapp"
-              className="text-fg-muted underline underline-offset-4 hover:text-fg"
-            >
-              WhatsApp
-            </Link>{" "}
             link, or sign out.
           </p>
           <SignOutButton />

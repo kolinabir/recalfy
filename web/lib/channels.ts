@@ -11,6 +11,26 @@
 
 export type Channel = "telegram" | "whatsapp";
 
+/**
+ * The channels someone can actually connect today.
+ *
+ * WhatsApp is built and its code is all still here — the adapter, the webhook,
+ * the signature guard, the entitlement — but it is switched off: connecting it
+ * asked people to register a phone number with Meta before they could use the
+ * product, and one chat app is enough to be useful. Turning it back on means
+ * adding it to this list and re-registering the adapter in
+ * `src/channels/channels.module.ts`.
+ *
+ * Everything that decides whether to draw a button, mint a token, or accept a
+ * handshake reads this. A channel offered in one place and refused in another
+ * is the failure this list exists to prevent.
+ */
+export const AVAILABLE_CHANNELS: readonly Channel[] = ["telegram"];
+
+export function isChannelAvailable(channel: Channel): boolean {
+  return AVAILABLE_CHANNELS.includes(channel);
+}
+
 export interface ChannelCopy {
   /** Product name, as it appears in every label. */
   name: string;

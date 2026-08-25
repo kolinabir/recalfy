@@ -7,7 +7,6 @@ import {
   Home,
   Library,
   LogOut,
-  MessageCircle,
   Send,
   Settings2,
 } from "lucide-react";
@@ -48,15 +47,20 @@ const LIBRARY = [
   { href: "/dashboard/usage", label: "Usage", icon: Gauge },
 ];
 
+/*
+  WhatsApp's row is gone rather than disabled: a greyed-out chat app reads as
+  something broken, where its absence reads as a product that does one thing.
+  See AVAILABLE_CHANNELS in lib/channels.ts — the page still exists and
+  redirects, for anyone holding an old link.
+*/
 const ACCOUNT = [
   { href: "/dashboard/telegram", label: "Telegram", icon: Send },
-  { href: "/dashboard/whatsapp", label: "WhatsApp", icon: MessageCircle },
   { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { href: "/dashboard/settings", label: "Settings", icon: Settings2 },
 ];
 
 /** Rows that get the "not connected" dot while no chat is attached. */
-const CHAT_ROUTES = ["/dashboard/telegram", "/dashboard/whatsapp"];
+const CHAT_ROUTES = ["/dashboard/telegram"];
 
 /**
  * The dashboard's frame. Same discipline as the rest of the site: canvas

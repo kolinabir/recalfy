@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Channel } from "@/lib/channels";
+import { type Channel, isChannelAvailable } from "@/lib/channels";
 
 export type { Channel };
 
@@ -42,6 +42,13 @@ export interface ChannelConfig {
 const TELEGRAM_FALLBACK = "recalfy_bot";
 
 export function channelConfig(channel: Channel): ChannelConfig {
+  // A switched-off channel is never connectable, however complete its
+  // environment happens to be — otherwise a stray variable in production
+  // quietly puts a dead button back on the page.
+  if (!isChannelAvailable(channel)) {
+    return { channel, address: "not available", configured: false };
+  }
+
   if (channel === "telegram") {
     const username = (
       process.env.TELEGRAM_BOT_USERNAME ?? TELEGRAM_FALLBACK

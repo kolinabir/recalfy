@@ -75,7 +75,6 @@ export const COMPARISON: ComparisonGroup[] = [
     rows: [
       { label: "Chat apps", keep: "Telegram", archive: "All of them" },
       { label: "Telegram", keep: true, archive: true },
-      { label: "WhatsApp", keep: false, archive: true },
       {
         label: "Both at once, one memory across them",
         keep: false,

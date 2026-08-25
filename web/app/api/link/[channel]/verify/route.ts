@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { minutesUntilRelink } from "@/lib/disconnect";
 import { Channel, isChannel } from "@/lib/linking";
 import { db } from "@/lib/mongo";
+import { isChannelAvailable } from "@/lib/channels";
 import { channelVerdict } from "@/lib/paddle/plan";
 import { normalisePairingCode } from "@/lib/pairing-code";
 
@@ -25,7 +26,10 @@ export async function POST(request: Request, params: { params: Promise<{ channel
   }
 
   const { channel } = await params.params;
-  if (!isChannel(channel)) {
+  // A switched-off channel is indistinguishable from one that never existed.
+  // This route writes the link itself, so it has to refuse independently of
+  // mintLink — a pairing code must not be a way in around the UI.
+  if (!isChannel(channel) || !isChannelAvailable(channel)) {
     return NextResponse.json({ error: "unknown-channel" }, { status: 404 });
   }
 

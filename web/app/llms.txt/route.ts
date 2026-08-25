@@ -17,11 +17,11 @@ export function GET() {
 
   const body = `# Recalfy
 
-> Recalfy is a personal memory that lives in your chat app. You text it facts the way you'd text a friend — dates, names, where you left things, what you just spent. It keeps every fact as its own record, counts what should be counted, answers from memory when you ask, and messages you first when a moment you mentioned comes around. Live on Telegram and WhatsApp.
+> Recalfy is a personal memory that lives in your chat app. You text it facts the way you'd text a friend — dates, names, where you left things, what you just spent. It keeps every fact as its own record, counts what should be counted, answers from memory when you ask, and messages you first when a moment you mentioned comes around. Live on Telegram.
 
 Key facts:
 
-- No install: it runs inside the chat app you already use — Telegram and WhatsApp today, and one memory across both.
+- No install: it runs inside the chat app you already use — Telegram today, with more chat apps to follow.
 - Every fact is stored as its own record; corrections replace instead of piling up.
 - Reminders are resolved in your timezone and read back before they're set.
 - Expenses are logged by sentence: "cucumber 250" is a categorised expense, "buy cucumber 250" is a shopping-list line until you say you bought it.
