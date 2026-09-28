@@ -94,10 +94,13 @@ const STEPS = [
   },
 ];
 
-export function How() {
+export function How({
+  id = "under-the-hood",
+  eyebrow = "Under the hood",
+}: { id?: string; eyebrow?: string } = {}) {
   return (
     <section
-      id="how-it-works"
+      id={id}
       className="scroll-mt-24 pt-10 pb-24 lg:pt-14 lg:pb-32"
     >
       <div className="shell">
@@ -106,7 +109,7 @@ export function How() {
           className="grid gap-6 lg:grid-cols-2 lg:items-end lg:gap-16"
         >
           <div>
-            <p className="eyebrow">How it works</p>
+            <p className="eyebrow">{eyebrow}</p>
             <h2 className="display display-fill mt-5 text-[clamp(2rem,4.2vw,3rem)]">
               Nothing to learn.{" "}
               <span className="block text-fg-muted">

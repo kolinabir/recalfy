@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 
 import { Reveal } from "@/components/motion/reveal";
+import { Against } from "@/components/sections/against";
 import { Closing } from "@/components/sections/closing";
+import { How } from "@/components/sections/how";
+import { Manifesto } from "@/components/sections/manifesto";
+import { Tracking } from "@/components/sections/tracking";
 import { FeatureGrid } from "@/components/sections/features";
 import { FEATURES, FEATURE_COUNT } from "@/lib/features-data";
 import { SITE } from "@/lib/sections";
@@ -86,6 +90,13 @@ export default function FeaturesPage() {
           <FeatureGrid />
         </div>
       </section>
+
+      {/* The depth the home page leaves out: the engine, money and habits,
+          the design decision, and why it exists. */}
+      <How />
+      <Tracking />
+      <Against />
+      <Manifesto />
 
       <Closing />
     </>

@@ -20,17 +20,18 @@ export default function WelcomePage() {
         <div className="resolve rounded-xl border border-line bg-s1 p-8 sm:p-10">
           <h1 className="display text-[2rem]">
             You&rsquo;re in.{" "}
-            <span className="block text-accent">Go say something.</span>
+            <span className="block text-accent">One step left.</span>
           </h1>
           <p className="mt-5 leading-relaxed text-fg-muted">
-            Your subscription is active and the receipt is on its way by email.
-            Nothing else to set up — start telling it things.
+            Your plan is active and the receipt is on its way by email.
+            Now connect Telegram — it opens the chat with Recalfy, you press
+            Start, and you can tell it things straight away.
           </p>
           <Link
             href="/dashboard"
             className="mt-8 inline-flex h-11 w-full items-center justify-center rounded-xl bg-accent text-[0.9375rem] font-medium text-accent-ink transition-transform duration-300 hover:scale-[1.01] active:scale-[0.99]"
           >
-            Open the dashboard
+            Connect Telegram
           </Link>
         </div>
       </div>

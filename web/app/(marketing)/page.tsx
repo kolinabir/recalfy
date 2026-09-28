@@ -3,7 +3,6 @@ import { ArrowRight } from "lucide-react";
 
 import { Reveal } from "@/components/motion/reveal";
 import { PlanTable } from "@/components/plan-table";
-import { Against } from "@/components/sections/against";
 import { Closing } from "@/components/sections/closing";
 import { Faq } from "@/components/sections/faq";
 import { QUESTIONS } from "@/lib/faq-data";
@@ -92,10 +91,9 @@ const JSON_LD = [
 ];
 import { SectionHash } from "@/components/section-hash";
 import { Hero } from "@/components/sections/hero";
-import { How } from "@/components/sections/how";
-import { Manifesto } from "@/components/sections/manifesto";
+import { GetStarted } from "@/components/sections/get-started";
 import { Moments } from "@/components/sections/moments";
-import { Tracking } from "@/components/sections/tracking";
+import { WhatItDoes } from "@/components/sections/what-it-does";
 
 export default async function HomePage() {
   // The home page carries the same live plan table as /pricing, so it needs
@@ -115,11 +113,12 @@ export default async function HomePage() {
       />
       <SectionHash sections={SECTION_TABS} suffix="Recalfy" />
       <Hero />
-      <How />
+      {/* What it is → what it does → proof → how to start → price. The
+          arguments (why no search, why it exists) and the engine live on
+          /features, for the visitor who wants them. */}
+      <WhatItDoes />
       <Moments />
-      <Tracking />
-      <Against />
-      <Manifesto />
+      <GetStarted />
 
       <section id="pricing" className="scroll-mt-24 pb-24 lg:pb-32">
         <div className="shell">

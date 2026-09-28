@@ -508,9 +508,6 @@ function MemoryRow({
         >
           {fact.text}
         </span>
-        <code className="ml-auto shrink-0 font-mono text-[0.625rem] text-fg-faint">
-          {fact.id}
-        </code>
       </span>
     </motion.li>
   );

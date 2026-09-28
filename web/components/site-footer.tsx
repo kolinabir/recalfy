@@ -8,9 +8,8 @@ const COLUMNS = [
     links: [
       { href: "/#how-it-works", label: "How it works" },
       { href: "/examples", label: "Examples" },
-      { href: "/#tracking", label: "Money and habits" },
+      { href: "/features#tracking", label: "Money and habits" },
       { href: "/features", label: "Features" },
-      { href: "/#channels", label: "Channels" },
       { href: "/pricing", label: "Pricing" },
       { href: "/self-host", label: "Self-host" },
       { href: "https://github.com/kolinabir/recalfy", label: "GitHub" },
@@ -19,8 +18,8 @@ const COLUMNS = [
   {
     title: "Company",
     links: [
-      { href: "/#approach", label: "Why no search" },
-      { href: "/#why", label: "Why this exists" },
+      { href: "/features#approach", label: "Why no search" },
+      { href: "/features#why", label: "Why this exists" },
       { href: "/#faq", label: "FAQ" },
       { href: "/changelog", label: "Changelog" },
       { href: "/login", label: "Sign in" },

@@ -35,10 +35,11 @@ export function Hero() {
             className="resolve mx-auto mt-7 max-w-xl text-[1.0625rem] leading-relaxed text-fg-muted"
             style={{ animationDelay: "170ms" }}
           >
-            Text Recalfy the way you&apos;d text a friend — dates, names, where
-            you left things, what you just spent. It keeps every fact, counts
-            what should be counted, and messages you first when the moment
-            comes.
+            {/* The headline is the hook; this sentence has to say what the
+                thing is, in words a first-time visitor already has. */}
+            Recalfy is an AI assistant in Telegram. Text it what you&apos;d
+            otherwise forget — birthdays, codes, where you parked — ask for it
+            whenever you need it, and it messages you first when it matters.
           </p>
 
           <div
@@ -53,10 +54,10 @@ export function Hero() {
               <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
             </Link>
             <Link
-              href="#how-it-works"
+              href="#get-started"
               className="btn-ghost inline-flex h-10 items-center px-5 text-[0.875rem]"
             >
-              See how it remembers
+              How to start
             </Link>
           </div>
 
@@ -64,7 +65,7 @@ export function Hero() {
             className="resolve mt-5 font-mono text-[0.6875rem] tracking-wide text-fg-faint"
             style={{ animationDelay: "320ms" }}
           >
-            no charge for 7 days · no install · no commands to learn
+            7 days free · lives in telegram · nothing to install
           </p>
         </div>
 
