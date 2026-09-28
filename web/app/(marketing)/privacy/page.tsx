@@ -137,7 +137,7 @@ export default function PrivacyPage() {
           body: (
             <p>
               Questions or requests about your data:{" "}
-              <a href="mailto:hello@recalfy.com">hello@recalfy.com</a>.
+              <a href="mailto:knkolin9@gmail.com">knkolin9@gmail.com</a>.
             </p>
           ),
         },

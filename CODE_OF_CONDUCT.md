@@ -8,6 +8,6 @@ assume the other person means well. Harassment, insults and personal attacks
 are not tolerated in issues, pull requests, or anywhere else this project
 lives.
 
-Report unacceptable behaviour to **hello@recalfy.com**. Every report is read
+Report unacceptable behaviour to **knkolin9@gmail.com**. Every report is read
 and kept confidential. Maintainers may remove comments, close threads, or ban
 anyone who breaks these rules.

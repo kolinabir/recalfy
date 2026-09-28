@@ -132,7 +132,7 @@ export default function TermsPage() {
           body: (
             <p>
               Questions about these terms:{" "}
-              <a href="mailto:hello@recalfy.com">hello@recalfy.com</a>.
+              <a href="mailto:knkolin9@gmail.com">knkolin9@gmail.com</a>.
             </p>
           ),
         },

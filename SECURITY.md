@@ -8,7 +8,7 @@ asked it to keep. Security reports are taken seriously and answered quickly.
 **Please don't open a public issue.** Report it privately, either way:
 
 - GitHub: **Security → Report a vulnerability** on this repository
-- Email: **hello@recalfy.com**, with "security" in the subject
+- Email: **knkolin9@gmail.com**, with "security" in the subject
 
 Include what you found, how to reproduce it, and what someone could do with it.
 You'll get a reply within 72 hours. Please give us a reasonable chance to fix
