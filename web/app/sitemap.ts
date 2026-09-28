@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/examples`, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/features`, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/pricing`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/self-host`, changeFrequency: "monthly", priority: 0.8 },
     {
       url: `${BASE}/changelog`,
       // Taken from the newest entry, so a crawler is told the truth about

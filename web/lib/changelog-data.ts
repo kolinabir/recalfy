@@ -41,7 +41,7 @@ const REAL: ChangeEntry[] = [
     changes: [
       {
         kind: "new",
-        text: "npx recalfy sets up your own copy: paste a bot token and an AI key, message your bot, done. Works with OpenAI, OpenRouter, Z.ai or Ollama on your own machine.",
+        text: "npx recalfy sets up your own copy: paste a bot token and an AI key, message your bot, done. Works with OpenAI, OpenRouter, Z.ai or Ollama on your own machine — the step-by-step guide is at recalfy.com/self-host.",
       },
     ],
   },

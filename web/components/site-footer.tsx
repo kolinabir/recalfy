@@ -12,6 +12,8 @@ const COLUMNS = [
       { href: "/features", label: "Features" },
       { href: "/#channels", label: "Channels" },
       { href: "/pricing", label: "Pricing" },
+      { href: "/self-host", label: "Self-host" },
+      { href: "https://github.com/kolinabir/recalfy", label: "GitHub" },
     ],
   },
   {

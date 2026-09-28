@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+
 import { Reveal } from "@/components/motion/reveal";
 import { PlanTable } from "@/components/plan-table";
 import { Against } from "@/components/sections/against";
@@ -126,6 +129,17 @@ export default async function HomePage() {
               defer
             />
           </div>
+          {/* One line, not a section: the page was cut to nine on purpose. */}
+          <Reveal className="mt-8 text-center text-[0.9375rem] text-fg-muted">
+            Rather run it yourself? Recalfy is open source —{" "}
+            <Link
+              href="/self-host"
+              className="group inline-flex items-center gap-1 font-medium text-fg"
+            >
+              one command sets up your own copy, free
+              <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+            </Link>
+          </Reveal>
         </div>
       </section>
 

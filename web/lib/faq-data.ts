@@ -25,6 +25,10 @@ export const QUESTIONS = [
     a: "It can. When it schedules something it reads the resolved time back before committing, so a misheard “at 5” is caught immediately. And because you can read your whole memory, a wrong answer is something you can see the cause of rather than guess at.",
   },
   {
+    q: "Can I run it myself?",
+    a: "Yes. Recalfy is open source under the AGPL, and one command — npx recalfy — sets up your own copy on a laptop, a Raspberry Pi or a small server. You paste a Telegram bot token and an AI key, and it works with OpenAI, OpenRouter, Z.ai or a free local model through Ollama. It's free; you look after updates and backups, one command each. The guide is at recalfy.com/self-host.",
+  },
+  {
     q: "Is there a free trial?",
     a: "Seven days on either plan. Card details are taken when you subscribe so nothing stops when the trial ends, but you aren't charged until it does — and if you do pay, you have fourteen days to ask for it back, no questions asked and no retention call.",
   },

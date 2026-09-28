@@ -28,6 +28,7 @@ Key facts:
 - Monthly budgets and daily goals are set by saying them; the same mechanism tracks water, gym visits, weight, or anything else countable.
 - Your whole memory exports as plain markdown or JSON, any day, from the dashboard.
 - Nothing is used for AI training; memories are readable only by you and the model answering you.
+- Open source (AGPL-3.0) and self-hostable: \`npx recalfy\` sets up your own copy with a Telegram bot token and any OpenAI-compatible model, including a local one through Ollama. Source: https://github.com/kolinabir/recalfy
 - 7-day free trial on every plan; card details are taken at signup but nothing is charged until the trial ends. Refunds within 14 days, no questions.
 
 ## Plans
@@ -40,6 +41,7 @@ ${plans}
 - [Examples](https://www.recalfy.com/examples): ${EXAMPLE_COUNT} worked examples across dates, people, places, codes, money, lists, habits, reminders, corrections and recall
 - [Features](https://www.recalfy.com/features): all ${FEATURE_COUNT} capabilities — atomic facts, supersession, unprompted reminders, spending by sentence, export and forget-on-request
 - [Pricing](https://www.recalfy.com/pricing): plans, limits, and what each one includes
+- [Self-host](https://www.recalfy.com/self-host): run your own copy for free — what you need, the setup steps, choosing a model, and day-to-day commands
 - [Changelog](https://www.recalfy.com/changelog): what shipped and when, newest first — also available as a feed at /changelog/rss.xml
 - [Privacy](https://www.recalfy.com/privacy): what Recalfy collects, why, and how to remove it
 - [Terms](https://www.recalfy.com/terms): the terms that govern using Recalfy
