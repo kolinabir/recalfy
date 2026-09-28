@@ -50,7 +50,7 @@ export async function dropWebhook(token) {
  * cannot make a stranger the owner. The message that is found is consumed, so
  * the running bot does not answer it a second time.
  */
-export async function waitForOwner(token, { timeoutMs = 180_000, signal } = {}) {
+export async function waitForOwner(token, { timeoutMs = 600_000, signal } = {}) {
   const pending = await call(token, 'getUpdates', { offset: -1, timeout: 0 });
   let offset = pending.length ? pending[pending.length - 1].update_id + 1 : 0;
 
