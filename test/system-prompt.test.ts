@@ -67,3 +67,10 @@ test('an empty digest leaves no gap in the prompt', () => {
   // The rules still teach tracking even before anything is tracked.
   assert.match(prompt, /call `track`/);
 });
+
+test('knows its own name, in every conversation and in the introduction', () => {
+  // It once introduced itself as "your memory assistant" — the prompt said
+  // who it was for but never what it was called.
+  assert.match(buildSystemPrompt(INPUT), /You are Recalfy/);
+  assert.match(buildSystemPrompt({ ...INPUT, onboarded: false }), /introduce yourself by name — you are Recalfy/);
+});
