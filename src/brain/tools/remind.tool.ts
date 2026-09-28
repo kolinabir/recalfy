@@ -7,6 +7,7 @@ import { ReminderStore } from '../../reminders/reminder.store';
 import { Resolution, resolveLeadTime, resolveWhen } from '../../reminders/resolve-when';
 import { BadArguments, asObject, optionalPositiveInteger, optionalString, requireString } from './args';
 import { Tool, ToolContext } from './tool';
+import { siteLink } from '../../config/site';
 
 const REPEAT_UNITS: Repeat['unit'][] = ['day', 'week', 'month', 'year'];
 
@@ -119,7 +120,7 @@ export class RemindTool extends Tool {
       `${scheduled} IMPORTANT: they asked for a repeating reminder, and repeating ` +
       'reminders are an Archive feature — this one is a ONE-OFF. Say so plainly: ' +
       'this one is set, but it will not repeat, and Archive at ' +
-      'recalfy.com/dashboard/billing makes it recurring. Do not imply it repeats.'
+      `${siteLink('/dashboard/billing')} makes it recurring. Do not imply it repeats.`
     );
   }
 }

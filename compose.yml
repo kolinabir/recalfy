@@ -1,0 +1,40 @@
+# The self-hosted stack. You normally never touch this file: `npx recalfy`
+# writes a copy of it next to your .env and drives it for you.
+#
+# By hand, from a checkout:
+#   cp .env.example .env   # fill in the two keys
+#   docker compose up -d --build
+
+name: recalfy
+
+services:
+  bot:
+    image: ${RECALFY_IMAGE:-ghcr.io/kolinabir/recalfy:latest}
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      RECALFY_MODE: selfhost
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB: recalfy
+    depends_on:
+      mongo:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '3' }
+
+  mongo:
+    image: mongo:8
+    restart: unless-stopped
+    # Not published: only the bot can reach it, over the compose network.
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.adminCommand("ping")']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mongo-data:

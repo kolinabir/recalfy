@@ -195,7 +195,7 @@ describe('maskSecret', () => {
   it('masks from the credential onward, not from the last "is" in the line', () => {
     // Masking the later separator would hide the email and print the password.
     assert.equal(
-      maskSecret('The Netflix password is hunter2 and the login is kolin@recalfy.com'),
+      maskSecret('The Netflix password is hunter2 and the login is someone@example.com'),
       'The Netflix password is ••••••••',
     );
   });

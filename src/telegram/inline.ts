@@ -1,5 +1,6 @@
 import type { InlineQueryResultArticle } from 'grammy/types';
 
+import { isSelfHosted, siteLink } from '../config/site';
 import { Memory } from '../memory/memory.types';
 import { maskSecret } from './mask-secret';
 
@@ -25,8 +26,20 @@ const TITLE_LIMIT = 90;
  * forever. `www` because that is the canonical host; the apex redirects, and
  * a fetcher is not obliged to follow.
  */
-const THUMBNAIL = 'https://www.recalfy.com/inline.png';
+const HOSTED_THUMBNAIL = 'https://www.recalfy.com/inline.png';
 const THUMBNAIL_SIZE = 128;
+
+/**
+ * A self-hosted install with its own dashboard serves the same file; one
+ * without a dashboard gets Telegram's letter tile rather than a request to
+ * recalfy.com every time its owner types.
+ */
+function thumbnail() {
+  const configured = process.env.WEB_URL?.trim().replace(/\/+$/, '');
+  const url = configured ? `${configured}/inline.png` : isSelfHosted() ? null : HOSTED_THUMBNAIL;
+  if (!url) return {};
+  return { thumbnail_url: url, thumbnail_width: THUMBNAIL_SIZE, thumbnail_height: THUMBNAIL_SIZE };
+}
 
 /**
  * The two settings that keep one person's memory out of another person's
@@ -58,9 +71,7 @@ export function toInlineResults(memories: Memory[]): InlineQueryResultArticle[] 
     // not be what decides whether a password is on screen.
     title: truncate(maskSecret(memory.text), TITLE_LIMIT),
     description: memory.group,
-    thumbnail_url: THUMBNAIL,
-    thumbnail_width: THUMBNAIL_SIZE,
-    thumbnail_height: THUMBNAIL_SIZE,
+    ...thumbnail(),
     input_message_content: {
       // Sent verbatim, with no parse_mode: a fact containing an underscore or
       // an asterisk would otherwise fail to send, or send half-formatted.
@@ -92,24 +103,42 @@ export const INLINE_REFUSALS = {
   unlinked: {
     text: 'Connect your account to search your memory here',
     start_parameter: 'inline',
-    /** What the bot says when the button is tapped and the chat opens. */
-    reply:
-      "This chat isn't connected yet, so there is nothing to search.\n\n" +
-      'Sign in at recalfy.com and press "Connect Telegram", then try typing @recalfy_bot in any chat again.',
+    /**
+     * What the bot says when the button is tapped and the chat opens. Getters,
+     * so the link is read from the environment when it is said.
+     */
+    get reply() {
+      const site = siteLink();
+      if (!site) return "This is a private Recalfy bot, and this Telegram account isn't its owner.";
+      return (
+        "This chat isn't connected yet, so there is nothing to search.\n\n" +
+        `Sign in at ${site} and press "Connect Telegram", then try searching from any chat again.`
+      );
+    },
   },
   lapsed: {
     text: 'Your plan has expired — tap to fix it',
     start_parameter: 'inline-plan',
-    reply:
-      'Your plan has expired, so inline results are empty for now.\n\n' +
-      'recalfy.com/dashboard/billing has the details. Nothing has been deleted — your memory is waiting.',
+    get reply() {
+      return (
+        'Your plan has expired, so inline results are empty for now.\n\n' +
+        `${siteLink('/dashboard/billing') ?? 'The billing page'} has the details. ` +
+        'Nothing has been deleted — your memory is waiting.'
+      );
+    },
   },
   off: {
     text: 'Inline results are turned off for your account',
     start_parameter: 'inline-off',
-    reply:
-      'Inline results are switched off, so @recalfy_bot returns nothing in other chats.\n\n' +
-      'Turn them back on at recalfy.com/dashboard/settings, under "Inline results".',
+    get reply() {
+      const settings = siteLink('/dashboard/settings');
+      return (
+        'Inline results are switched off, so searching me from other chats returns nothing.\n\n' +
+        (settings
+          ? `Turn them back on at ${settings}, under "Inline results".`
+          : 'They were switched off from the dashboard, and that is where they come back on.')
+      );
+    },
   },
 } as const;
 

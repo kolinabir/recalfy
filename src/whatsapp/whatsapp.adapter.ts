@@ -5,6 +5,7 @@ import { LinkStore } from '../channels/link.store';
 import { formatPairingCode } from '../channels/pairing-code';
 import { strangerWelcome } from '../channels/stranger';
 import { ENV, Env } from '../config/env';
+import { siteLink } from '../config/site';
 import { Address, Channel, Handle } from '../mongo/collections';
 import { GraphClient } from './graph.client';
 import { ParsedMessage, WhatsAppWebhook, parseMessages, unsupportedTypes } from './inbound';
@@ -183,7 +184,7 @@ export class WhatsAppAdapter extends ChannelAdapter implements OnModuleInit {
       await this.say(
         address.handle,
         `Your pairing code is\n\n${formatPairingCode(code)}\n\n` +
-          `Type it into the "Connect manually" box on recalfy.com. It lasts ${PAIRING_TTL_MS / 60_000} minutes.\n\n` +
+          `Type it into the "Connect manually" box on ${siteLink() ?? 'the website'}. It lasts ${PAIRING_TTL_MS / 60_000} minutes.\n\n` +
           'Nobody legitimate will ever ask you for this code — if someone did, ignore them.',
       );
       return;
@@ -222,7 +223,7 @@ export class WhatsAppAdapter extends ChannelAdapter implements OnModuleInit {
         return;
       case 'invalid':
         await reply(
-          'That link has expired or was already used. Open recalfy.com and press "Connect WhatsApp" for a fresh one.',
+          `That link has expired or was already used. Open ${siteLink() ?? 'the website'} and press "Connect WhatsApp" for a fresh one.`,
         );
     }
   }

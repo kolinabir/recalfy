@@ -1,0 +1,34 @@
+{
+  "name": "recalfy",
+  "version": "0.1.0",
+  "description": "Set up and run your own Recalfy — a personal AI memory that lives in Telegram",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "bin": {
+    "recalfy": "bin/recalfy.mjs"
+  },
+  "files": [
+    "bin",
+    "lib"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kolinabir/recalfy.git",
+    "directory": "cli"
+  },
+  "homepage": "https://recalfy.com",
+  "keywords": [
+    "telegram",
+    "bot",
+    "memory",
+    "ai",
+    "self-hosted",
+    "reminders"
+  ],
+  "dependencies": {
+    "@clack/prompts": "^1.8.1"
+  }
+}

@@ -13,3 +13,5 @@ backups/
 .agents
 .claude
 video
+
+deploy/deploy.env

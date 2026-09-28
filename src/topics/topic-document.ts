@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 
+import { siteLink } from '../config/site';
 import { Memory } from '../memory/memory.types';
 import { maskSecret } from '../telegram/mask-secret';
 
@@ -16,8 +17,10 @@ import { maskSecret } from '../telegram/mask-secret';
 /** Telegram's limit is 4096; the margin covers the footer and a long group. */
 const MAX_BODY = 3800;
 
-const OVERFLOW = (n: number) =>
-  `\n\n…and ${n} older — recalfy.com/dashboard/memories`;
+const OVERFLOW = (n: number) => {
+  const where = siteLink('/dashboard/memories');
+  return where ? `\n\n…and ${n} older — ${where}` : `\n\n…and ${n} older — ask me for them`;
+};
 
 export function renderTopic(group: string, facts: readonly Memory[], now: Date): string {
   const header = `${group}\n`;

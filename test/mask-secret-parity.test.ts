@@ -20,7 +20,7 @@ const CORPUS = [
   "The WiFi password at Kolin's office is Th!s_is*complex.",
   "The WiFi network at Kolin's studio is duckpond42.",
   "Kolin's spare key is with the neighbour in flat 4B (blue door).",
-  'Netflix password is hunter2 and the login is kolin@viralspot.ai',
+  'Netflix password is hunter2 and the login is someone@example.com',
   'Wifi password: hunter2',
   'The bank PIN is 4417.',
   'The recovery codes are 8812-4410, 9930-1123.',

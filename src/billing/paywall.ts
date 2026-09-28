@@ -1,21 +1,25 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { Outbox } from '../channels/outbox';
+import { siteLink } from '../config/site';
 import { Channel, UserId } from '../mongo/collections';
 import { Limits } from './entitlements';
 import { Subscriptions } from './subscriptions';
 
-const LAPSED_NOTICE =
+// Functions, not constants: the link is read from the environment, and only a
+// hosted install ever reaches these — a self-hosted one has no plans.
+const billing = () => siteLink('/dashboard/billing') ?? 'the billing page';
+
+const lapsedNotice = () =>
   "Your Recalfy plan isn't active, so I've stopped picking up messages.\n\n" +
   'Nothing has been deleted — every fact, reminder and receipt is exactly ' +
   'where you left it, and it stays that way.\n\n' +
-  'Start a plan at recalfy.com/dashboard/billing and I carry on mid-sentence.';
+  `Start a plan at ${billing()} and I carry on mid-sentence.`;
 
-const WRONG_CHANNEL_NOTICE =
+const wrongChannelNotice = () =>
   "Your plan covers Telegram, so that's where I'm listening.\n\n" +
   'Everything you told me is still there — talk to me on Telegram and nothing ' +
-  'is lost. Archive adds WhatsApp alongside it, sharing one memory: ' +
-  'recalfy.com/dashboard/billing';
+  `is lost. Archive adds WhatsApp alongside it, sharing one memory: ${billing()}`;
 
 /**
  * The gate between a linked account and everything that costs money — the
@@ -66,12 +70,12 @@ export class Paywall {
     const limits = await this.subscriptions.limitsFor(userId);
 
     if (!limits) {
-      await this.notice(userId, LAPSED_NOTICE, 'no active plan');
+      await this.notice(userId, lapsedNotice(), 'no active plan');
       return null;
     }
 
     if (!limits.channels.includes(channel)) {
-      await this.notice(userId, WRONG_CHANNEL_NOTICE, `${channel} not on their plan`);
+      await this.notice(userId, wrongChannelNotice(), `${channel} not on their plan`);
       return null;
     }
 

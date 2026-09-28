@@ -16,9 +16,13 @@
 # without needing whoever ran it to still be watching.
 set -euo pipefail
 
-HOST="${RECALFY_HOST:-knkolin9@136.66.250.175}"
+# Where recalfy.com runs lives outside the repo, in deploy/deploy.env
+# (gitignored): RECALFY_HOST, RECALFY_APP_DIR and optionally RECALFY_SSH_KEY.
+# shellcheck source=/dev/null
+[ -f "$(dirname "$0")/deploy.env" ] && . "$(dirname "$0")/deploy.env"
+HOST="${RECALFY_HOST:?Set RECALFY_HOST in deploy/deploy.env, e.g. user@203.0.113.7}"
 KEY="${RECALFY_SSH_KEY:-$HOME/.ssh/gcp_recalfy}"
-APP="${RECALFY_APP_DIR:-/home/knkolin9/recalfy}"
+APP="${RECALFY_APP_DIR:?Set RECALFY_APP_DIR in deploy/deploy.env}"
 KEEP="${RECALFY_KEEP_RELEASES:-5}"
 # A cold release is slow: its files are not in page cache yet, and this box has
 # 955MB of RAM and a swapfile. A deploy on 25 Aug 2026 was rolled back after

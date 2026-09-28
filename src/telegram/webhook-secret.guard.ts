@@ -17,6 +17,9 @@ export class WebhookSecretGuard implements CanActivate {
   constructor(@Inject(ENV) private readonly env: Env) {}
 
   canActivate(context: ExecutionContext): boolean {
+    // Polling installs never set a secret, and nothing legitimate posts here.
+    if (this.env.telegramMode === 'polling') return false;
+
     const request = context.switchToHttp().getRequest<Request>();
     const presented = request.header(SECRET_TOKEN_HEADER);
 

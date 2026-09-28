@@ -23,6 +23,48 @@ export class Env {
   }
 
   /**
+   * `hosted` is recalfy.com: billing, the website's linking flow, a webhook.
+   * `selfhost` is one person's own install: no billing, the owner linked at
+   * boot, and long polling so no domain is needed.
+   *
+   * An explicit switch rather than something inferred from missing Paddle
+   * variables. Inferring it would mean a production box that lost its billing
+   * config quietly became free for everyone.
+   */
+  get selfHosted(): boolean {
+    const mode = (this.config.get<string>('RECALFY_MODE') ?? 'hosted').trim().toLowerCase();
+    if (mode !== 'hosted' && mode !== 'selfhost') {
+      throw new Error(`RECALFY_MODE must be "hosted" or "selfhost", got "${mode}"`);
+    }
+    return mode === 'selfhost';
+  }
+
+  /**
+   * The Telegram user id that owns a self-hosted install. Linked to an
+   * account at boot, so the owner never goes through the website handshake.
+   */
+  get ownerTelegramId(): string | undefined {
+    const value = this.config.get<string>('OWNER_TELEGRAM_ID')?.trim();
+    if (!value) return undefined;
+    if (!/^\d+$/.test(value)) throw new Error('OWNER_TELEGRAM_ID must be a numeric Telegram user id');
+    return value;
+  }
+
+  /**
+   * How updates arrive. Polling needs no public URL, which is what makes a
+   * self-hosted install work behind a home router; the webhook is what
+   * recalfy.com runs, fronted by Caddy.
+   */
+  get telegramMode(): 'polling' | 'webhook' {
+    const fallback = this.selfHosted ? 'polling' : 'webhook';
+    const mode = (this.config.get<string>('TELEGRAM_MODE') || fallback).trim().toLowerCase();
+    if (mode !== 'polling' && mode !== 'webhook') {
+      throw new Error(`TELEGRAM_MODE must be "polling" or "webhook", got "${mode}"`);
+    }
+    return mode;
+  }
+
+  /**
    * Show the reply while it is being written (`sendMessageDraft`), and draw
    * buttons under messages that offer one.
    *
@@ -105,13 +147,24 @@ export class Env {
     return this.config.get<string>('GRAPH_API_VERSION') ?? 'v23.0';
   }
 
+  /**
+   * Any OpenAI-compatible endpoint: OpenAI, OpenRouter, Z.ai, Ollama. The
+   * `LLM_*` names are the ones to use; `ZAPI_KEY`, `ZAI_BASE_URL` and
+   * `GLM_MODEL` are what recalfy.com was configured with first, still read so
+   * that box keeps booting.
+   */
   get glmApiKey(): string {
-    return this.required('ZAPI_KEY');
+    const key = this.config.get<string>('LLM_API_KEY') || this.config.get<string>('ZAPI_KEY');
+    if (!key) throw new Error('Missing required environment variable: LLM_API_KEY');
+    return key;
   }
 
-  /** Z.ai is OpenAI-wire-compatible, so the official `openai` SDK talks to it. */
   get glmBaseUrl(): string {
-    return this.config.get<string>('ZAI_BASE_URL') ?? 'https://api.z.ai/api/paas/v4';
+    return (
+      this.config.get<string>('LLM_BASE_URL') ||
+      this.config.get<string>('ZAI_BASE_URL') ||
+      'https://api.z.ai/api/paas/v4'
+    );
   }
 
   /**
@@ -121,7 +174,7 @@ export class Env {
    * Terminal-Bench 2.1 per Z.ai's docs).
    */
   get glmModel(): string {
-    return this.config.get<string>('GLM_MODEL') ?? 'glm-5.2';
+    return this.config.get<string>('LLM_MODEL') || this.config.get<string>('GLM_MODEL') || 'glm-5.2';
   }
 
   /**
@@ -159,6 +212,15 @@ export class Env {
 
   get port(): number {
     return Number(this.config.get<string>('PORT') ?? 3000);
+  }
+
+  /**
+   * Loopback by default: on recalfy.com Caddy is the only thing that should
+   * reach the process. A container sets 0.0.0.0 so its healthcheck and the
+   * optional dashboard can.
+   */
+  get host(): string {
+    return this.config.get<string>('HOST') || '127.0.0.1';
   }
 
   get defaultTimezone(): string {

@@ -14,9 +14,9 @@ async function bootstrap(): Promise<void> {
   app.enableShutdownHooks();
 
   const env = app.get<Env>(ENV);
-  await app.listen(env.port, '127.0.0.1');
+  await app.listen(env.port, env.host);
 
-  new Logger('Bootstrap').log(`Listening on 127.0.0.1:${env.port} — Caddy fronts this`);
+  new Logger('Bootstrap').log(`Listening on ${env.host}:${env.port}`);
 }
 
 void bootstrap();

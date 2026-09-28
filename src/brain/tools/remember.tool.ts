@@ -13,6 +13,7 @@ import {
   requireString,
 } from './args';
 import { Tool, ToolContext } from './tool';
+import { siteLink } from '../../config/site';
 
 @Injectable()
 export class RememberTool extends Tool {
@@ -81,7 +82,7 @@ export class RememberTool extends Tool {
           `NOT STORED — memory is full at ${error.cap} facts on their plan (holding ${error.held}). ` +
           'Tell them plainly that nothing was saved, and that they can either ask you to ' +
           'forget things they no longer need, or move to Archive for unlimited memory at ' +
-          'recalfy.com/dashboard/billing. Do not say it was saved.'
+          `${siteLink('/dashboard/billing')}. Do not say it was saved.`
         );
       }
       throw error;

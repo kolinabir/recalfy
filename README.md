@@ -1,12 +1,55 @@
 # Recalfy
 
-A personal AI assistant that lives in Telegram. You tell it things, it remembers
+A personal AI memory that lives in Telegram. You tell it things, it remembers
 them. You ask it things, it answers. You ask it to remind you, it does — at the
 right time, without you being in the chat.
 
-One NestJS process. MongoDB for storage — Docker locally, Atlas in production.
-Telegram is the UI: no frontend, no auth, no sessions — the Telegram user id is
-the identity.
+Use it hosted at [recalfy.com](https://recalfy.com), or run your own copy for
+free with the command below.
+
+## Run your own
+
+You need [Docker](https://docker.com/products/docker-desktop) and
+[Node.js 20+](https://nodejs.org). Then:
+
+```bash
+npx recalfy
+```
+
+The setup asks for two things and does the rest:
+
+1. **A bot token.** Message [@BotFather](https://t.me/BotFather), send
+   `/newbot`, paste what it gives you.
+2. **An AI key.** OpenAI, OpenRouter, Z.ai, any OpenAI-compatible API, or
+   [Ollama](https://ollama.com) on your own machine with no key at all.
+
+Then it asks you to send your new bot a message, which is how it learns who
+you are. There's no domain, HTTPS certificate or port forwarding to set up. It
+works on a laptop, a Raspberry Pi or a $4 VPS.
+
+On a fresh Linux server, this installs Docker and Node first:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kolinabir/recalfy/main/install.sh | sh
+```
+
+Afterwards:
+
+| | |
+|---|---|
+| `npx recalfy status` | is it running? |
+| `npx recalfy logs` | what it is doing |
+| `npx recalfy update` | newest version |
+| `npx recalfy backup` / `restore <file>` | a copy of the whole database |
+| `npx recalfy export` | your memory as Markdown (`--json` for everything) |
+| `npx recalfy stop` | turn it off, keeping everything |
+
+More in [SELF_HOSTING.md](SELF_HOSTING.md).
+
+## How it works
+
+One NestJS process. MongoDB for storage. Telegram is the UI — the Telegram
+user id is the identity.
 
 Design rationale, trade-offs and the cost model live in [DESIGN.md](DESIGN.md).
 The short version: **there are no embeddings and no vector index.** The whole
@@ -53,7 +96,9 @@ calling it), `renderMemoryDocument` and `buildSystemPrompt` (both pure — data
 in, prompt out), and `resolveWhen` (the guard that stops a model misparse from
 becoming a silently wrong reminder).
 
-## Running locally
+## Developing
+
+### Running locally
 
 MongoDB runs in Docker and ngrok gives Telegram a public HTTPS URL to reach
 your machine. Nothing but `MONGODB_URI` and `PUBLIC_URL` differs from
@@ -188,3 +233,9 @@ npm run typecheck   # tsc --noEmit
 
 `npm run chat` runs against a scratch user id by default, so experimenting
 never touches real memories.
+
+## License
+
+[AGPL-3.0](LICENSE). You can run it, change it and share it. If you offer a
+modified version to other people as a service, you have to publish your
+changes under the same license.

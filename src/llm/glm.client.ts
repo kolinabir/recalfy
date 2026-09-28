@@ -155,14 +155,30 @@ export class GlmClient {
       model: this.model,
       messages: turns.map(toOpenAiMessage),
       tools: tools.map(toOpenAiTool),
-      temperature: 0.3,
-      // Z.ai extension, not in the OpenAI schema. GLM reasoning models
-      // otherwise spend their whole turn in `reasoning_content` and return an
-      // empty `content` — and this assistant has nothing to reason about that
-      // is worth doubling the latency for.
-      ...({ thinking: { type: 'disabled' } } as Record<string, unknown>),
+      ...requestExtras(String(this.client.baseURL), this.model),
     };
   }
+}
+
+/**
+ * The parameters that depend on who is on the other end.
+ *
+ * `thinking` is a Z.ai extension: GLM reasoning models otherwise spend the
+ * whole turn in `reasoning_content` and return an empty `content`, and this
+ * assistant has nothing to reason about worth doubling the latency for. OpenAI
+ * rejects unknown fields outright, so it is only sent to Z.ai.
+ *
+ * `temperature` is refused by OpenAI's reasoning models (gpt-5, o-series) at
+ * anything but the default, so those get none.
+ */
+export function requestExtras(baseUrl: string, model: string): Record<string, unknown> {
+  const zai = /z\.ai|bigmodel\.cn/.test(baseUrl);
+  const openAiReasoning = /api\.openai\.com/.test(baseUrl) && /^(gpt-5|o\d)/.test(model);
+
+  return {
+    ...(!openAiReasoning && { temperature: 0.3 }),
+    ...(zai && { thinking: { type: 'disabled' } }),
+  };
 }
 
 /** The free GLM tiers cap requests per minute, and a retry would not help. */

@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
+import { siteLink } from '../../config/site';
 import { JsonSchema } from '../../llm/llm.types';
 import { MemoryStore } from '../../memory/memory.store';
 import { Tool, ToolContext } from './tool';
-
-/** Where the download lives. Same host the linking copy already names. */
-const EXPORT_PAGE = 'recalfy.com/dashboard/settings';
 
 /**
  * Hands over the whole memory.
@@ -34,8 +32,20 @@ export class ExportMemoryTool extends Tool {
     const count = await this.memories.count(context.userId, context.now);
     const noun = count === 1 ? 'fact' : 'facts';
 
+    // A self-hosted install usually has no website, but it does have a
+    // terminal: the same two formats come out of the `recalfy` command.
+    const page = siteLink('/dashboard/settings');
+    if (!page) {
+      return (
+        `Their memory holds ${count} ${noun}. This is a self-hosted install, so the export is ` +
+        'a command on the machine running it: `recalfy export` writes Markdown, and ' +
+        '`recalfy export --json` writes JSON with corrections and forgotten facts included. ' +
+        'Tell them the count and the command, and that the file is theirs to keep.'
+      );
+    }
+
     return (
-      `Their memory holds ${count} ${noun}. The export is on ${EXPORT_PAGE}, under "Your data", ` +
+      `Their memory holds ${count} ${noun}. The export is on ${page}, under "Your data", ` +
       'in two formats: Markdown — the same document you recite, grouped the same way — or ' +
       'JSON, which additionally carries corrections and the facts they asked you to forget. ' +
       'Both download the moment they press one; nothing is queued and nothing expires. ' +

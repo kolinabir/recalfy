@@ -343,6 +343,10 @@ export interface WebUserDoc {
    * all rather than an immediate re-link.
    */
   relinkLockedUntil?: Date;
+  /** Better Auth's own bookkeeping, also written by the self-hosted owner seed. */
+  emailVerified?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
   /**
    * Where the Telegram link lived before channels existed. Read by the
    * migration in scripts/migrate-channels.ts and by nothing else.

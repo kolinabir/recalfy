@@ -1,9 +1,9 @@
 {
   "name": "recalfy",
   "version": "0.1.0",
-  "description": "Recalfy \u2014 a personal AI memory assistant that lives in Telegram",
+  "description": "Recalfy — a personal AI memory assistant that lives in Telegram",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "AGPL-3.0-only",
   "scripts": {
     "build": "nest build",
     "start": "nest start",

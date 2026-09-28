@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { ENV, Env } from '../config/env';
 import { UserId } from '../mongo/collections';
-import { ACCESS_STATUSES, Limits, limitsForPrice } from './entitlements';
+import { ACCESS_STATUSES, LIMITS, Limits, limitsForPrice } from './entitlements';
 import { MongoService } from '../mongo/mongo.service';
 
 /**
@@ -43,6 +43,9 @@ export class Subscriptions {
 
   /** What this account may do, or `null` when it has no live plan at all. */
   async limitsFor(userId: UserId): Promise<Limits | null> {
+    // A self-hosted install has no plans and no Paddle. Everything, always.
+    if (this.env.selfHosted) return LIMITS.archive;
+
     const hit = this.granted.get(userId);
     if (hit && hit.until > Date.now()) return hit.limits;
 

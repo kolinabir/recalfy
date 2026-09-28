@@ -1,4 +1,11 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnApplicationBootstrap,
+  OnApplicationShutdown,
+  OnModuleInit,
+} from '@nestjs/common';
 import { Bot, InlineKeyboard, type Context } from 'grammy';
 import type { Update } from 'grammy/types';
 
@@ -13,6 +20,7 @@ import {
 import { LinkStore } from '../channels/link.store';
 import { formatPairingCode } from '../channels/pairing-code';
 import { ENV, Env } from '../config/env';
+import { siteLink } from '../config/site';
 import { MemoryStore } from '../memory/memory.store';
 import { searchMemories } from '../memory/memory-search';
 import { UserStore } from '../memory/user.store';
@@ -45,12 +53,22 @@ const MAX_MESSAGE_LENGTH = 4000;
  */
 const REDACT_AFTER_MS = 60_000;
 
+/** Everything the bot handles. `npm run webhook:set` registers the same list. */
+export const ALLOWED_UPDATES = ['message', 'inline_query', 'callback_query'] as const;
+
+/** Telegram holds a long poll open this long when there is nothing to say. */
+const POLL_TIMEOUT_S = 30;
+const POLL_RETRY_MS = 5_000;
+
 /**
  * grammY, wrapped. Used raw rather than through a decorator module: those add
  * interface surface while hiding nothing, and this is the whole of the glue.
  */
 @Injectable()
-export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
+export class TelegramAdapter
+  extends ChannelAdapter
+  implements OnModuleInit, OnApplicationBootstrap, OnApplicationShutdown
+{
   readonly channel: Channel = 'telegram';
   protected readonly maxMessageLength = MAX_MESSAGE_LENGTH;
 
@@ -61,6 +79,8 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
   private readonly handlers: InboundHandler[] = [];
   private readonly actionHandlers: ActionHandler[] = [];
   private readonly buttons: boolean;
+  private readonly polls: boolean;
+  private readonly stopPolling = new AbortController();
 
   constructor(
     @Inject(ENV) env: Env,
@@ -73,6 +93,7 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
     this.bot = new Bot(env.botToken);
     this.streams = env.telegramStreaming;
     this.buttons = env.telegramButtons;
+    this.polls = env.telegramMode === 'polling';
   }
 
   async onModuleInit(): Promise<void> {
@@ -114,7 +135,7 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
       const code = await this.links.issuePairingCode(address, PAIRING_TTL_MS);
       await ctx.reply(
         `Your pairing code is\n\n${formatPairingCode(code)}\n\n` +
-          `Type it into the "Connect manually" box on recalfy.com. It lasts ${PAIRING_TTL_MS / 60_000} minutes.\n\n` +
+          `Type it into the "Connect manually" box on ${siteLink() ?? 'the website'}. It lasts ${PAIRING_TTL_MS / 60_000} minutes.\n\n` +
           'Nobody legitimate will ever ask you for this code — if someone did, ignore them.',
       );
     });
@@ -270,6 +291,63 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
   }
 
   /**
+   * Started only once every module is up, so the owner account exists and the
+   * handlers are registered before the first update is read.
+   */
+  onApplicationBootstrap(): void {
+    if (!this.polls) return;
+    void this.poll();
+  }
+
+  onApplicationShutdown(): void {
+    this.stopPolling.abort();
+  }
+
+  /**
+   * Long polling, for installs with no public URL.
+   *
+   * A loop rather than grammY's `bot.start()`, which handles one update at a
+   * time: a model call takes seconds, and every message behind it would wait.
+   * Each update is dispatched without being awaited — the same treatment the
+   * webhook controller gives them — and the per-user turn queue downstream is
+   * what keeps one person's messages in order.
+   */
+  private async poll(): Promise<void> {
+    // A webhook left over from another install makes getUpdates fail with 409.
+    await this.bot.api.deleteWebhook().catch(() => {});
+    this.logger.log('Polling Telegram for updates — no public URL needed');
+
+    let offset = 0;
+    const signal = this.stopPolling.signal;
+
+    while (!signal.aborted) {
+      try {
+        const updates = await this.bot.api.getUpdates(
+          { offset, timeout: POLL_TIMEOUT_S, allowed_updates: [...ALLOWED_UPDATES] },
+          // grammY types its signal against the abort-controller polyfill;
+          // the platform's own is what it actually uses at runtime.
+          signal as unknown as Parameters<Bot['api']['getUpdates']>[1],
+        );
+        for (const update of updates) {
+          offset = update.update_id + 1;
+          void this.dispatch(update).catch((error: unknown) =>
+            this.logger.error(
+              `Failed handling update ${update.update_id}: ${error instanceof Error ? error.message : error}`,
+            ),
+          );
+        }
+      } catch (error) {
+        if (signal.aborted) return;
+        const message = error instanceof Error ? error.message : String(error);
+        // 409 is the one worth spelling out: two installs sharing a token.
+        const hint = message.includes('409') ? ' — is another copy of this bot running with the same token?' : '';
+        this.logger.warn(`getUpdates failed: ${message}${hint}`);
+        await new Promise((resolve) => setTimeout(resolve, POLL_RETRY_MS));
+      }
+    }
+  }
+
+  /**
    * An empty list plus a button into the bot. Carries the same privacy flags
    * as a real answer: an empty result is still an answer about a specific
    * person, and caching "no results" across users would be its own small leak.
@@ -310,7 +388,7 @@ export class TelegramAdapter extends ChannelAdapter implements OnModuleInit {
         return;
       case 'invalid':
         await ctx.reply(
-          'That link has expired or was already used. Open recalfy.com and press "Connect Telegram" for a fresh one.',
+          `That link has expired or was already used. Open ${siteLink() ?? 'the website'} and press "Connect Telegram" for a fresh one.`,
         );
     }
   }

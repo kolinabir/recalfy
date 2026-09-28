@@ -5,6 +5,7 @@ import { UserStore } from '../../memory/user.store';
 import { describeQuietHours } from '../../reminders/quiet-hours';
 import { BadArguments, asObject, optionalString } from './args';
 import { Tool, ToolContext } from './tool';
+import { siteLink } from '../../config/site';
 
 @Injectable()
 export class SetQuietHoursTool extends Tool {
@@ -36,7 +37,7 @@ export class SetQuietHoursTool extends Tool {
     if (!context.limits.quietHours) {
       return (
         'NOT SET — quiet hours are an Archive feature and their plan does not include ' +
-        'it. Tell them plainly, and mention recalfy.com/dashboard/billing. Do not ' +
+        `it. Tell them plainly, and mention ${siteLink('/dashboard/billing')}. Do not ` +
         'pretend it is set.'
       );
     }

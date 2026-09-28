@@ -1,0 +1,16 @@
+node_modules
+dist
+web
+video
+cli
+backups
+deploy
+test
+scripts
+.env
+.env.*
+.git
+.claude
+.agents
+*.log
+.DS_Store

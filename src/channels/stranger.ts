@@ -1,3 +1,4 @@
+import { siteLink } from '../config/site';
 import { Channel } from '../mongo/collections';
 
 /**
@@ -28,10 +29,18 @@ const CONNECT_BUTTON: Record<Channel, string> = {
 };
 
 export function strangerWelcome(channel: Channel): string {
+  const login = siteLink('/login');
+
+  // A self-hosted bot with no website belongs to one person, and there is no
+  // door to point anyone else at. Said once, plainly, with nothing to try.
+  if (!login) {
+    return "I'm a private Recalfy bot, and I only talk to the person who runs me.";
+  }
+
   return [
     OPENING,
     'This chat is not connected to an account yet:',
-    `1. Sign in at recalfy.com/login\n2. Press "${CONNECT_BUTTON[channel]}"`,
+    `1. Sign in at ${login}\n2. Press "${CONNECT_BUTTON[channel]}"`,
     MANUAL_FALLBACK[channel],
     'Seven days free, nothing to install.',
   ].join('\n\n');
