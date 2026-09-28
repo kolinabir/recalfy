@@ -237,6 +237,12 @@ npm run typecheck   # tsc --noEmit
 `npm run chat` runs against a scratch user id by default, so experimenting
 never touches real memories.
 
+## Contributing
+
+Issues and pull requests are welcome. Start with
+[CONTRIBUTING.md](CONTRIBUTING.md). Security problems go through
+[SECURITY.md](SECURITY.md) instead.
+
 ## License
 
 [AGPL-3.0](LICENSE). You can run it, change it and share it. If you offer a

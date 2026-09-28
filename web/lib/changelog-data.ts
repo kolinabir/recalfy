@@ -35,17 +35,6 @@ export const CHANGE_KINDS: Record<ChangeKind, string> = {
 
 const REAL: ChangeEntry[] = [
   {
-    date: "2026-09-28",
-    title: "Recalfy is open source",
-    body: "The whole bot is now public under the AGPL. Run your own copy for free with one command — the hosted version here stays exactly as it is.",
-    changes: [
-      {
-        kind: "new",
-        text: "npx recalfy sets up your own copy: paste a bot token and an AI key, message your bot, done. Works with OpenAI, OpenRouter, Z.ai or Ollama on your own machine.",
-      },
-    ],
-  },
-  {
     date: "2026-08-20",
     title: "Forward it instead of retyping it",
     body: "Somebody sends you the wifi password, the gate code, the time they're arriving. Forward that message to Recalfy and it's filed under their name, not yours.",

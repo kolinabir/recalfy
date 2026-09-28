@@ -1,0 +1,32 @@
+name: Bug
+description: Something the bot or the setup did wrong
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you said or ran, what it did, and what you expected instead. Remove anything private.
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - Self-hosted (npx recalfy)
+        - Self-hosted (docker compose by hand)
+        - recalfy.com
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      description: Provider and model, e.g. "OpenAI gpt-5-mini" or "Ollama qwen3:8b"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: "`npx recalfy logs`, trimmed to the part around the problem. Check for tokens and keys before pasting."
+      render: text
