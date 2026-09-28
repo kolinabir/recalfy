@@ -12,16 +12,26 @@ export function readEnv(path) {
 }
 
 /**
+ * Single quotes are the one form Docker Compose reads literally — no `$`
+ * interpolation, no `#` comment — which is what an API key needs. Plain values
+ * stay bare so the file is still pleasant to edit.
+ */
+function quote(value) {
+  if (/^[A-Za-z0-9_./:@+,=-]*$/.test(value)) return value;
+  return `'${value.replace(/'/g, '')}'`;
+}
+
+/**
  * Writes the .env with a short header, readable only by its owner: it holds
  * the bot token and the model key, and nothing else on the machine needs them.
  */
 export function writeEnv(path, values) {
   const lines = [
-    '# Written by `recalfy setup`. Edit freely, then run `recalfy restart`.',
+    '# Written by `npx recalfy`. Edit freely, then run `npx recalfy restart`.',
     '',
     ...Object.entries(values)
       .filter(([, value]) => value !== undefined && value !== '')
-      .map(([key, value]) => `${key}=${value}`),
+      .map(([key, value]) => `${key}=${quote(String(value))}`),
     '',
   ];
   writeFileSync(path, lines.join('\n'), { mode: 0o600 });

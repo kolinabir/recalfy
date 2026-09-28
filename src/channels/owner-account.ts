@@ -17,7 +17,8 @@ const DEFAULT_OWNER_EMAIL = 'owner@recalfy.local';
  * sees exactly what it would have seen after a real link.
  *
  * Idempotent: it runs on every start, finds the account it made last time, and
- * only moves the link if the owner id in `.env` has changed.
+ * only moves the link if the owner id in `.env` has changed — onto the same
+ * account, so the memory moves with it.
  */
 @Injectable()
 export class OwnerAccount implements OnModuleInit {
@@ -35,26 +36,35 @@ export class OwnerAccount implements OnModuleInit {
     if (!handle) {
       this.logger.warn(
         'Self-hosted with no OWNER_TELEGRAM_ID — nobody is linked, so the bot will answer no one. ' +
-          'Run `recalfy setup` again, or set it in .env.',
+          'Run `npx recalfy` again, or set it in .env.',
       );
       return;
     }
 
+    // Whoever holds this handle already is the owner's account, and stays so.
+    // Every memory is filed under that account's id, so the one thing this
+    // must never do is make a second account and move the link to it — that
+    // would leave the whole memory behind, attached to nobody.
+    const current = await this.mongo.webUsers.findOne(
+      { 'channels.telegram.handle': handle },
+      { projection: { _id: 1 } },
+    );
+    if (current) {
+      this.logger.log(`Owner account ready — Telegram ${handle} is linked`);
+      return;
+    }
+
+    // First boot, or the owner id in .env changed to a different Telegram
+    // account. Either way the link goes on the one owner account, found by
+    // its email, so a changed id carries the memory over rather than
+    // starting a new one.
     const email = process.env.OWNER_EMAIL?.trim() || DEFAULT_OWNER_EMAIL;
     const now = new Date();
-
-    // Someone else holding this handle can only be an earlier owner account
-    // with a different email. Unlinked first, or the unique index refuses.
-    await this.mongo.webUsers.updateMany(
-      { 'channels.telegram.handle': handle, email: { $ne: email } },
-      { $unset: { 'channels.telegram': '' } },
-    );
-
-    // The shape Better Auth writes, so the dashboard can adopt this account
-    // later if the owner turns it on and signs in with the same email.
     await this.mongo.webUsers.updateOne(
       { email },
       {
+        // The shape Better Auth writes, so the dashboard can adopt this
+        // account later if the owner signs in with the same email.
         $setOnInsert: { name: 'Owner', emailVerified: false, createdAt: now },
         $set: { 'channels.telegram': { handle, linkedAt: now }, updatedAt: now },
       },

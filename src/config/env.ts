@@ -18,6 +18,14 @@ export class Env {
     return this.required('TELEGRAM_BOT_TOKEN');
   }
 
+  /**
+   * A self-run Telegram Bot API server, for the few who want one (bigger file
+   * limits, or no traffic to api.telegram.org). Unset means Telegram's own.
+   */
+  get telegramApiRoot(): string | undefined {
+    return this.config.get<string>('TELEGRAM_API_ROOT')?.trim().replace(/\/+$/, '') || undefined;
+  }
+
   get webhookSecret(): string {
     return this.required('TELEGRAM_WEBHOOK_SECRET');
   }

@@ -3,7 +3,7 @@
 #
 # By hand, from a checkout:
 #   cp .env.example .env   # fill in the two keys
-#   docker compose up -d --build
+#   docker compose -f compose.selfhost.yml up -d --build
 
 name: recalfy
 

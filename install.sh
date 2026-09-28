@@ -57,10 +57,10 @@ if ! node_ok; then
   if [ "$OS" = "Linux" ]; then
     say "Installing Node.js 22"
     if have apt-get; then
-      curl -fsSL https://deb.nodesource.com/setup_22.x | $SUDO -E sh -
-      $SUDO apt-get install -y nodejs
+      curl -fsSL https://deb.nodesource.com/setup_22.x | $SUDO bash -
+      $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
     elif have dnf || have yum; then
-      curl -fsSL https://rpm.nodesource.com/setup_22.x | $SUDO sh -
+      curl -fsSL https://rpm.nodesource.com/setup_22.x | $SUDO bash -
       $SUDO "$(have dnf && echo dnf || echo yum)" install -y nodejs
     else
       fail "Install Node.js 20 or newer (https://nodejs.org), then run this again."

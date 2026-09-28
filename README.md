@@ -106,6 +106,9 @@ production.
 
 ### 1. Configure
 
+`.env.example` starts in `selfhost` mode. To work on the website's linking
+flow or billing, set `RECALFY_MODE=hosted`.
+
 ```bash
 cp .env.example .env
 openssl rand -hex 32   # → TELEGRAM_WEBHOOK_SECRET

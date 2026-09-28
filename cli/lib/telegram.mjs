@@ -1,10 +1,11 @@
 /**
  * The few Bot API calls setup needs, over plain fetch. The token never leaves
- * this machine except to api.telegram.org.
+ * this machine except to api.telegram.org (or TELEGRAM_API_ROOT, if set).
  */
 
 async function call(token, method, body = {}, { timeoutMs = 15_000 } = {}) {
-  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+  const root = (process.env.TELEGRAM_API_ROOT || 'https://api.telegram.org').replace(/\/+$/, '');
+  const response = await fetch(`${root}/bot${token}/${method}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),

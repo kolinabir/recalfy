@@ -80,6 +80,7 @@ export class TelegramAdapter
   private readonly actionHandlers: ActionHandler[] = [];
   private readonly buttons: boolean;
   private readonly polls: boolean;
+  private readonly selfHosted: boolean;
   private readonly stopPolling = new AbortController();
 
   constructor(
@@ -90,10 +91,12 @@ export class TelegramAdapter
     private readonly subscriptions: Subscriptions,
   ) {
     super();
-    this.bot = new Bot(env.botToken);
+    const apiRoot = env.telegramApiRoot;
+    this.bot = new Bot(env.botToken, apiRoot ? { client: { apiRoot } } : undefined);
     this.streams = env.telegramStreaming;
     this.buttons = env.telegramButtons;
     this.polls = env.telegramMode === 'polling';
+    this.selfHosted = env.selfHosted;
   }
 
   async onModuleInit(): Promise<void> {
@@ -116,6 +119,17 @@ export class TelegramAdapter
       }
 
       await this.completeLink(ctx, token);
+    });
+
+    // A self-hosted bot's owner is linked from .env at every boot. /unlink
+    // would lock them out until the next restart, and /code pairs with a
+    // website that usually does not exist — so both just say so.
+    this.bot.command(['code', 'unlink'], async (ctx, next) => {
+      if (!this.selfHosted) return next();
+      await ctx.reply(
+        'This is a self-hosted bot, so its owner is set in its settings file rather than by linking. ' +
+          'Change OWNER_TELEGRAM_ID there (or run `npx recalfy` again) to hand it to another account.',
+      );
     });
 
     this.bot.command('code', async (ctx) => {

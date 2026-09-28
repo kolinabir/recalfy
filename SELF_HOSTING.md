@@ -51,10 +51,11 @@ npx recalfy backup                 # → ~/.recalfy/backups/recalfy-<date>.archi
 npx recalfy restore <file>         # replaces the current database with the backup
 ```
 
-A nightly backup with cron:
+A nightly backup with cron. Cron runs with an almost empty `PATH`, so give it
+the full path to `npx`, which `which npx` prints:
 
 ```cron
-0 3 * * * npx --yes recalfy backup >/dev/null 2>&1
+0 3 * * * /usr/bin/npx --yes recalfy backup >/dev/null 2>&1
 ```
 
 `npx recalfy export` prints your memory as Markdown, and `--json` includes
@@ -95,7 +96,7 @@ If you'd rather use plain Docker Compose from a checkout:
 
 ```bash
 cp .env.example .env    # fill in TELEGRAM_BOT_TOKEN, OWNER_TELEGRAM_ID, LLM_*
-docker compose up -d --build
+docker compose -f compose.selfhost.yml up -d --build
 ```
 
 ## Troubleshooting

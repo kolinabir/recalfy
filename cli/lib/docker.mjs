@@ -97,6 +97,10 @@ export function composeCapture(rest, { input, binary = false } = {}) {
   });
 }
 
+export function imageIsLocal(image) {
+  return spawnSync('docker', ['image', 'inspect', image], { stdio: 'ignore' }).status === 0;
+}
+
 /** The bot container's health, as Docker reports it, or null if it is not running. */
 export function botHealth() {
   const result = composeCapture(['ps', '--format', '{{.Service}} {{.State}} {{.Health}}']);

@@ -3,10 +3,10 @@ import { existsSync, mkdirSync } from 'node:fs';
 
 import * as p from '@clack/prompts';
 
-import { botHealth, compose, dockerProblem, writeCompose } from './docker.mjs';
+import { botHealth, compose, dockerProblem, imageIsLocal, writeCompose } from './docker.mjs';
 import { readEnv, writeEnv } from './env-file.mjs';
 import { PROVIDERS, tryModel } from './llm.mjs';
-import { ENV_FILE, HOME } from './paths.mjs';
+import { COMPOSE_FILE, ENV_FILE, HOME, IMAGE } from './paths.mjs';
 import {
   dropWebhook,
   looksLikeToken,
@@ -50,6 +50,9 @@ export async function setup() {
       p.outro('Nothing changed. `npx recalfy status` shows how it is doing.');
       return;
     }
+    // The running bot is polling Telegram. Left up, it would swallow the
+    // owner's message below and both would fail with 409 Conflict.
+    if (existsSync(COMPOSE_FILE)) await compose(['stop', 'bot'], { quiet: true });
   }
 
   // --- Telegram ------------------------------------------------------------
@@ -61,7 +64,23 @@ export async function setup() {
 
   let token;
   let bot;
-  for (;;) {
+
+  // A re-run offers to keep the bot it already has rather than making the
+  // person dig the token out of @BotFather again.
+  if (previous.TELEGRAM_BOT_TOKEN) {
+    const known = await whoIsBot(previous.TELEGRAM_BOT_TOKEN);
+    if (known.bot) {
+      const keep = answer(
+        await p.confirm({ message: `Keep using @${known.bot.username}?`, initialValue: true }),
+      );
+      if (keep) {
+        token = previous.TELEGRAM_BOT_TOKEN;
+        bot = known.bot;
+      }
+    }
+  }
+
+  while (!bot) {
     token = answer(
       await p.password({
         message: 'Paste the bot token',
@@ -76,9 +95,9 @@ export async function setup() {
     if (result.bot) {
       bot = result.bot;
       spin.stop(`Connected to @${bot.username}`);
-      break;
+    } else {
+      spin.error(result.error);
     }
-    spin.stop(result.error, 1);
   }
 
   // A bot already wired to a webhook (a previous install on a server, say)
@@ -103,9 +122,16 @@ export async function setup() {
     'Step 2 of 3 — the AI model',
   );
 
+  // On a re-run, start from what was chosen last time.
+  const previousProvider = previous.LLM_BASE_URL
+    ? (Object.entries(PROVIDERS).find(([, known]) => known.baseUrl === previous.LLM_BASE_URL)?.[0] ??
+      'other')
+    : undefined;
+
   const providerKey = answer(
     await p.select({
       message: 'Which provider?',
+      initialValue: previousProvider,
       options: Object.entries(PROVIDERS).map(([value, provider]) => ({
         value,
         label: provider.label,
@@ -115,9 +141,11 @@ export async function setup() {
   );
   const provider = PROVIDERS[providerKey];
 
-  let baseUrl = provider.baseUrl;
-  let model = provider.model;
+  const sameAsBefore = providerKey === previousProvider;
+  let baseUrl = sameAsBefore ? previous.LLM_BASE_URL : provider.baseUrl;
+  let model = (sameAsBefore && previous.LLM_MODEL) || provider.model;
   let apiKey = '';
+  const keptKey = sameAsBefore && previous.LLM_API_KEY !== 'none' ? previous.LLM_API_KEY : '';
   for (;;) {
     if (!provider.baseUrl) {
       baseUrl = answer(
@@ -130,12 +158,15 @@ export async function setup() {
       ).trim();
     }
     if (provider.needsKey) {
-      apiKey = answer(
-        await p.password({
-          message: `${provider.label} API key`,
-          validate: (value) => (value?.trim() ? undefined : 'The key is required.'),
-        }),
-      ).trim();
+      apiKey =
+        answer(
+          await p.password({
+            message: keptKey
+              ? `${provider.label} API key (Enter keeps the current one)`
+              : `${provider.label} API key`,
+            validate: (value) => (value?.trim() || keptKey ? undefined : 'The key is required.'),
+          }),
+        )?.trim() || keptKey;
     }
     model = answer(
       await p.text({
@@ -150,11 +181,22 @@ export async function setup() {
     const probe = await tryModel({ baseUrl: provider.probeUrl ?? baseUrl, apiKey, model });
     if (probe.ok) {
       spin.stop(`${model} answered`);
+      // Docker Desktop routes host.docker.internal to the Mac's loopback;
+      // Linux routes it to the bridge, where a default Ollama is not listening.
+      if (providerKey === 'ollama' && process.platform === 'linux') {
+        p.log.warn(
+          'On Linux the bot reaches Ollama over the Docker bridge, so Ollama must listen beyond ' +
+            'localhost: set OLLAMA_HOST=0.0.0.0 for the Ollama service and restart it.',
+        );
+      }
       break;
     }
-    spin.stop(probe.reason, 1);
+    spin.error(probe.reason);
     if (providerKey === 'ollama' && probe.field === 'url') {
       p.log.info('Is Ollama running? Start it, then `ollama pull ' + model + '`.');
+    }
+    if (providerKey === 'ollama' && probe.field === 'model') {
+      p.log.info('Download it first: `ollama pull ' + model + '`.');
     }
     const retry = answer(await p.confirm({ message: 'Try again?' }));
     if (!retry) {
@@ -187,7 +229,7 @@ export async function setup() {
       spin.stop(`Got it — ${from.first_name ?? 'you'} (id ${from.id}) is the owner`);
       await say(token, from.id, "✓ You're the owner. Finishing setup — I'll message you when I'm ready.");
     } else {
-      spin.stop('No message arrived.', 1);
+      spin.error('No message arrived.');
       const typed = answer(
         await p.text({
           message: 'Enter your Telegram user id instead (@userinfobot tells you)',
@@ -214,6 +256,8 @@ export async function setup() {
     RECALFY_MODE: 'selfhost',
     TELEGRAM_BOT_TOKEN: token,
     TELEGRAM_MODE: 'polling',
+    // Only for a self-run Bot API server; absent for nearly everyone.
+    TELEGRAM_API_ROOT: process.env.TELEGRAM_API_ROOT || previous.TELEGRAM_API_ROOT,
     TELEGRAM_WEBHOOK_SECRET: previous.TELEGRAM_WEBHOOK_SECRET || randomBytes(32).toString('hex'),
     OWNER_TELEGRAM_ID: String(owner.id),
     LLM_BASE_URL: baseUrl,
@@ -226,13 +270,15 @@ export async function setup() {
 
   const spin = p.spinner();
   spin.start('Downloading Recalfy (first time takes a minute)');
-  if ((await compose(['pull', '--quiet'], { quiet: true })) !== 0) {
-    spin.stop('Download failed — check your internet connection, then run `npx recalfy start`.', 1);
+  // A build that only exists on this machine (RECALFY_IMAGE=recalfy:dev) has
+  // nothing to pull, and that is fine.
+  if ((await compose(['pull', '--quiet', 'bot'], { quiet: true })) !== 0 && !imageIsLocal(IMAGE)) {
+    spin.error('Download failed — check your internet connection, then run `npx recalfy start`.');
     process.exit(1);
   }
   spin.message('Starting');
   if ((await compose(['up', '-d', '--remove-orphans'], { quiet: true })) !== 0) {
-    spin.stop('Could not start. `npx recalfy logs` shows why.', 1);
+    spin.error('Could not start. `npx recalfy logs` shows why.');
     process.exit(1);
   }
 
@@ -244,7 +290,7 @@ export async function setup() {
     await sleep(2_000);
   }
   if (health !== 'healthy') {
-    spin.stop(`It did not come up (${health ?? 'not running'}). \`npx recalfy logs\` shows why.`, 1);
+    spin.error(`It did not come up (${health ?? 'not running'}). \`npx recalfy logs\` shows why.`);
     process.exit(1);
   }
   spin.stop('Recalfy is running');
