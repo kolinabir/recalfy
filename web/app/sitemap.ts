@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { CHANGELOG_RANGE } from "@/lib/changelog-data";
 import { SITE as BASE } from "@/lib/sections";
+import { UPDATED as SELF_HOST_UPDATED } from "@/lib/self-host-data";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
@@ -12,7 +13,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/examples`, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/features`, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/pricing`, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE}/self-host`, changeFrequency: "monthly", priority: 0.8 },
+    {
+      url: `${BASE}/self-host`,
+      lastModified: new Date(`${SELF_HOST_UPDATED}T12:00:00Z`),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
     {
       url: `${BASE}/changelog`,
       // Taken from the newest entry, so a crawler is told the truth about

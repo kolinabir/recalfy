@@ -41,7 +41,8 @@ ${plans}
 - [Examples](https://www.recalfy.com/examples): ${EXAMPLE_COUNT} worked examples across dates, people, places, codes, money, lists, habits, reminders, corrections and recall
 - [Features](https://www.recalfy.com/features): all ${FEATURE_COUNT} capabilities — atomic facts, supersession, unprompted reminders, spending by sentence, export and forget-on-request
 - [Pricing](https://www.recalfy.com/pricing): plans, limits, and what each one includes
-- [Self-host](https://www.recalfy.com/self-host): run your own copy for free — what you need, the setup steps, choosing a model, and day-to-day commands
+- [Self-host](https://www.recalfy.com/self-host): run your own copy for free — what you need, the setup steps, choosing a model, and day-to-day commands, running costs and common questions ([Markdown](https://www.recalfy.com/self-host.md))
+- [Pricing as Markdown](https://www.recalfy.com/pricing.md): every plan, its price and limits, and the free self-hosted option, in plain text
 - [Changelog](https://www.recalfy.com/changelog): what shipped and when, newest first — also available as a feed at /changelog/rss.xml
 - [Privacy](https://www.recalfy.com/privacy): what Recalfy collects, why, and how to remove it
 - [Terms](https://www.recalfy.com/terms): the terms that govern using Recalfy

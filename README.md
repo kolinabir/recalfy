@@ -25,7 +25,7 @@ The setup asks for two things and does the rest:
 
 Then it asks you to send your new bot a message, which is how it learns who
 you are. There's no domain, HTTPS certificate or port forwarding to set up. It
-works on a laptop, a Raspberry Pi or a $4 VPS.
+works on a laptop, a Raspberry Pi 5 or a $4 VPS.
 
 On a fresh Linux server, this installs Docker and Node first:
 

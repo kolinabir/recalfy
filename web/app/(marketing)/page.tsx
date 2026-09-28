@@ -9,6 +9,7 @@ import { Faq } from "@/components/sections/faq";
 import { QUESTIONS } from "@/lib/faq-data";
 import { PLANS } from "@/lib/pricing";
 import { SECTIONS, SECTION_TABS, SITE } from "@/lib/sections";
+import { GITHUB_URL, NPM_URL } from "@/lib/self-host-data";
 import { getViewer } from "@/lib/dashboard-data";
 import { tiers } from "@/lib/paddle/config";
 import { visitorCountry } from "@/lib/paddle/country";
@@ -40,9 +41,21 @@ const JSON_LD = [
   {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${SITE}/#organization`,
     name: "Recalfy",
     url: SITE,
     logo: `${SITE}/icon.svg`,
+    email: "knkolin9@gmail.com",
+    // The same entity elsewhere: the open-source code and the installer.
+    sameAs: [GITHUB_URL, NPM_URL],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${SITE}/#website`,
+    name: "Recalfy",
+    url: SITE,
+    publisher: { "@id": `${SITE}/#organization` },
   },
   /*
     Each section declared as a part of this page, with its own anchor URL. A

@@ -1,7 +1,7 @@
 # Tag a version to ship it:
 #   git tag v0.1.0 && git push --tags
 #
-# Publishes the bot image to GHCR (amd64 + arm64, so a Raspberry Pi or an ARM
+# Publishes the bot image to GHCR (amd64 + arm64, so a Raspberry Pi 5 or an ARM
 # VPS works) and the `recalfy` CLI to npm. Needs one repository secret,
 # NPM_TOKEN; GHCR uses the built-in GITHUB_TOKEN.
 name: Release

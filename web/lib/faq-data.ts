@@ -26,7 +26,7 @@ export const QUESTIONS = [
   },
   {
     q: "Can I run it myself?",
-    a: "Yes. Recalfy is open source under the AGPL, and one command — npx recalfy — sets up your own copy on a laptop, a Raspberry Pi or a small server. You paste a Telegram bot token and an AI key, and it works with OpenAI, OpenRouter, Z.ai or a free local model through Ollama. It's free; you look after updates and backups, one command each. The guide is at recalfy.com/self-host.",
+    a: "Yes. Recalfy is open source under the AGPL, and one command — npx recalfy — sets up your own copy on a laptop, a Raspberry Pi 5 or a small server. You paste a Telegram bot token and an AI key, and it works with OpenAI, OpenRouter, Z.ai or a free local model through Ollama. It's free; you look after updates and backups, one command each. The guide is at recalfy.com/self-host.",
   },
   {
     q: "Is there a free trial?",
