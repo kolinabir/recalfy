@@ -15,7 +15,9 @@ type Search = { plan?: string; cycle?: string; locked?: string };
 const REASSURANCE = [
   "Nothing to install — it lives in the chat app you already have",
   "Your memory exports as plain markdown, any day",
-  "Cancel by asking it to cancel",
+  // The bot can cancel reminders, not a subscription — that lives in the
+  // Paddle portal behind Billing, so that is what this promises.
+  "Cancel any time from Billing in your dashboard",
 ];
 
 export default async function LoginPage({
@@ -43,8 +45,9 @@ export default async function LoginPage({
               </>
             ) : (
               <>
+                {/* Reached from "Sign in" by new and returning people alike. */}
                 Welcome{" "}
-                <span className="block text-accent">back.</span>
+                <span className="block text-accent">to Recalfy.</span>
               </>
             )}
           </h1>
