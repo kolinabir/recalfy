@@ -30,6 +30,7 @@ function contextFor(limits = LIMITS.keep): ToolContext {
     now: new Date('2026-08-12T06:00:00Z'),
     turn: newTurnRecord(),
     sourceMessageId: new ObjectId(),
+    secrets: [],
   };
 }
 
@@ -253,6 +254,7 @@ describe('the channel gate', () => {
       { onDue: () => {} } as never,
       {} as never,
       outbox as never,
+      { reveal: (row: { text: string }) => row.text } as never,
     );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (delivery as any).send(

@@ -22,7 +22,7 @@
  * address, not a secret, and masking it would hide the only useful half of the
  * line. Every entry here is a word that is not worth reading aloud.
  */
-const CREDENTIAL =
+export const CREDENTIAL =
   /\b(?:passwords?|passcodes?|passphrases?|pins?|otps?|cvv|one[- ]time[- ](?:codes?|passwords?)|(?:api|secret|access|private|licen[cs]e|product|recovery|encryption)[- ]?keys?|recovery[- ]codes?|seed[- ]phrases?|secrets?)\b/i;
 
 /**
@@ -33,7 +33,7 @@ const CREDENTIAL =
 const SEPARATOR = /(?:\s+(?:is|are)\s+|\s*[:=]\s*)/gi;
 
 /** Fixed width: a mask that matched the real length would leak it. */
-const MASK = '••••••••';
+export const MASK = '••••••••';
 
 export function maskSecret(text: string): string {
   const credential = CREDENTIAL.exec(text);

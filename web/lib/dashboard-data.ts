@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/mongo";
+import { revealText } from "@/lib/vault";
 
 /**
  * Read models for the dashboard, serialised to plain JSON-safe shapes so they
@@ -97,7 +98,7 @@ export async function getMemories(userId: string): Promise<MemoryItem[]> {
           { staleAfter: { $gt: new Date() } },
         ],
       },
-      { projection: { sid: 1, text: 1, group: 1, createdAt: 1 } },
+      { projection: { userId: 1, sid: 1, text: 1, sealed: 1, group: 1, createdAt: 1 } },
     )
     .sort({ createdAt: -1 })
     .toArray();
@@ -105,7 +106,7 @@ export async function getMemories(userId: string): Promise<MemoryItem[]> {
   return rows.map((row) => ({
     id: row._id.toString(),
     sid: String(row.sid),
-    text: String(row.text),
+    text: revealText(row),
     group: String(row.group ?? "General"),
     createdAt: (row.createdAt as Date).toISOString(),
   }));
@@ -120,7 +121,7 @@ export async function getReminders(
     .collection("reminders")
     .find(
       { userId, status: "pending" },
-      { projection: { text: 1, dueAt: 1, repeat: 1 } },
+      { projection: { userId: 1, text: 1, sealed: 1, dueAt: 1, repeat: 1 } },
     )
     .sort({ dueAt: 1 })
     .limit(limit)
@@ -128,7 +129,7 @@ export async function getReminders(
 
   return rows.map((row) => ({
     id: row._id.toString(),
-    text: String(row.text),
+    text: revealText(row),
     dueAt: (row.dueAt as Date).toISOString(),
     ...(row.repeat
       ? { repeat: row.repeat as ReminderItem["repeat"] }
@@ -164,8 +165,10 @@ export async function getArchive(userId: string): Promise<ArchivedMemory[]> {
       { userId },
       {
         projection: {
+          userId: 1,
           sid: 1,
           text: 1,
+          sealed: 1,
           group: 1,
           createdAt: 1,
           supersededBy: 1,
@@ -196,7 +199,7 @@ export async function getArchive(userId: string): Promise<ArchivedMemory[]> {
     return {
       id: row._id.toString(),
       sid: String(row.sid),
-      text: String(row.text),
+      text: revealText(row),
       group: String(row.group ?? "General"),
       createdAt: (row.createdAt as Date).toISOString(),
       status,

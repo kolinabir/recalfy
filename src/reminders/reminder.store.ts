@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 
 import { ReminderDoc, Repeat, UserId } from '../mongo/collections';
 import { MongoService } from '../mongo/mongo.service';
+import { Vault } from '../memory/vault.service';
 import { nextOccurrence } from './next-occurrence';
 
 /** A reminder stuck in `claimed` this long is assumed to have died mid-send. */
@@ -18,18 +19,25 @@ const CLAIM_EXPIRY_MS = 5 * 60 * 1000;
 export class ReminderStore {
   private readonly logger = new Logger(ReminderStore.name);
 
-  constructor(private readonly mongo: MongoService) {}
+  constructor(
+    private readonly mongo: MongoService,
+    private readonly vault: Vault,
+  ) {}
 
   async schedule(
     userId: UserId,
     text: string,
     at: Date,
     recurrence?: { repeat: Repeat; tz: string },
+    known: readonly string[] = [],
   ): Promise<ReminderDoc> {
+    // Through the vault like facts: "send Sara the door PIN 4417" is read
+    // back by list_reminders and the morning brief, both of which are prompts.
+    // Delivery opens it again on the way to the person.
     const reminder: ReminderDoc = {
       _id: new ObjectId(),
       userId,
-      text: text.trim(),
+      ...this.vault.protect(userId, text.trim(), known),
       dueAt: at,
       status: 'pending',
       attempts: 0,
@@ -90,13 +98,14 @@ export class ReminderStore {
   async complete(reminder: ReminderDoc, now: Date): Promise<ReminderDoc | null> {
     await this.mongo.reminders.updateOne({ _id: reminder._id }, { $set: { status: 'sent' } });
 
-    const { repeat, tz, anchorAt, userId, text } = reminder;
+    const { repeat, tz, anchorAt, userId, text, sealed } = reminder;
     if (!repeat || !tz || !anchorAt) return null;
 
     const next: ReminderDoc = {
       _id: new ObjectId(),
       userId,
       text,
+      ...(sealed ? { sealed } : {}),
       dueAt: nextOccurrence(anchorAt, repeat, tz, now),
       status: 'pending',
       repeat,

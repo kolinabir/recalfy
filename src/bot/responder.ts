@@ -16,14 +16,16 @@ export class Responder {
   async reply(
     userId: UserId,
     text: string,
-    options: { actions?: readonly Action[]; threadId?: number } = {},
+    options: { actions?: readonly Action[]; threadId?: number; known?: readonly string[] } = {},
   ): Promise<void> {
     // Only the text is logged. A button is an offer, not something that was
     // said, and a transcript full of "[Undo]" would be read back to the model
     // on every subsequent turn as if it were part of the conversation.
-    await this.log.record(userId, 'assistant', text);
+    // `known` masks a password the model repeated back in its own words.
+    await this.log.record(userId, 'assistant', text, options.known);
     // Chunking belongs to the channel — the limit differs per network, and
     // only the Outbox knows which one this user is on.
-    await this.outbox.reply(userId, text, options);
+    const { known: _, ...delivery } = options;
+    await this.outbox.reply(userId, text, delivery);
   }
 }

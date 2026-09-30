@@ -15,12 +15,9 @@ const REPEAT_UNITS: Repeat['unit'][] = ['day', 'week', 'month', 'year'];
 export class RemindTool extends Tool {
   readonly name = 'remind';
   readonly description =
-    'Schedule a reminder to be sent to the user at a specific time. Resolve relative ' +
-    'phrasing ("tomorrow at 6", "in 20 minutes", "at 5 today") yourself against the ' +
-    'current time and timezone given in your instructions. For recurring reminders ' +
-    '("every Monday", "rent on the 3rd of each month") pass the FIRST occurrence as ' +
-    '`when` plus a `repeat` unit. For "N days before X" pass `event_at` and `lead_days` ' +
-    'instead of `when` — never do that subtraction yourself.';
+    'Schedule a reminder. Work out the absolute time yourself from the current time in ' +
+    'your instructions. Recurring: the FIRST occurrence as `when`, plus `repeat`. "N days ' +
+    'before X": `event_at` and `lead_days` instead of `when` — never do that subtraction yourself.';
 
   readonly parameters: JsonSchema = {
     type: 'object',
@@ -32,30 +29,26 @@ export class RemindTool extends Tool {
       when: {
         type: 'string',
         description:
-          'Absolute ISO-8601 instant with an offset, e.g. 2026-08-10T18:00:00+06:00. ' +
-          'Never a relative phrase. For a recurring reminder, the first occurrence. ' +
-          'Omit when using event_at + lead_days.',
+          'ISO-8601 instant with an offset, e.g. 2026-08-10T18:00:00+06:00 — never a relative ' +
+          'phrase. Omit when using event_at.',
       },
       event_at: {
         type: 'string',
-        description:
-          'For "remind me N days before X": the ISO-8601 instant of X itself. The ' +
-          'reminder time is computed as event_at minus lead_days.',
+        description: 'For "N days before X": the ISO-8601 instant of X itself.',
       },
       lead_days: {
         type: 'number',
-        description: 'How many days before event_at the reminder should fire.',
+        description: 'Days before event_at to fire.',
       },
       repeat: {
         type: 'string',
         enum: [...REPEAT_UNITS],
         description:
-          'Make it recurring: the unit it repeats on. "every Monday" is week, ' +
-          '"the 3rd of each month" is month. Omit for one-off reminders.',
+          '"every Monday" is week, "the 3rd of each month" is month. Omit for one-offs.',
       },
       every: {
         type: 'number',
-        description: 'Repeat interval, default 1. "every 2 weeks" is repeat=week, every=2.',
+        description: 'Interval, default 1: "every 2 weeks" is week with every=2.',
       },
     },
     required: ['text'],
@@ -107,6 +100,7 @@ export class RemindTool extends Tool {
       text,
       resolved.at,
       repeat && { repeat, tz: context.timezone },
+      context.secrets,
     );
     context.turn.scheduled.push(reminder._id.toHexString());
 

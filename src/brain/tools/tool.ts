@@ -21,6 +21,12 @@ export interface ToolContext {
   now: Date;
   sourceMessageId: ObjectId;
   /**
+   * Credential values found in the message this turn answers, as literal
+   * strings. Whatever the model writes this turn — a fact, a reminder — has
+   * them masked, however it reworded the sentence around them.
+   */
+  secrets: readonly string[];
+  /**
    * What this turn did, written by the tools as they run.
    *
    * The same object across every round — the context is rebuilt each time a
@@ -48,10 +54,16 @@ export interface TurnRecord {
    * anyway — an undone interview still pinging at 8am the next morning.
    */
   scheduled: string[];
+  /**
+   * Credentials `reveal_secret` opened for the person, in plain text. Sent as
+   * their own message after the reply and never logged — they exist here, and
+   * not in the tool's result, so the model that asked for them never reads them.
+   */
+  revealed: string[];
 }
 
 export function newTurnRecord(): TurnRecord {
-  return { saved: [], memoryChanged: false, scheduled: [] };
+  return { saved: [], memoryChanged: false, scheduled: [], revealed: [] };
 }
 
 /**

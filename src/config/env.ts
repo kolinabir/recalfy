@@ -1,5 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 
+import { parseKey } from '../memory/vault';
+
 /**
  * Typed view over the environment. Everything the app needs to boot is read
  * once, here, so a missing variable fails at startup rather than at 3am when
@@ -45,6 +47,18 @@ export class Env {
       throw new Error(`RECALFY_MODE must be "hosted" or "selfhost", got "${mode}"`);
     }
     return mode === 'selfhost';
+  }
+
+  /**
+   * The key that seals credentials at rest — see memory/vault.ts. Optional
+   * so an install that predates it still boots: without it, nothing is
+   * sealed and credentials are stored and prompted as they always were. A
+   * key that is present but malformed fails at boot, because silently
+   * running unsealed on a typo is the one outcome worse than either.
+   */
+  get memoryEncryptionKey(): Buffer | null {
+    const raw = this.config.get<string>('MEMORY_ENCRYPTION_KEY')?.trim();
+    return raw ? parseKey(raw) : null;
   }
 
   /**

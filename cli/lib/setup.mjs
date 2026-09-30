@@ -259,6 +259,9 @@ export async function setup() {
     // Only for a self-run Bot API server; absent for nearly everyone.
     TELEGRAM_API_ROOT: process.env.TELEGRAM_API_ROOT || previous.TELEGRAM_API_ROOT,
     TELEGRAM_WEBHOOK_SECRET: previous.TELEGRAM_WEBHOOK_SECRET || randomBytes(32).toString('hex'),
+    // Seals passwords and PINs at rest. Never regenerated: a new key would
+    // leave every credential already stored unreadable.
+    MEMORY_ENCRYPTION_KEY: previous.MEMORY_ENCRYPTION_KEY || randomBytes(32).toString('base64'),
     OWNER_TELEGRAM_ID: String(owner.id),
     LLM_BASE_URL: baseUrl,
     LLM_API_KEY: apiKey || 'none',

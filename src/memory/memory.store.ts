@@ -4,10 +4,13 @@ import { ObjectId } from 'mongodb';
 import { MemoryDoc, UserId } from '../mongo/collections';
 import { MongoService } from '../mongo/mongo.service';
 import { removeDuplicates } from './duplicate-filter';
+import { selectCore } from './core-selection';
 import { renderMemoryDocument } from './memory-document';
+import { rankMatches } from './memory-search';
 import { buildMemory, citedSids, toMemory } from './memory-factory';
 import { Fact, Memory } from './memory.types';
 import { SidMinter } from './sid-minter';
+import { Vault } from './vault.service';
 
 const FALLBACK_TIMEZONE = 'UTC';
 
@@ -52,6 +55,7 @@ export class MemoryStore {
   constructor(
     private readonly mongo: MongoService,
     private readonly sids: SidMinter,
+    private readonly vault: Vault,
   ) {}
 
   /**
@@ -67,10 +71,17 @@ export class MemoryStore {
     facts: Fact[],
     sourceMessageId?: ObjectId,
     cap: number | null = null,
+    known: readonly string[] = [],
   ): Promise<Memory[]> {
     if (facts.length === 0) return [];
 
-    const live = await this.liveMemoriesOf(userId);
+    // Compared against the originals, not the masked text: "Wifi password is
+    // ••••••••" would otherwise match every restated password, including a
+    // changed one.
+    const live = (await this.liveMemoriesOf(userId)).map((memory) => ({
+      ...memory,
+      text: this.vault.reveal(memory),
+    }));
     const { fresh, duplicates } = removeDuplicates(facts, live);
     if (duplicates.length > 0) {
       this.logger.log(`skipped ${duplicates.length} duplicate fact(s) for ${userId}`);
@@ -91,9 +102,10 @@ export class MemoryStore {
       if (held + fresh.length - replaced.size > cap) throw new MemoryFull(held, cap);
     }
     const minted = await this.sids.mint(userId, fresh.length);
-    const documents = fresh.map((fact, index) =>
-      buildMemory({ userId, fact, sid: minted[index], replaced, sourceMessageId }),
-    );
+    const documents = fresh.map((fact, index) => {
+      const memory = buildMemory({ userId, fact, sid: minted[index], replaced, sourceMessageId });
+      return { ...memory, ...this.vault.protect(userId, memory.text, known) };
+    });
 
     await this.mongo.memories.insertMany(documents);
     await this.linkSupersessions(userId, fresh, documents, replaced);
@@ -102,19 +114,52 @@ export class MemoryStore {
     return documents.map(toMemory);
   }
 
-  /** The live memory as markdown — this is what goes into the system prompt. */
+  /**
+   * The live memory as markdown — this is what goes into the system prompt.
+   * Past a few hundred facts it is the core only; see core-selection.ts.
+   */
   async render(userId: UserId, now: Date = new Date()): Promise<string> {
     const [user, memories] = await Promise.all([
       this.mongo.users.findOne({ _id: userId }),
       this.liveMemoriesOf(userId),
     ]);
 
-    return renderMemoryDocument({ timezone: user?.tz ?? FALLBACK_TIMEZONE, memories, now });
+    return renderMemoryDocument({
+      timezone: user?.tz ?? FALLBACK_TIMEZONE,
+      memories,
+      now,
+      select: selectCore,
+    });
+  }
+
+  /**
+   * Live facts matching a few keywords, best first — `search_memory`, for
+   * the facts the rendered core leaves out. Masked, like the document: this
+   * goes to the model, and a credential is reached through reveal instead.
+   *
+   * Ranked in this process rather than with a Mongo text index. It is one
+   * user's facts, already the rows `render` reads every turn, and it keeps
+   * the matching identical to the inline search people already use.
+   */
+  async search(userId: UserId, query: string, now: Date = new Date()): Promise<Memory[]> {
+    const rows = await this.mongo.memories
+      .find({
+        userId,
+        deletedAt: { $exists: false },
+        supersededBy: { $exists: false },
+        $or: [{ staleAfter: { $exists: false } }, { staleAfter: { $gt: now } }],
+      })
+      .toArray();
+    return rankMatches(rows.map(toMemory), query);
   }
 
   /**
    * The live facts as rows, for callers that need to search or list them
-   * rather than read the document — inline lookups, mainly.
+   * rather than read the document — inline lookups and the topic tabs.
+   *
+   * Credentials come back opened. Both callers put the fact in front of the
+   * person, never the model, and inline in particular exists to paste the
+   * actual value; each does its own masking of what is merely on screen.
    *
    * Filtered in the query rather than after the fact, so a superseded or
    * expired memory can never surface somewhere the rendered document would
@@ -133,7 +178,36 @@ export class MemoryStore {
       .sort({ createdAt: -1 })
       .toArray();
 
-    return rows.map(toMemory);
+    return rows.map((row) => toMemory({ ...row, text: this.vault.reveal(row) }));
+  }
+
+  /**
+   * Opens the credentials in these facts, for `reveal_secret` to hand to the
+   * person directly. Only live facts: a password that was replaced or
+   * forgotten is not one to send. `sealed` says whether there was anything
+   * hidden at all, so the tool can tell the model when there was not.
+   */
+  async reveal(
+    userId: UserId,
+    sids: string[],
+    now: Date = new Date(),
+  ): Promise<{ sid: string; text: string; sealed: boolean }[]> {
+    if (sids.length === 0) return [];
+    const rows = await this.mongo.memories
+      .find({
+        userId,
+        sid: { $in: sids },
+        deletedAt: { $exists: false },
+        supersededBy: { $exists: false },
+        $or: [{ staleAfter: { $exists: false } }, { staleAfter: { $gt: now } }],
+      })
+      .sort({ createdAt: 1 })
+      .toArray();
+    return rows.map((row) => ({
+      sid: row.sid,
+      text: this.vault.reveal(row),
+      sealed: row.sealed !== undefined,
+    }));
   }
 
   /**

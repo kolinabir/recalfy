@@ -8,6 +8,7 @@ import { BrainService } from './brain.service';
 import { ConversationWindow } from './conversation-window';
 import { HistorySearch } from './history-search';
 import { SearchHistoryTool } from './tools/search-history.tool';
+import { SearchMemoryTool } from './tools/search-memory.tool';
 import { CancelReminderTool } from './tools/cancel-reminder.tool';
 import { ConfigureTrackerTool } from './tools/configure-tracker.tool';
 import { ExportMemoryTool } from './tools/export-memory.tool';
@@ -16,6 +17,7 @@ import { ListRemindersTool } from './tools/list-reminders.tool';
 import { RecallSourceTool } from './tools/recall-source.tool';
 import { RememberTool } from './tools/remember.tool';
 import { RemindTool } from './tools/remind.tool';
+import { RevealSecretTool } from './tools/reveal-secret.tool';
 import { ReportTool } from './tools/report.tool';
 import { SetDailyBriefTool } from './tools/set-daily-brief.tool';
 import { SetEveningReflectionTool } from './tools/set-evening-reflection.tool';
@@ -37,8 +39,10 @@ const TOOL_CLASSES = [
   SetDailyBriefTool,
   SetEveningReflectionTool,
   SetQuietHoursTool,
+  SearchMemoryTool,
   SearchHistoryTool,
   RecallSourceTool,
+  RevealSecretTool,
   ExportMemoryTool,
   TrackTool,
   UpdateEntryTool,

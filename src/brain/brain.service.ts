@@ -8,6 +8,7 @@ import { MemoryStore } from '../memory/memory.store';
 import { UserStore } from '../memory/user.store';
 import { TrackerStore } from '../tracker/tracker.store';
 import { UserId } from '../mongo/collections';
+import { secretValues } from '../memory/vault';
 import { NO_ACTION_TAKEN, claimsAction } from './claims-action';
 import { ConversationWindow } from './conversation-window';
 import { buildSystemPrompt } from './system-prompt';
@@ -84,11 +85,12 @@ export class BrainService {
     turn: TurnRecord,
     onText?: (partial: string) => void,
   ): Promise<string> {
-    let context = await this.contextFor(userId, now, sourceMessageId, limits, turn);
+    const secrets = secretValues(text);
+    let context = await this.contextFor(userId, now, sourceMessageId, limits, turn, secrets);
     const turns: Turn[] = [
       { role: 'system', content: await this.systemPrompt(context) },
       // The window already ends with this message — BotService logs it first.
-      ...(await this.window.recent(userId)),
+      ...(await this.window.recent(userId, undefined, { id: sourceMessageId, text })),
     ];
 
     const specs = this.tools.specs();
@@ -130,7 +132,7 @@ export class BrainService {
       // A tool may have changed the memory or the timezone — "I'm from
       // Bangladesh, remind me at 5" sets the zone and then depends on it in
       // the same turn, so both are re-read before the next round.
-      context = await this.contextFor(userId, now, sourceMessageId, limits, turn);
+      context = await this.contextFor(userId, now, sourceMessageId, limits, turn, secrets);
       turns[0] = { role: 'system', content: await this.systemPrompt(context) };
     }
 
@@ -144,6 +146,7 @@ export class BrainService {
     sourceMessageId: ObjectId,
     limits: Limits,
     turn: TurnRecord,
+    secrets: readonly string[],
   ): Promise<ToolContext> {
     const user = await this.users.ensure(userId);
     return {
@@ -153,6 +156,7 @@ export class BrainService {
       limits,
       now,
       sourceMessageId,
+      secrets,
       turn,
     };
   }

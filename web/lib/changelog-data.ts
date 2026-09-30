@@ -35,6 +35,21 @@ export const CHANGE_KINDS: Record<ChangeKind, string> = {
 
 const REAL: ChangeEntry[] = [
   {
+    date: "2026-10-01",
+    title: "Your passwords, locked away",
+    body: "Passwords, PINs and codes you give Recalfy are now stored encrypted. Once saved, the AI only sees dots where they were — in your memory, your reminders and your chat history.",
+    changes: [
+      {
+        kind: "new",
+        text: "Ask for a saved password and it arrives in its own message, straight from your encrypted memory — the AI answering you never reads it.",
+      },
+      {
+        kind: "improved",
+        text: "Big memories stay fast: past a few hundred facts, Recalfy looks older ones up when it needs them instead of rereading everything on every message.",
+      },
+    ],
+  },
+  {
     date: "2026-09-28",
     title: "Recalfy is open source",
     body: "The whole bot is now public under the AGPL. Run your own copy for free with one command — the hosted version here stays exactly as it is.",

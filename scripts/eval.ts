@@ -19,7 +19,9 @@ import { MemoryStore } from '../src/memory/memory.store';
 import { UserStore } from '../src/memory/user.store';
 import { MongoService } from '../src/mongo/mongo.service';
 import { UserId } from '../src/mongo/collections';
-import { CASES, EvalCase, EvalTurn } from './eval-cases';
+import { CASES as BASE_CASES, EvalCase, EvalTurn, LARGE_MEMORY_CASES, VAULT_CASES } from './eval-cases';
+
+const CASES = [...BASE_CASES, ...LARGE_MEMORY_CASES, ...VAULT_CASES];
 
 /** Synthetic account ids, one per case, disjoint from anything real. */
 const scratchUserId = (index: number): UserId =>

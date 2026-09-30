@@ -72,6 +72,7 @@ export class RememberTool extends Tool {
         facts,
         context.sourceMessageId,
         context.limits.memories,
+        context.secrets,
       );
     } catch (error) {
       // Spelled out for the model rather than thrown on, because the one thing

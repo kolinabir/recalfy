@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { botHealth, compose, composeCapture, dockerProblem, writeCompose } from '../lib/docker.mjs';
+import { readEnv } from '../lib/env-file.mjs';
 import { BACKUP_DIR, ENV_FILE, HOME } from '../lib/paths.mjs';
 import { setup } from '../lib/setup.mjs';
 
@@ -36,6 +38,22 @@ function needsInstall() {
   }
   // Refreshed every time, so an updated CLI brings its compose changes along.
   writeCompose();
+  ensureEncryptionKey();
+}
+
+/**
+ * Installs set up before the vault existed have no key, and `update` is how
+ * they get the version that uses one — so every command adds it if missing.
+ * Only ever added, never replaced: a changed key strands what it sealed.
+ * Appended rather than rewriting the file, so hand-written comments survive.
+ */
+function ensureEncryptionKey() {
+  if (readEnv(ENV_FILE).MEMORY_ENCRYPTION_KEY) return;
+  const text = readFileSync(ENV_FILE, 'utf8');
+  appendFileSync(
+    ENV_FILE,
+    `${text.endsWith('\n') ? '' : '\n'}MEMORY_ENCRYPTION_KEY=${randomBytes(32).toString('base64')}\n`,
+  );
 }
 
 function option(name) {

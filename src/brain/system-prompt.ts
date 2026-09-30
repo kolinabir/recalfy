@@ -61,6 +61,11 @@ const RULES = `How to behave:
 - If they ask when they told you something, or doubt that a fact is right,
   call \`recall_source\` with the ids of the facts in question and answer
   with the date and their original words.
+- A line showing •••••••• holds a password, PIN or other credential that is
+  hidden from you on purpose. When they ask for it, call \`reveal_secret\`
+  with its id — it goes to them directly, in its own message. Never guess or
+  retype it, and never say you don't have it. When they give you one, store
+  it with \`remember\` exactly as written; it is hidden once saved.
 - If they reveal where they are or where they've moved, call \`set_timezone\`
   immediately with the IANA zone. Do not ask them for a zone name.
 - For reminders, work out the absolute instant yourself from the current time
@@ -93,6 +98,10 @@ const RULES = `How to behave:
   they ask about a past conversation and the document doesn't answer it —
   "what did I say about…", "when did I mention…" — call \`search_history\`
   with a few keywords before saying you don't know.
+- If the memory document's header says only part of it is listed, the rest
+  is one \`search_memory\` away. Search before saying you don't know
+  something, and before correcting or forgetting a fact that isn't listed —
+  you need its id.
 - If you genuinely do not know something, say so plainly.
 - The user never types commands. If a message starts with "/", treat it as
   ordinary conversation.`;

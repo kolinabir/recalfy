@@ -4,6 +4,7 @@ import { Limits } from '../billing/entitlements';
 import { parseAction } from '../channels/action-data';
 import { CHANNEL_ADAPTERS, ChannelAdapter, InboundAction } from '../channels/channel';
 import { Outbox } from '../channels/outbox';
+import { Vault } from '../memory/vault.service';
 import { ReminderDoc } from '../mongo/collections';
 import { ReminderScheduler } from './reminder.scheduler';
 import { ReminderStore } from './reminder.store';
@@ -32,6 +33,7 @@ export class ReminderDelivery implements OnModuleInit {
     private readonly scheduler: ReminderScheduler,
     private readonly reminders: ReminderStore,
     private readonly outbox: Outbox,
+    private readonly vault: Vault,
   ) {}
 
   onModuleInit(): void {
@@ -46,7 +48,7 @@ export class ReminderDelivery implements OnModuleInit {
     // out over a chat the account no longer pays to be reached on.
     return this.outbox.notify(
       reminder.userId,
-      `⏰ ${reminder.text}`,
+      `⏰ ${this.vault.reveal(reminder)}`,
       limits.channels,
       snoozeActions(reminder._id.toHexString()),
     );
@@ -74,7 +76,9 @@ export class ReminderDelivery implements OnModuleInit {
       return true;
     }
 
-    await this.reminders.schedule(userId, original.text, when.at);
+    // Opened first: `schedule` seals again, and sealing the masked text would
+    // snooze a reminder that can only ever say ••••••••.
+    await this.reminders.schedule(userId, this.vault.reveal(original), when.at);
     await settle(snoozedLine(when.label));
     this.logger.log(`snoozed ${id} by ${key} for ${userId}`);
     return true;

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ObjectId } from 'mongodb';
 
 import { Turn } from '../llm/llm.types';
 import { MessageDoc, UserId } from '../mongo/collections';
@@ -15,9 +16,22 @@ const WINDOW_SIZE = 10;
 export class ConversationWindow {
   constructor(private readonly mongo: MongoService) {}
 
-  async recent(userId: UserId, limit: number = WINDOW_SIZE): Promise<Turn[]> {
+  /**
+   * `live` is the message this turn is answering, as it arrived. Its logged
+   * row is masked if it carried a credential, and this is the turn that has
+   * to store it — so that one row reads as typed. Matched by id rather than
+   * by position: a reminder logged a moment later would otherwise be "last".
+   */
+  async recent(
+    userId: UserId,
+    limit: number = WINDOW_SIZE,
+    live?: { id: ObjectId; text: string },
+  ): Promise<Turn[]> {
     const messages = await this.recentMessages(userId, limit);
-    return messages.map((message) => ({ role: message.role, content: message.text }));
+    return messages.map((message) => ({
+      role: message.role,
+      content: live && message._id.equals(live.id) ? live.text : message.text,
+    }));
   }
 
   /** The same window with timestamps intact — the reflection needs to know "today". */

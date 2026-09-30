@@ -27,6 +27,9 @@ be named.
 
 - `~/.recalfy/.env` holds your bot token and AI key. Setup makes it readable
   only by you. Keep it that way.
+- The same file holds `MEMORY_ENCRYPTION_KEY`, which encrypts the passwords
+  and PINs you tell the bot. Back it up with your backups: a database restored
+  without it keeps those values hidden for good.
 - The database isn't exposed outside Docker's network. Don't publish its port.
 - Anyone who has your bot token can read your bot's messages. If it leaks,
   revoke it in @BotFather with `/revoke`, then run `npx recalfy` again.

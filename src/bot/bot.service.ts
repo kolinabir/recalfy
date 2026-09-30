@@ -6,6 +6,7 @@ import { Action } from '../channels/channel';
 import { CHANNEL_ADAPTERS, ChannelAdapter, InboundMessage } from '../channels/channel';
 import { Outbox } from '../channels/outbox';
 import { UserStore } from '../memory/user.store';
+import { secretValues } from '../memory/vault';
 import { needsTopicSync } from '../topics/needs-sync';
 import { TopicMirror } from '../topics/topic-mirror';
 import { ConversationLog } from './conversation-log';
@@ -102,7 +103,16 @@ export class BotService implements OnModuleInit {
     // draft, and a frame landing behind it would repaint what it replaced.
     await draft?.settle();
     // Back into the thread it was asked in — see InboundMessage.threadId.
-    await this.responder.reply(userId, reply.text, { actions: actionsFor(reply), threadId });
+    await this.responder.reply(userId, reply.text, {
+      actions: actionsFor(reply),
+      threadId,
+      known: secretValues(text),
+    });
+    // Straight to the chat, never through the responder: that would log the
+    // value, and the model would read it back on every turn after this one.
+    for (const secret of reply.revealed) {
+      await this.outbox.reply(userId, secret, { threadId });
+    }
 
     // After the reply, never before: redrawing tabs is bookkeeping, and the
     // person is waiting on the sentence. The mirror swallows its own failures.

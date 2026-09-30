@@ -159,6 +159,11 @@ export interface MessageDoc {
   userId: UserId;
   role: 'user' | 'assistant';
   text: string;
+  /**
+   * The original text, encrypted, when it held a credential — `text` is then
+   * the masked form. Opened only on the way to the person; see memory/vault.ts.
+   */
+  sealed?: string;
   createdAt: Date;
 }
 
@@ -168,6 +173,11 @@ export interface MemoryDoc {
   /** Short, stable, per-user id the model cites when forgetting or superseding. */
   sid: string;
   text: string;
+  /**
+   * The original text, encrypted, when it held a credential — `text` is then
+   * the masked form. Opened only on the way to the person; see memory/vault.ts.
+   */
+  sealed?: string;
   /** Heading this fact renders under, e.g. "People", "Home". */
   group: string;
   /** Set when this fact replaces an older one. */
@@ -230,6 +240,8 @@ export interface ReminderDoc {
   _id: ObjectId;
   userId: UserId;
   text: string;
+  /** The original text, encrypted, when it held a credential; see memory/vault.ts. */
+  sealed?: string;
   dueAt: Date;
   status: ReminderStatus;
   /**

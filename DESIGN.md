@@ -241,6 +241,7 @@ Do these **in order**, and only when you can measure the need:
 
 1. **Now → ~2k facts:** render everything. Current design.
 2. **~2k–20k:** keep the last N + a "core facts" set always in prompt; for the rest, have the model emit 2–3 keywords and pull matching rows with a Mongo `$text` index. Still no embeddings, still M0.
+   **Built 2026-10-01**, triggered earlier than planned — at 300 facts, not 2k, because the Keep cap is 2k and a fact measured ~18 tokens. See `src/memory/core-selection.ts`: past 300 live facts the prompt carries the newest 200 plus Goals, and `search_memory` ranks the rest in-process (no `$text` index needed at one user's scale).
 3. **20k+ or recall visibly failing:** move to **Atlas Flex** ($8–30/mo, hard-capped, includes Vector Search) and add embeddings *alongside* the full-context path, not replacing it.
 
 Also worth revisiting later:

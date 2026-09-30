@@ -435,6 +435,130 @@ export const CASES: EvalCase[] = [
   },
 ];
 
+/**
+ * Enough ordinary facts to push a memory past FULL_LIMIT, so the fact under
+ * test (seeded first, so oldest) is left out of the prompt and only
+ * `search_memory` can reach it. Varied on purpose: a search that matched
+ * everything would pass for the wrong reason.
+ */
+function filler(count = 400): { text: string; group: string }[] {
+  const names = ['Sara', 'Tanvir', 'Nadia', 'Arif', 'Mitu', 'Omar', 'Lena', 'Joy', 'Fahim', 'Anika'];
+  const make: [string, (i: number, n: string) => string][] = [
+    ['People', (i, n) => `${n} ${i}'s birthday is on ${1 + (i % 28)} March.`],
+    ['People', (i, n) => `${n} ${i} works at a design studio in Banani.`],
+    ['Work', (i) => `Project ${i} is due on ${1 + (i % 28)} November.`],
+    ['Preferences', (i) => `Likes table ${i} at the corner café.`],
+    ['Places', (i) => `Favourite biryani place is on Road ${i}, Mirpur.`],
+    ['Health', (i) => `Walked ${2000 + i} steps on day ${i}.`],
+    ['Home', (i) => `Box ${i} in the storeroom holds winter clothes.`],
+  ];
+  return Array.from({ length: count }, (_, i) => {
+    const [group, text] = make[i % make.length];
+    return { group, text: text(i, names[i % names.length]) };
+  });
+}
+
+/** The fact under test is seeded first, so it is the oldest — `01`. */
+const OLDEST = '01';
+
+export const LARGE_MEMORY_CASES: EvalCase[] = [
+  {
+    name: 'large memory: an unlisted fact is found by search',
+    timezone: DHAKA,
+    seedFacts: [{ text: "Kolin's dentist is Dr. Karim in Gulshan.", group: 'Health' }, ...filler()],
+    turns: [
+      {
+        say: "who's my dentist again?",
+        expect: [{ tool: 'search_memory' }],
+        replyMatch: /Karim/,
+      },
+    ],
+  },
+  {
+    name: 'large memory: correcting an unlisted fact supersedes it',
+    timezone: DHAKA,
+    seedFacts: [{ text: 'Rent is due on the 5th of each month.', group: 'Home' }, ...filler()],
+    turns: [
+      {
+        say: 'actually rent moved to the 3rd',
+        expect: [
+          { tool: 'search_memory' },
+          {
+            tool: 'remember',
+            check: (args) =>
+              facts(args).some((f) => Array.isArray(f.supersedes) && f.supersedes.includes(OLDEST)),
+            label: 'supersedes the unlisted fact by its id',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'large memory: forgetting an unlisted fact',
+    timezone: DHAKA,
+    seedFacts: [
+      { text: 'Kolin used to play cricket for the Dhanmondi club.', group: 'Personal' },
+      ...filler(),
+    ],
+    turns: [
+      {
+        say: 'forget the thing about me playing cricket',
+        expect: [
+          {
+            tool: 'forget',
+            check: (args) => Array.isArray(args.ids) && args.ids.includes(OLDEST),
+            label: 'deletes the unlisted fact by its id',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'large memory: a listed fact needs no search',
+    timezone: DHAKA,
+    seedFacts: [...filler(), { text: 'Kolin parks on level B2.', group: 'Places' }],
+    turns: [
+      {
+        say: 'where do i park?',
+        forbid: ['search_memory'],
+        replyMatch: /B2/,
+      },
+    ],
+  },
+];
+
+export const VAULT_CASES: EvalCase[] = [
+  {
+    name: 'vault: a password is stored as given',
+    timezone: DHAKA,
+    turns: [
+      {
+        say: 'the office wifi password is Sunflower#88',
+        expect: [
+          {
+            tool: 'remember',
+            check: (args) => facts(args).some((f) => String(f.text).includes('Sunflower#88')),
+            label: 'stores the value verbatim',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'vault: asking for a hidden password reveals it',
+    timezone: DHAKA,
+    seedFacts: [{ text: 'The office wifi password is Sunflower#88.', group: 'Work' }],
+    turns: [
+      {
+        say: "what's the office wifi password?",
+        expect: [{ tool: 'reveal_secret' }],
+        // It cannot see the value, so it must not claim one.
+        replyMatch: /^(?![\s\S]*Sunflower)/,
+      },
+    ],
+  },
+];
+
 function entries(args: Record<string, unknown>): Record<string, unknown>[] {
   return Array.isArray(args.entries) ? (args.entries as Record<string, unknown>[]) : [];
 }

@@ -8,6 +8,12 @@ export interface MemoryDocumentInput {
   memories: MemoryDoc[];
   /** Expiring facts are judged against this instant. */
   now: Date;
+  /**
+   * Narrows the live facts to the ones rendered — the prompt passes
+   * `selectCore`; exports leave it out and get everything. When it drops
+   * facts, the header says so, which is the model's cue to search.
+   */
+  select?: (live: MemoryDoc[]) => MemoryDoc[];
 }
 
 const EMPTY_BODY = '_(nothing yet)_';
@@ -27,11 +33,17 @@ const PEOPLE_GROUP = 'People';
  * together (names ordered by first appearance) so "tell me about Rahim" reads
  * one block, not a scatter.
  */
-export function renderMemoryDocument({ timezone, memories, now }: MemoryDocumentInput): string {
+export function renderMemoryDocument({
+  timezone,
+  memories,
+  now,
+  select,
+}: MemoryDocumentInput): string {
   const live = memories.filter((memory) => isLive(memory, now));
-  const header = renderHeader(timezone, live.length);
+  const shown = select ? select(live) : live;
+  const header = renderHeader(timezone, live.length, shown.length);
   const body =
-    live.length === 0 ? EMPTY_BODY : renderSections(live, indexById(memories), timezone);
+    shown.length === 0 ? EMPTY_BODY : renderSections(shown, indexById(memories), timezone);
   return `${header}\n\n${body}`;
 }
 
@@ -40,9 +52,13 @@ function isLive(memory: MemoryDoc, now: Date): boolean {
   return !memory.staleAfter || memory.staleAfter.getTime() > now.getTime();
 }
 
-function renderHeader(timezone: string, count: number): string {
+function renderHeader(timezone: string, count: number, shown: number): string {
   const noun = count === 1 ? 'memory' : 'memories';
-  return `# What I know about you\n_Timezone: ${timezone} · ${count} ${noun}_`;
+  const partial =
+    shown < count
+      ? ` · only ${shown} listed below (the most recent, and goals) — call search_memory for the rest`
+      : '';
+  return `# What I know about you\n_Timezone: ${timezone} · ${count} ${noun}${partial}_`;
 }
 
 function renderSections(
