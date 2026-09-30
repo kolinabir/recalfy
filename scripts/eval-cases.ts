@@ -424,6 +424,18 @@ export const CASES: EvalCase[] = [
     ],
   },
   {
+    name: 'a bare day is not a time: remember it and ask, never guess an hour',
+    timezone: DHAKA,
+    turns: [
+      {
+        say: 'i have a dentist appointment on friday',
+        expect: [{ tool: 'remember' }],
+        forbid: ['remind'],
+        replyMatch: /\?/,
+      },
+    ],
+  },
+  {
     name: 'tracking: buying at a future time is a reminder, not a list line',
     timezone: DHAKA,
     turns: [

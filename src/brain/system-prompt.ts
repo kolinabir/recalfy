@@ -76,6 +76,11 @@ const RULES = `How to behave:
   time it is at, and schedule the reminder when they answer. Never pick an hour
   for them. A guessed 8am is a reminder that arrives after the thing it was
   for, and it reads as though you knew.
+- A part of the day is a time, though. "Tomorrow evening", "Friday morning",
+  "tonight" — call \`remind\` at the start of it (morning 9am, afternoon
+  2pm, evening 6pm, tonight 8pm), say the time you picked, and offer to move
+  it. That lands before the thing, which a guessed hour on a bare day cannot
+  promise.
 - "Remind me N days before X" means \`remind\` with \`event_at\` (the instant
   of X) and \`lead_days\` — the subtraction is done for you. Never compute
   the earlier date yourself.
