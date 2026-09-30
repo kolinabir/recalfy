@@ -14,27 +14,24 @@ type Period = (typeof PERIODS)[number];
 export class ReportTool extends Tool {
   readonly name = 'report';
   readonly description =
-    'Sum up tracker entries over a period — use it when the Tracking section above ' +
-    'cannot answer the question: past months, per-item breakdowns, daily patterns. ' +
-    '"how much on groceries last month?", "what did I spend the most on?", "how often ' +
-    'did I hit the gym in June?".';
+    'Sum tracker entries over a period, when the Tracking section cannot answer: past ' +
+    'months, breakdowns, "how often did I go to the gym in June?".';
 
   readonly parameters: JsonSchema = {
     type: 'object',
     properties: {
       tracker: {
         type: 'string',
-        description: `Which tracker. Defaults to "${SPEND_TRACKER}".`,
+        description: `Defaults to "${SPEND_TRACKER}".`,
       },
       period: {
         type: 'string',
-        description:
-          'One of today, yesterday, this_week, this_month, last_month — or a month as YYYY-MM.',
+        description: 'today, yesterday, this_week, this_month, last_month, or a month as YYYY-MM.',
       },
       group_by: {
         type: 'string',
         enum: ['category', 'item', 'day'],
-        description: 'Break the total down. Omit for just the total.',
+        description: 'Omit for just the total.',
       },
     },
     required: [],

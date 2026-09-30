@@ -16,12 +16,9 @@ import { Tool, ToolContext } from './tool';
 export class UpdateEntryTool extends Tool {
   readonly name = 'update_entry';
   readonly description =
-    'Correct or resolve a tracker entry by its id (`e…`, shown in the Tracking section ' +
-    'and in track results). "actually it was 350" → new value. "that was transport" → new ' +
-    'category. "bought the cucumber" → bought=true, turning a shopping-list line into a ' +
-    'real expense — and when the price is only now known ("got the milk, it was 80"), ' +
-    'pass value together with bought. "that wasn\'t an expense" → remove=true. Only ' +
-    'entry ids work here; memory facts are corrected through `remember`/`forget`.';
+    'Correct a tracker entry by its `e…` id: a new value, category or item; bought=true ' +
+    'when a shopping-list line was bought (with value if the price is only known now); ' +
+    'remove=true if it was not an expense. Memory facts go through `remember`/`forget`.';
 
   readonly parameters: JsonSchema = {
     type: 'object',
@@ -32,9 +29,9 @@ export class UpdateEntryTool extends Tool {
       item: { type: 'string', description: 'The corrected item name.' },
       bought: {
         type: 'boolean',
-        description: 'True to mark a planned (shopping-list) entry as actually bought now.',
+        description: 'A planned entry was actually bought.',
       },
-      remove: { type: 'boolean', description: 'True to delete the entry entirely.' },
+      remove: { type: 'boolean', description: 'Delete the entry.' },
     },
     required: ['sid'],
   };

@@ -18,43 +18,39 @@ export class TrackTool extends Tool {
   readonly name = 'track';
   readonly description =
     'Log tracker entries: money spent, things done, things measured. "cucumber 250" is ' +
-    'money already spent — tracker "spending", value 250, item cucumber. "buy cucumber 250" ' +
-    'is money NOT yet spent — same, plus planned=true (it joins the shopping list). ' +
-    '"drank 2L water" or "went to the gym" go to that tracker by name, which is created on ' +
-    'first use. This is for numbers that recur; a durable fact is `remember`, a future ' +
-    'to-do at a specific time is `remind`.';
+    'money spent — tracker "spending", value 250, item cucumber. "buy cucumber 250" is not ' +
+    'spent yet — the same plus planned=true. Other trackers ("water", "gym") are created on ' +
+    'first use. A durable fact is `remember`; a to-do at a set time is `remind`.';
 
   readonly parameters: JsonSchema = {
     type: 'object',
     properties: {
       entries: {
         type: 'array',
-        description: 'The entries to log — one per amount or occurrence.',
+        description: 'One per amount or occurrence.',
         items: {
           type: 'object',
           properties: {
             tracker: {
               type: 'string',
-              description: `Which tracker. Money is always "${SPEND_TRACKER}"; anything else by name ("water", "gym").`,
+              description: `Money is always "${SPEND_TRACKER}"; anything else by name.`,
             },
             item: {
               type: 'string',
-              description: 'What it was for: "cucumber", "rickshaw". Omit when meaningless.',
+              description: 'What it was for, e.g. "cucumber". Omit when meaningless.',
             },
             value: {
               type: 'number',
               description:
-                'The amount, in the tracker\'s unit. Omit for a bare occurrence ("went to the gym") — it counts as 1.',
+                'Amount in the tracker\'s unit. Omit for a bare occurrence — it counts as 1.',
             },
             category: {
               type: 'string',
-              description:
-                'Spending only: a broad bucket like groceries, transport, rent, eating out, health.',
+              description: 'Spending only: groceries, transport, rent, eating out, health…',
             },
             planned: {
               type: 'boolean',
-              description:
-                'Spending only: true when the money is not spent yet — "buy cucumber" is a shopping-list line, not an expense.',
+              description: 'Spending only: true when not bought yet (a shopping-list line).',
             },
           },
           required: ['tracker'],

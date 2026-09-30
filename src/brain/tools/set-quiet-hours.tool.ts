@@ -11,10 +11,9 @@ import { siteLink } from '../../config/site';
 export class SetQuietHoursTool extends Tool {
   readonly name = 'set_quiet_hours';
   readonly description =
-    'Set or clear the hours when reminders should not arrive. "Nothing after 10pm" is ' +
-    'from="22:00" with the existing end kept, "no reminders between 11pm and 7am" is ' +
-    'from="23:00" to="07:00". Pass enabled=false to turn quiet hours off entirely. ' +
-    'A reminder that comes due inside the window waits until it ends — it is never lost.';
+    'Set or clear the hours reminders must not arrive. "Nothing after 10pm" is from=22:00 ' +
+    'keeping the end; "not between 11pm and 7am" is from=23:00, to=07:00; enabled=false ' +
+    'clears it. Reminders due inside the window wait until it ends.';
 
   readonly parameters: JsonSchema = {
     type: 'object',

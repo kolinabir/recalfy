@@ -16,31 +16,28 @@ import { Tool, ToolContext } from './tool';
 export class ConfigureTrackerTool extends Tool {
   readonly name = 'configure_tracker';
   readonly description =
-    'Create or adjust a tracker: its unit, how it aggregates, and its target. ' +
-    `A monthly budget is a target on "${SPEND_TRACKER}" ("keep me under 15000 a month"). ` +
-    '"track my water, 3L a day" → water, sum, unit L, target 3 per day. "weigh-ins" ' +
-    'are aggregate=last (only the latest reading matters). Also how the currency ' +
-    `changes: unit on "${SPEND_TRACKER}". Plain logging never needs this — \`track\` ` +
-    'creates trackers on first use.';
+    'Create or adjust a tracker\'s unit, aggregation or target. "Keep me under 15000 a ' +
+    `month" is a monthly target on "${SPEND_TRACKER}", whose unit is the currency. "3L of ` +
+    'water a day" → water, sum, unit L, target 3 per day. Plain logging never needs this.';
 
   readonly parameters: JsonSchema = {
     type: 'object',
     properties: {
-      name: { type: 'string', description: 'The tracker, e.g. spending, water, gym, weight.' },
+      name: { type: 'string', description: 'e.g. spending, water, gym, weight.' },
       aggregate: {
         type: 'string',
         enum: ['sum', 'count', 'last'],
         description:
-          'sum: amounts that add up (money, litres). count: occurrences (gym visits). ' +
-          'last: readings where only the latest matters (weight).',
+          'sum adds amounts (money, litres); count counts occurrences (gym); last keeps ' +
+          'the latest reading (weight).',
       },
       unit: {
         type: 'string',
-        description: `The unit, e.g. L, kg, pages — or the currency code for ${SPEND_TRACKER}.`,
+        description: `e.g. L, kg, pages — a currency code for ${SPEND_TRACKER}.`,
       },
       target: {
         type: 'number',
-        description: 'The budget or goal per period. Omit to leave as is.',
+        description: 'Budget or goal per period. Omit to keep it.',
       },
       target_period: {
         type: 'string',
