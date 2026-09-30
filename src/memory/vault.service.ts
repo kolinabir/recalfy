@@ -112,7 +112,7 @@ export class Vault implements OnApplicationBootstrap {
 
 /** Every credential word `maskSecret` knows starts with one of these. */
 const CANDIDATE =
-  'pass|pin|otp|cvv|one.?time|api|secret|access|private|licen|product|recovery|encryption|seed';
+  'pass|pin|otp|cvv|one.?time|api|secret|access|private|licen|product|recovery|encryption|seed|code';
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);

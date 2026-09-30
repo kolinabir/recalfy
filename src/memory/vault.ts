@@ -52,6 +52,13 @@ export function maskCredentials(text: string): string {
  */
 const NEAR_SEPARATOR = /^((?:\s+[\p{L}\p{N}'’-]+){0,4}?)(\s+(?:is|are)\s+|\s*[:=]\s*)/iu;
 
+/**
+ * No "is" at all — "gate code 4455", "PIN 4417" — is a value only when the
+ * very next word has a digit in it. Without that, "PIN reset tomorrow" would
+ * hide the rest of the sentence.
+ */
+const DIRECT_VALUE = /^\s+(?=[^\s]*\d)(?=[^\s]{3,})/u;
+
 /** Words that follow "password is" without being one. */
 const NOT_A_VALUE = new Set([
   'saved', 'stored', 'noted', 'safe', 'hidden', 'set', 'changed', 'updated', 'correct',
@@ -78,7 +85,7 @@ function findValue(line: string): { cut: number; value: string } | null {
   const pattern = new RegExp(CREDENTIAL.source, 'gi');
   for (let hit = pattern.exec(line); hit; hit = pattern.exec(line)) {
     const after = hit.index + hit[0].length;
-    const near = NEAR_SEPARATOR.exec(line.slice(after));
+    const near = NEAR_SEPARATOR.exec(line.slice(after)) ?? DIRECT_VALUE.exec(line.slice(after));
     if (!near) continue;
 
     const cut = after + near[0].length;

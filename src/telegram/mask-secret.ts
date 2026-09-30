@@ -23,7 +23,7 @@
  * line. Every entry here is a word that is not worth reading aloud.
  */
 export const CREDENTIAL =
-  /\b(?:passwords?|passcodes?|passphrases?|pins?|otps?|cvv|one[- ]time[- ](?:codes?|passwords?)|(?:api|secret|access|private|licen[cs]e|product|recovery|encryption)[- ]?keys?|recovery[- ]codes?|seed[- ]phrases?|secrets?)\b/i;
+  /\b(?:passwords?|passcodes?|passphrases?|pins?|otps?|cvv|one[- ]time[- ](?:codes?|passwords?)|(?:api|secret|access|private|licen[cs]e|product|recovery|encryption)[- ]?keys?|(?:recovery|door|gate|alarm|lock|locker|safe|garage|building|entry|entrance|keypad|security|wi-?fi|verification|backup|2fa|login)[- ]?codes?|seed[- ]phrases?|secrets?)\b/i;
 
 /**
  * What separates the label from the value. `is`/`are` because the assistant

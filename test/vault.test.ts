@@ -71,6 +71,24 @@ describe('vault', () => {
     );
   });
 
+  it('hides door, gate and alarm codes, with or without an "is"', () => {
+    assert.equal(maskCredentials('the gate code is 4455'), 'the gate code is ••••••••');
+    assert.equal(maskCredentials('gate code 4455, ring twice'), 'gate code ••••••••');
+    assert.equal(maskCredentials('Alarm code: 1234.'), 'Alarm code: ••••••••.');
+    assert.equal(maskCredentials('bank PIN 4417'), 'bank PIN ••••••••');
+  });
+
+  it('leaves codes that are not secrets, and PIN talk with no value, alone', () => {
+    for (const text of [
+      'the zip code is 1207',
+      'use promo code SAVE20 at checkout',
+      'PIN reset tomorrow at the bank',
+      'the code is on github',
+    ]) {
+      assert.equal(maskCredentials(text), text);
+    }
+  });
+
   it('pulls the values out of a message, stopping where the sentence moves on', () => {
     assert.deepEqual(secretValues('my wifi password is hunter2 and remind me at 5'), ['hunter2']);
     assert.deepEqual(secretValues('The recovery codes are 8812-4410, 9930-1123.'), [
@@ -83,9 +101,11 @@ describe('vault', () => {
 
   it('hides a known value however the model reworded around it', () => {
     const known = secretValues('remind me to text Rafi the locker PIN is 5520');
-    const stored = protect(KEY, 'u1', "I'll remind you to text Rafi the locker PIN (5520).", known);
-    assert.equal(stored.text, "I'll remind you to text Rafi the locker PIN (••••••••).");
-    assert.equal(openSealed(KEY, 'u1', stored.sealed!), "I'll remind you to text Rafi the locker PIN (5520).");
+    // No credential word anywhere near it: only the known value can catch this.
+    const echo = "I'll remind you to send Rafi 5520 before you leave.";
+    const stored = protect(KEY, 'u1', echo, known);
+    assert.equal(stored.text, "I'll remind you to send Rafi •••••••• before you leave.");
+    assert.equal(openSealed(KEY, 'u1', stored.sealed!), echo);
     // Only the value itself — a longer number that contains it is not it.
     assert.equal(protect(KEY, 'u1', 'Room 15520 is booked.', known).text, 'Room 15520 is booked.');
   });
