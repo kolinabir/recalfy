@@ -178,6 +178,8 @@ Two environment variables change:
 - `MONGODB_URI` → an Atlas **Free (M0)** cluster, with the VPS IP allowlisted
   under *Network Access*. M0 has **no backups**, so put `deploy/backup.sh` on a
   nightly cron — it is the only copy of your memory that isn't in a free cluster.
+  It encrypts every archive with `age` and refuses to run without
+  `BACKUP_AGE_RECIPIENT`; the one-time setup is at the top of the script.
 - `PUBLIC_URL` → your own domain, fronted by Caddy.
 
 Then:
