@@ -1,0 +1,11 @@
+[Unit]
+Description=Recalfy nightly encrypted database backup
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=knkolin9
+WorkingDirectory=/home/knkolin9/recalfy
+ExecStart=/home/knkolin9/recalfy/deploy/backup.sh
+Nice=10

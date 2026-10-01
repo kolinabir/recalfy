@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 # Atlas M0 has no backups. This is the only copy of your memory that isn't
-# in a free cluster — run it nightly from cron:
+# in a free cluster — it runs nightly from a systemd timer (the box has no
+# cron), installed from the two unit files beside this script:
 #
-#   0 3 * * * /srv/recalfy/deploy/backup.sh >> /var/log/bot-backup.log 2>&1
+#   sudo cp deploy/recalfy-backup.{service,timer} /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now recalfy-backup.timer
+#   journalctl -u recalfy-backup        # what the last runs said
+#
+# Needs `mongodump` (MongoDB's mongodb-database-tools .deb) and `age`.
 #
 # Every archive is encrypted with `age` before it touches the disk, because a
 # dump holds every fact verbatim — passwords included. The box only ever has
@@ -11,7 +16,7 @@
 # lives off the box, with whoever may restore.
 #
 # One-time setup:
-#   apt install age                      # on the server
+#   apt install age                      # on the server, with mongodb-database-tools
 #   age-keygen -o recalfy-backup.key     # on YOUR machine; keep this file safe
 #   # put the "public key: age1…" line from it in the server's .env:
 #   BACKUP_AGE_RECIPIENT=age1…
