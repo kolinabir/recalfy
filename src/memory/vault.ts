@@ -23,9 +23,9 @@ import { CREDENTIAL, MASK } from '../telegram/mask-secret';
  * or ":" has to follow the credential word closely, in the same clause, and
  * the value cannot be a word like "saved".
  *
- * Best-effort by design: "gate code 4455" has no credential word and stays
- * plain. A miss costs what the old behaviour cost; a false positive costs a
- * masked phrase that can still be revealed.
+ * Best-effort by design: "4455, the usual one" has no credential word at all
+ * and stays plain. A miss costs what the old behaviour cost; a false positive
+ * costs a masked phrase that can still be revealed.
  *
  * ⚠️ `openSealed` is copied in `web/lib/vault.ts`, because the dashboard reads
  * these rows directly. `test/vault.test.ts` holds the two together.
