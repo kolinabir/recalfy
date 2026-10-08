@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Wordmark } from "@/components/wordmark";
 import { signOut, useSession } from "@/lib/auth-client";
+import { GITHUB_URL } from "@/lib/self-host-data";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -27,6 +28,29 @@ const NAV = [
   { href: "/pricing", label: "Pricing" },
   { href: "/self-host", label: "Self-host" },
 ];
+
+/**
+ * The repo, as an icon beside the theme toggle and drawn to the same 36px
+ * square — open source is part of the pitch, so it sits in the header rather
+ * than only in the footer. Lucide dropped its brand marks, hence the inline
+ * GitHub mark.
+ */
+function GitHubLink() {
+  return (
+    <a
+      href={GITHUB_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Recalfy on GitHub"
+      title="Recalfy on GitHub"
+      className="grid size-9 place-items-center rounded-lg text-fg-muted transition-colors hover:bg-s2 hover:text-fg"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden className="size-[17px]" fill="currentColor">
+        <path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z" />
+      </svg>
+    </a>
+  );
+}
 
 /**
  * The signed-in control. A menu rather than a link: the avatar is where people
@@ -181,6 +205,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-1.5">
+          <GitHubLink />
           <ThemeToggle />
           {isPending ? (
             // Reserve the slot rather than flashing signed-out controls at a
