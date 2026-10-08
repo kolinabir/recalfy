@@ -35,6 +35,16 @@ export const CHANGE_KINDS: Record<ChangeKind, string> = {
 
 const REAL: ChangeEntry[] = [
   {
+    date: "2026-10-08",
+    title: "One answer, shown once",
+    changes: [
+      {
+        kind: "fixed",
+        text: "With live replies on, a short answer could appear twice for a few seconds. Now only longer replies type out live; short ones simply arrive.",
+      },
+    ],
+  },
+  {
     date: "2026-10-01",
     title: "Your passwords, locked away",
     body: "Passwords, PINs and codes you give Recalfy are now stored encrypted. Once saved, the AI only sees dots where they were — in your memory, your reminders and your chat history.",
