@@ -1,5 +1,8 @@
 # Recalfy
 
+[![npm](https://img.shields.io/npm/v/recalfy?label=npm%20%C2%B7%20recalfy&color=f5a524)](https://www.npmjs.com/package/recalfy)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
+
 A personal AI memory that lives in Telegram. You tell it things, it remembers
 them. You ask it things, it answers. You ask it to remind you, it does — at the
 right time, without you being in the chat.
@@ -16,6 +19,7 @@ You need [Docker](https://docker.com/products/docker-desktop) and
 npx recalfy
 ```
 
+That runs the [`recalfy` package on npm](https://www.npmjs.com/package/recalfy).
 The setup asks for two things and does the rest:
 
 1. **A bot token.** Message [@BotFather](https://t.me/BotFather), send
