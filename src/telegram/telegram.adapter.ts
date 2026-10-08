@@ -472,8 +472,10 @@ export class TelegramAdapter
    * renders it as "Thinking…", which is what opens the frame before the model
    * has produced a word.
    *
-   * A draft lives about thirty seconds and is superseded by the real message,
-   * so nothing here needs cleaning up. Swallowing the error is the point: a
+   * A draft lives about thirty seconds and Telegram drops it when the real
+   * message lands — though some clients show both for a few seconds first,
+   * which is why Draft only previews long replies. There is nothing to clean
+   * up, and no method to do it with. Swallowing the error is the point: a
    * frame that fails to paint is invisible, while a throw would take the
    * answer down with it.
    */

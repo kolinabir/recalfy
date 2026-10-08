@@ -15,22 +15,38 @@
 /** Telegram animates draft changes, and anything faster than this is wasted. */
 const MIN_GAP_MS = 900;
 
+/**
+ * No preview until the reply is about two sentences long.
+ *
+ * A preview cannot be withdrawn: Telegram is meant to drop it when the real
+ * message lands, and on some clients it lingers beside the answer for a few
+ * seconds first. For a one-line reply that is the whole answer shown twice —
+ * seen 8 Oct 2026 as "Alive and kicking! …" stacked on "Alive and kicking!".
+ * A short reply arrives in a couple of seconds anyway; watching it being typed
+ * buys nothing. A long one is where the preview earns its keep.
+ */
+const MIN_START_CHARS = 160;
+
 export class Draft {
   private pending: string | null = null;
   private sentAt = 0;
   private timer: NodeJS.Timeout | null = null;
+  /** Once a reply is long enough to preview, every later frame is painted. */
+  private started = false;
   /** Serialises writes, so two edits can never land out of order. */
   private queue: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly write: (text: string) => Promise<void>,
     private readonly minGapMs: number = MIN_GAP_MS,
+    private readonly minStartChars: number = MIN_START_CHARS,
   ) {}
 
   /**
    * Replaces what the user is looking at. Returns immediately.
    *
-   * Empty text is ignored rather than painted. Telegram draws it as a
+   * Nothing is painted until the text reaches `minStartChars` — see
+   * MIN_START_CHARS. Empty text is ignored rather than painted. Telegram draws it as a
    * "Thinking…" placeholder, and a draft cannot be deleted — there is no
    * draft_id on sendMessage and no method to clear one — so a placeholder
    * painted for a reply that turns out to be short just sits next to the
@@ -38,6 +54,8 @@ export class Draft {
    */
   show(text: string): void {
     if (text === '') return;
+    if (!this.started && text.length < this.minStartChars) return;
+    this.started = true;
     this.pending = text;
     if (this.timer) return;
 

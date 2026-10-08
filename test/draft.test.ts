@@ -14,7 +14,7 @@ import { Draft } from '../src/channels/draft';
 describe('draft', () => {
   it('coalesces a burst into one write, carrying the latest text', async () => {
     const written: string[] = [];
-    const draft = new Draft(async (text) => void written.push(text), 0);
+    const draft = new Draft(async (text) => void written.push(text), 0, 0);
 
     draft.show('Re');
     draft.show('Rent is');
@@ -27,7 +27,7 @@ describe('draft', () => {
 
   it('abandons a frame that is still pending when the real reply is ready', async () => {
     const written: string[] = [];
-    const draft = new Draft(async (text) => void written.push(text), 50);
+    const draft = new Draft(async (text) => void written.push(text), 50, 0);
 
     draft.show('half a sen');
     await draft.settle();
@@ -38,7 +38,7 @@ describe('draft', () => {
   it('swallows a failing write', async () => {
     const draft = new Draft(async () => {
       throw new Error('Bad Request: DRAFT_ID_INVALID');
-    }, 0);
+    }, 0, 0);
 
     draft.show('anything');
     await sleep(10);
@@ -56,12 +56,48 @@ describe('draft', () => {
 describe('draft placeholders', () => {
   it('never paints an empty frame', async () => {
     const written: string[] = [];
-    const draft = new Draft(async (text) => void written.push(text), 0);
+    const draft = new Draft(async (text) => void written.push(text), 0, 0);
 
     draft.show('');
     await sleep(10);
     await draft.settle();
 
     assert.deepEqual(written, []);
+  });
+});
+
+/*
+  Seen in production 8 Oct 2026: a one-line reply's preview lingered beside
+  the real message for a few seconds, so the answer appeared twice.
+*/
+describe('draft length threshold', () => {
+  it('never previews a short reply — it arrives once, as the real message', async () => {
+    const written: string[] = [];
+    const draft = new Draft(async (text) => void written.push(text), 0);
+
+    draft.show('Alive and');
+    draft.show("Alive and kicking! 😄 What's up?");
+    await sleep(10);
+    await draft.settle();
+
+    assert.deepEqual(written, []);
+  });
+
+  it('starts previewing once the reply gets long, and keeps going', async () => {
+    const written: string[] = [];
+    const draft = new Draft(async (text) => void written.push(text), 0, 20);
+
+    draft.show('Short so far');
+    await sleep(10);
+    draft.show('Long enough to be worth watching');
+    await sleep(10);
+    draft.show('Long enough to be worth watching, and more');
+    await sleep(10);
+    await draft.settle();
+
+    assert.deepEqual(written, [
+      'Long enough to be worth watching',
+      'Long enough to be worth watching, and more',
+    ]);
   });
 });
